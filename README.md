@@ -16,4 +16,6 @@ Then prepare the uparal(u1) and uperp (u2) distributions using `MakeU1U2.py`. On
 
 `PdfToCdf_njets_pt.py` will take the pdfs from the fit, convert it to cdfs and save all of them into the ROOT files. It also allows to do the Gaussian Kernel Smoothing from the original histograms instead of the fitting, which can be used as one source of systematic uncertainties.
 
+`MakePlots_sys_new_njets.py` is the final plotting script: plot the data-MC comparisons pre/post corrections, and do the systematic variations and plot the uncs.
+
 
