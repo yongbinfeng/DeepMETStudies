@@ -1,0 +1,4 @@
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/WWTo2L2Nu_13TeV-powheg/Job_0000/tree.root
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/WWTo2L2Nu_13TeV-powheg/Job_0001/tree.root
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/WWTo2L2Nu_13TeV-powheg/Job_0002/tree.root
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/WWTo2L2Nu_13TeV-powheg/Job_0003/tree.root

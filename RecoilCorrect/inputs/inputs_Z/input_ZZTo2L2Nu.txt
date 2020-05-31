@@ -1,0 +1,7 @@
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/ZZTo2L2Nu_13TeV_powheg_pythia8/Job_0000/tree.root
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/ZZTo2L2Nu_13TeV_powheg_pythia8/Job_0001/tree.root
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/ZZTo2L2Nu_13TeV_powheg_pythia8/Job_0002/tree.root
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/ZZTo2L2Nu_13TeV_powheg_pythia8/Job_0003/tree.root
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/ZZTo2L2Nu_13TeV_powheg_pythia8/Job_0004/tree.root
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/ZZTo2L2Nu_13TeV_powheg_pythia8/Job_0005/tree.root
+/eos/cms/store/user/yofeng/LepLep_mumu_2020_01_30/ZZTo2L2Nu_13TeV_powheg_pythia8/Job_0006/tree.root
