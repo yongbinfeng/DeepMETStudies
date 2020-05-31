@@ -1,3 +1,10 @@
+'''
+plot and save the u1(uparal) and u2(uperp) distributions 
+in the Z SR, which will be used in the recoil corrections in 
+next steps. It can be run on data/Z amc@NLO/Z Madgraph/ttbar bkg
+/Dibson bkg etc. QCD scale variations can be taken into account.
+'''
+
 import ROOT
 import numpy as np
 from collections import OrderedDict

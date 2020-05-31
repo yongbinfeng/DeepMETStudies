@@ -1,3 +1,7 @@
+'''
+plot the data-MC comparisons pre/post DeepMET corrections.
+and the systematic uncs.
+'''
 import ROOT
 import numpy as np
 from collections import OrderedDict

@@ -1,3 +1,10 @@
+'''
+plot the data-MC comparsions in the W SR, pre/post DeepMET corrections.
+And estimate systematic uncertainties.
+(Note it takes about 2 hours to finish since we have more than 
+10 Million W events in data...)
+'''
+
 import ROOT
 import numpy as np
 from collections import OrderedDict

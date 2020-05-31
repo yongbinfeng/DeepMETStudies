@@ -1,3 +1,8 @@
+'''
+script to run the multi-Gaussian fits on Z data/MC samples 
+of u1(uparal) and u2(uperp), in bins of Z pt and jet multiplicity
+'''
+
 import ROOT
 import numpy as np
 from collections import OrderedDict

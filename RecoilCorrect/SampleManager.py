@@ -1,3 +1,10 @@
+'''
+basic class to do the sample loading, filtering, defining new 
+variables and plotting.
+Currently customized to work best for the W/Z case. can be easily
+extened to general usage.
+'''
+
 import ROOT
 import numpy as np
 import sys

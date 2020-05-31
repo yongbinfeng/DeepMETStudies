@@ -3,6 +3,10 @@ import math
 import array
 
 class Smoother:
+    '''
+    Gaussian kernel smoother 
+    to smooth the distributions
+    '''
     def __init__(self):
         self.histo = None
         self.weights = None

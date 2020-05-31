@@ -1,3 +1,10 @@
+'''
+conver the pdfs from the fits to cdfs, which will be used 
+in the quantile corrections.
+it also allows Gaussian kernel smoothings to smooth the u1(uparal)
+and u2(uperp) distributions, intead of doing fits.
+'''
+
 import ROOT
 import numpy as np
 from collections import OrderedDict
