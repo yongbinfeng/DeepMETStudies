@@ -4,6 +4,10 @@ includes code to calculate and compare the resolution difference between differe
 The code needs [RDataFrame](https://root.cern/doc/master/classROOT_1_1RDataFrame.html), which becomes an official part
 of ROOT since ROOT 6.14. Tested and confirmed at least CMSSW_10_6_0 works (with ROOT 6.14.09)
 
+## Recoil Resolutions
+
+Code used to compare the responses and (un)scaled resolutions of different recoil estimators
+
 ## Recoil Corrections
 
 Code used to study the corrections and uncertainties of DeepMET. In principle it should also work on any type of MET with minor modification.
