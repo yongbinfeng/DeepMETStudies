@@ -18,6 +18,6 @@ Then prepare the uparal(u1) and uperp (u2) distributions using `MakeU1U2.py`. On
 
 `MakePlots_Z.py` is the final plotting script: plot the data-MC comparisons pre/post corrections, and do the systematic variations and plot the uncs.
 
-`MakePlots_W.py` functions the same way as `MakePlots_Z.py`, except it runs on samples in W signal region. Thus it is very slow, since we have more than 10 million W->munu events after the lepton id and kinematic selection in 2016...
+`MakePlots_W.py` functions the same way as `MakePlots_Z.py`, except it runs on samples in W signal region. Thus it is very slow, since we have more than 80 million W->munu events after the lepton id and kinematic selection in 2016...
 
 
