@@ -6,7 +6,7 @@ of ROOT since ROOT 6.14. Tested and confirmed at least CMSSW_10_6_0 works (with 
 
 ## Recoil Resolutions
 
-Code used to compare the responses and (un)scaled resolutions of different recoil estimators
+Some scripts used to compare the responses and (un)scaled resolutions of different recoil estimators
 
 ## Recoil Corrections
 
