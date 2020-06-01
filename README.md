@@ -6,7 +6,10 @@ of ROOT since ROOT 6.14. Tested and confirmed at least CMSSW_10_6_0 works (with 
 
 ## Recoil Resolutions
 
-Some scripts used to compare the responses and (un)scaled resolutions of different recoil estimators
+Some scripts used to compare the responses and (un)scaled resolutions of different recoil estimators.
+The core is the class `RecoilAnalyzer` in `RecoilResol/utils/RecoilAnalyzer.py`, which prepares the RDataFrame, 
+loads the functions, prepare the responses and resolutions. The other scripts are keeping constructing this class and 
+compare the performances (responses and resolutions).
 
 ## Recoil Corrections
 
