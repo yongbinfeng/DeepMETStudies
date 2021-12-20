@@ -10,6 +10,18 @@
 #include "TTree.h"
 #include "TH1D.h"
 #include "TH2D.h"
+#include "TLorentzVector.h"
+
+TLorentzVector VVec(float lep0_pt, float lep0_eta, float lep0_phi, float lep0_m,
+                    float lep1_pt, float lep1_eta, float lep1_phi, float lep1_m)
+{
+    TLorentzVector vlep0;
+    vlep0.SetPtEtaPhiM(lep0_pt, lep0_eta, lep0_phi, lep0_m);
+    TLorentzVector vlep1;
+    vlep1.SetPtEtaPhiM(lep1_pt, lep1_eta, lep1_phi, lep1_m);
+
+    return (vlep0 + vlep1);
+}
 
 // reweight w pt
 float wpt_slope_weight(float wpt, float offset, float slope, float cut=20.0){
