@@ -1,8 +1,7 @@
 from collections import OrderedDict
 import sys
-sys.path.append("/afs/cern.ch/work/y/yofeng/public/CMSPLOTS")
-from myFunction import getResolution, getErrors
-from utils import prepVars
+from CMSPLOTS.myFunction import getResolution, getErrors
+from utils.utils import prepVars
 
 class RecoilAnalyzer(object):
     """
@@ -33,7 +32,7 @@ class RecoilAnalyzer(object):
         nbins_x = xbins.size-1 
         for itype in self.recoils:
             hparal = "h_{RECOIL}_paral_VS_{XVAR}".format(RECOIL=itype, XVAR=xvar)
-            print hparal, hparal, nbins_x, xbins, option, xvar, "u_{RECOIL}_paral".format(RECOIL=itype)
+            print(hparal, hparal, nbins_x, xbins, option, xvar, "u_{RECOIL}_paral".format(RECOIL=itype))
             self.profs[xvar][itype] = self.rdf.Profile1D((hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype))
         # add GEN
         hparal_Gen = "h_GEN_VS_{XVAR}".format(XVAR=xvar)
@@ -55,7 +54,7 @@ class RecoilAnalyzer(object):
     def getResponses(self, xvar):
         hresponses = OrderedDict()
         for itype in self.recoils:
-            print xvar, itype
+            print(xvar, itype)
             hresponses[itype] = self.profs[xvar][itype].Clone( self.profs[xvar][itype].GetName()+ "_response" )
             hresponses[itype].Divide( self.profs[xvar]['GEN'].GetValue() )
         return hresponses

@@ -6,13 +6,13 @@ for the RDataFrame
 def getpTBins():
     import numpy as np
     xbins_qT = np.zeros(18)
-    for ibin in xrange(0,4):
+    for ibin in range(0,4):
         xbins_qT[ibin] = 5*ibin
-    for ibin in xrange(4,8):
+    for ibin in range(4,8):
         xbins_qT[ibin] = 10*ibin-20
-    for ibin in xrange(8,13):
+    for ibin in range(8,13):
         xbins_qT[ibin] = 20*ibin-100
-    for ibin in xrange(13,18):
+    for ibin in range(13,18):
         xbins_qT[ibin] = 30*ibin-230
     return xbins_qT
 
