@@ -19,7 +19,7 @@ def getpTBins():
 def getnVtxBins():
     import numpy as np
     #xbins_nVtx = np.array([0.,5.5, 7.5, 9.5, 11.5, 13.5, 15.5, 17.5, 19.5, 21.5, 23.5, 25.5, 27.5, 29.5, 31.5, 33.5, 38.5, 43.5, 50.5])
-    xbins_nVtx = np.array([0.,5.5, 7.5, 9.5, 11.5, 13.5, 15.5, 17.5, 19.5, 21.5, 23.5, 27.5, 31.5, 35.5, 40.5])
+    xbins_nVtx = np.array([0.,5.5, 7.5, 9.5, 11.5, 13.5, 15.5, 17.5, 19.5, 21.5, 23.5, 27.5, 31.5, 35.5, 40.5, 50.5, 60.5])
     return xbins_nVtx
 
 def prepVars(rdf, u, utruth):
