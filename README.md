@@ -1,8 +1,10 @@
 # DeepMET studies
 includes code to calculate and compare the resolution difference between different METs.
 
-The code needs [RDataFrame](https://root.cern/doc/master/classROOT_1_1RDataFrame.html), which becomes an official part
-of ROOT since ROOT 6.14. Tested and confirmed at least CMSSW_10_6_0 works (with ROOT 6.14.09)
+The code needs python3 and [RDataFrame](https://root.cern/doc/master/classROOT_1_1RDataFrame.html). One can source the provided environment on `/cvmfs` to get started:
+```bash
+source setenv.sh
+```
 
 ## Recoil Resolutions
 
@@ -11,8 +13,21 @@ The core is the class `RecoilAnalyzer` in `RecoilResol/utils/RecoilAnalyzer.py`,
 loads the functions, prepare the responses and resolutions. The other scripts are keeping constructing this class and 
 compare the performances (responses and resolutions).
 
-## Recoil Corrections
+To make the plots for UL data and MC, firtly compile some helper functions in `RecoilResol/Functions.cc`. This only need to be done once.
+```bash
+root [0] .L Functions.cc+
+```
 
+Then run the scripts:
+```bash
+python recoil_resol_MC.py --era 2016
+python recoil_resol_Data.py --era 2016
+```
+to make the resolution plots for data and MC on $Z\to\mu\mu$ events. The `--era` flag can be `2016`, `2017` or `2018`.
+
+
+## Recoil Corrections
+(To be updated.)
 Code used to study the corrections and uncertainties of DeepMET. In principle it should also work on any type of MET with minor modification.
 
 ### Run the correction code.
