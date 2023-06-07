@@ -14,7 +14,6 @@ ROOT.gSystem.Load("Functions_cc.so")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--era", default="2016", help="Era")
-parser.add_argument("--test", action="store_true", help="Run on test sample")
 parser.add_argument("--applySc", action="store_true", help="Apply response corrections and include the plots in the output")
 parser.add_argument("--no-applySc", action="store_false", dest="applySc", help="Do not apply response corrections and do not include the plots in the output")
 parser.set_defaults(applySc=True)
