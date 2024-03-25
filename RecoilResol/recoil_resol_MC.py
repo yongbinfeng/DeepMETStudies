@@ -25,15 +25,16 @@ outdir = f"plots/MC/{era}"
 
 #rdf = ROOT.ROOT.RDataFrame("Events", "/eos/cms/store/user/yofeng/WRecoilNanoAOD_Skimmed_v10_tempMET/myNanoProdMc2016_NANO_[1-9]_Skim.root")
 if do2016:
-   rdf_org = ROOT.ROOT.RDataFrame("Events", "/eos/uscms/store/user/lpcsusyhiggs/ntuples/nAODv9/2016/DYJetsToLLM50NLO/all_DYJetsToLLM50NLO_file00[1-9]_part_1of3_Muons.root")
+   #rdf_org = ROOT.ROOT.RDataFrame("Events", "/eos/uscms/store/user/lpcsusyhiggs/ntuples/nAODv9/2016/DYJetsToLLM50NLO/all_DYJetsToLLM50NLO_file00[1-9]_part_1of3_Muons.root")
+   rdf_org = ROOT.ROOT.RDataFrame("Events", "/eos/cms/store/group/cmst3/group/wmass/yofeng/NanoAOD/DYJetsToMuMu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_testPVRobustDM/240226_075056/0000/NanoV9MCPostVFP_1*.root")
 elif do2017:
    rdf_org = ROOT.ROOT.RDataFrame("Events", "/eos/uscms/store/user/lpcsusyhiggs/ntuples/nAODv9/2017/DYJetsToLLM50NLO/all_DYJetsToLLM50NLO_file0[1-4][1-9]*_part_1of3_Muons.root")
 else:
    rdf_org = ROOT.ROOT.RDataFrame("Events", "/eos/uscms/store/user/lpcsusyhiggs/ntuples/nAODv9/2018/DYJetsToLLM50NLO/all_DYJetsToLLM50NLO_file0[1-4][1-9]*_part_1of3_Muons.root")
 
 rdf_org1 = rdf_org.Filter("nMuon > 1")
-rdf_org1 = rdf_org1.Define("Muon_pass0", "Muon_pt[0] > 25.0 && abs(Muon_eta[0]) < 2.4 && abs(Muon_dxy[0]) < 0.05 && abs(Muon_dz[0]) < 0.10 && Muon_pfRelIso04_all[0] < 0.15 && Muon_tightId[0]")
-rdf_org1 = rdf_org1.Define("Muon_pass1", "Muon_pt[1] > 25.0 && abs(Muon_eta[1]) < 2.4 && abs(Muon_dxy[1]) < 0.05 && abs(Muon_dz[1]) < 0.10 && Muon_pfRelIso04_all[1] < 0.15 && Muon_tightId[1]")
+rdf_org1 = rdf_org1.Define("Muon_pass0", "Muon_pt[0] > 25.0 && abs(Muon_eta[0]) < 2.4 && Muon_pfRelIso04_all[0] < 0.15 && Muon_looseId[0]")
+rdf_org1 = rdf_org1.Define("Muon_pass1", "Muon_pt[1] > 25.0 && abs(Muon_eta[1]) < 2.4 && Muon_pfRelIso04_all[1] < 0.15 && Muon_looseId[1]")
 
 rdf_org2 = rdf_org1.Filter("Muon_pass0 && Muon_pass1")
 rdf = rdf_org2
@@ -53,8 +54,15 @@ rdf = rdf.Define("u_PUPPI_x",  "-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt*T
          .Define("u_GEN_pt",   "TMath::Sqrt(u_GEN_x * u_GEN_x + u_GEN_y * u_GEN_y)") \
          .Define("u_DeepMET_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETResolutionTune_pt*TMath::Cos(DeepMETResolutionTune_phi))") \
          .Define("u_DeepMET_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETResolutionTune_pt*TMath::Sin(DeepMETResolutionTune_phi))") \
-         .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)")
+         .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)") \
+         .Define("u_DeepMETPVRobust_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETPVRobust_pt*TMath::Cos(DeepMETPVRobust_phi))") \
+         .Define("u_DeepMETPVRobust_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETPVRobust_pt*TMath::Sin(DeepMETPVRobust_phi))") \
+         .Define("u_DeepMETPVRobust_pt", "TMath::Sqrt(u_DeepMETPVRobust_x * u_DeepMETPVRobust_x + u_DeepMETPVRobust_y * u_DeepMETPVRobust_y)") \
+         .Define("u_DeepMETPVRobustNoPUPPI_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETPVRobustNoPUPPI_pt*TMath::Cos(DeepMETPVRobustNoPUPPI_phi))") \
+         .Define("u_DeepMETPVRobustNoPUPPI_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETPVRobustNoPUPPI_pt*TMath::Sin(DeepMETPVRobustNoPUPPI_phi))") \
+         .Define("u_DeepMETPVRobustNoPUPPI_pt", "TMath::Sqrt(u_DeepMETPVRobustNoPUPPI_x * u_DeepMETPVRobustNoPUPPI_x + u_DeepMETPVRobustNoPUPPI_y * u_DeepMETPVRobustNoPUPPI_y)")
 
+recoils = ["PUPPI", "PF", "DeepMET", "DeepMETPVRobust", "DeepMETPVRobustNoPUPPI"]
 recoils = ["PUPPI", "PF", "DeepMET"]
 
 #for itype in recoils:
@@ -66,6 +74,8 @@ colors = {
             "PUPPI": 2,
             "GEN": 6,
             "DeepMET": 4,
+            "DeepMETPVRobust": 6,
+            "DeepMETPVRobustNoPUPPI": 7
          }
 
 labels = {
@@ -75,6 +85,8 @@ labels = {
             "GEN": "GEN",
             "TKPHO": "TK+Photon",
             "DeepMET": "DeepMET",
+            "DeepMETPVRobust": "DeepMET PVRobust",
+            "DeepMETPVRobustNoPUPPI": "DeepMET PVRobust NoPUPPI"
          }
 
 xbins_qT = getpTBins()
@@ -118,6 +130,9 @@ hresponsesSc = recoilanalyzerSc.getResponses('u_GEN_pt')
 hresolsSc_paral_diff, hresolsSc_perp = recoilanalyzerSc.getResolutions('u_GEN_pt')
 hresponsesSc_nVtx = recoilanalyzerSc.getResponses('PV_npvsGood')
 hresolsSc_paral_diff_VS_nVtx, hresolsSc_perp_VS_nVtx = recoilanalyzerSc.getResolutions('PV_npvsGood')
+
+h_pvIndex = rdf.Histo1D(("pv_Index", "pv_Index", 11, -1.5, 10.5), "PVRobustIndex")
+DrawHistos([h_pvIndex], ["RobustPV Index"], -1.5, 10.5, "Index", 1e-5, 10.0, "A.U.", "pv_Index", donormalize=True, outdir=outdir, noLumi=True, mycolors=[1])
 
 qtmax = 150.0
 
