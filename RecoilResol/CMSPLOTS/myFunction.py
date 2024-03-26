@@ -1,8 +1,8 @@
 import ROOT
 import os
 import sys
-from . import CMS_lumi
-from . import tdrstyle
+import CMS_lumi
+import tdrstyle
 
 
 class bcolors:

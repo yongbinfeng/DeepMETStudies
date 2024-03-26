@@ -7,14 +7,15 @@ next steps. It can be run on data/Z amc@NLO/Z Madgraph/ttbar bkg
 
 import ROOT
 import numpy as np
+import os
 from collections import OrderedDict
 from SampleManager import Sample
 import CMS_lumi
 import pickle
 from Utils.utils import getPtBins, getJetBins
 
-isData     = False
-isAMCNLO   = True
+isData     = True
+isAMCNLO   = False
 isMADGRAPH = False
 isTTbar    = False
 isDiboson  = False
@@ -23,21 +24,21 @@ assert isData+isAMCNLO+isMADGRAPH+isTTbar+isDiboson==1, "must pick one sample fr
 
 ROOT.gROOT.SetBatch(True)
 
-ROOT.ROOT.EnableImplicitMT()
+ROOT.ROOT.EnableImplicitMT(18)
 
 def main():
     
     if isData:
-        inputfile = "inputs/inputs_Z/input_data.txt"
+        inputfile = "inputs/inputs_Z_UL/input_data.txt"
         samp = Sample(inputfile, isMC=False, name = "Data")
         samp.donormalization = False
         samp.varyQCDScale = False
         samples = [samp]
     elif isAMCNLO:
-        inputfile = "inputs/inputs_Z/input_zjets.txt"
-        samp = Sample(inputfile, isMC=True,  name = "ZJets_NLO")
+        inputfile = "inputs/inputs_Z_UL/input_zjets.txt"
+        samp = Sample(inputfile, isMC=True,  name = "ZJets_NLO", xsec = 5765.4*1e3)
         samp.donormalization = False
-        samp.varyQCDScale = True
+        samp.varyQCDScale = False
         samples = [samp]
     elif isMADGRAPH:
         inputfile = "inputs/inputs_Z/input_zjets_madgraph.txt"
@@ -73,20 +74,20 @@ def main():
     ptbins = getPtBins()
     njetbins = getJetBins()
 
-    print ptbins
-    print njetbins
+    print(ptbins)
+    print(njetbins)
 
     # prepare u1 (uparal) and u2 (uperp) distributions 
     # in differen Z pt and jet multiplicity bins
     def prepareU1U2(rdf, postfix="", extra_weight = "1.0"):
         histos_u1 = OrderedDict() 
         histos_u2 = OrderedDict()
-        for ijet in xrange(njetbins.size-1):
+        for ijet in range(njetbins.size-1):
             njetmin = njetbins[ijet]
             njetmax = njetbins[ijet+1]
             histos_u1[(njetmin, njetmax)] = OrderedDict()
             histos_u2[(njetmin, njetmax)] = OrderedDict()
-            for ipt in xrange(ptbins.size-1):
+            for ipt in range(ptbins.size-1):
                 ptmin = ptbins[ipt]
                 ptmax = ptbins[ipt+1]
     
@@ -101,7 +102,7 @@ def main():
 
 
     for samp in samples:
-        print "\n\n\nWork on sample ", samp.name
+        print("\n\n\nWork on sample ", samp.name)
 
         weights = OrderedDict()
         if samp.varyQCDScale:
@@ -120,16 +121,16 @@ def main():
 
         histos_u1 = OrderedDict()
         histos_u2 = OrderedDict()
-        print "\n\nMaking histograms..."
-        for wname, wstring in weights.iteritems():
+        print("\n\nMaking histograms...")
+        for wname, wstring in weights.items():
             # making all histograms first, such that rdataframe could handle
             # everything in one loop.
-            print wname, wstring
+            print(wname, wstring)
             samp.rdf = samp.rdf.Define(wname, wstring)
             histos_u1[wname], histos_u2[wname] = prepareU1U2(samp.rdf, postfix="{}_{}".format(samp.name, wname), extra_weight=wname)
 
         if samp.donormalization:
-            print "\n\nScale the {} MC to the xsec with normalization factor {}".format(samp.name, samp.normfactor)
+            print("\n\nScale the {} MC to the xsec with normalization factor {}".format(samp.name, samp.normfactor))
             for wname in histos_u1:
                 for ijetbin in histos_u1[wname]:
                     for iptbin in histos_u1[wname][ijetbin]:
@@ -137,14 +138,17 @@ def main():
                         histos_u2[wname][ijetbin][iptbin].Scale(samp.normfactor)
 
 
-        print "\n\nWriting to output file..."
-        for wname, wstring in weights.iteritems():
+        print("\n\nWriting to output file...")
+        for wname, wstring in weights.items():
+            outdir = "results/U1U2"
+            if os.path.exists(outdir) == False:
+                os.makedirs(outdir)
             ofilename = "results/U1U2/histos_u1u2_{}_njets_pt_{}.root".format(samp.name, wname)
 
-            print "Write to output file ", ofilename
+            print("Write to output file ", ofilename)
             ofile = ROOT.TFile(ofilename, "recreate")
-            for ijetbin in histos_u1[wname].keys():
-                for iptbin in histos_u1[wname][ijetbin].keys():
+            for ijetbin in list(histos_u1[wname].keys()):
+                for iptbin in list(histos_u1[wname][ijetbin].keys()):
                     histos_u1[wname][ijetbin][iptbin].GetValue().SetDirectory(ofile)
                     histos_u1[wname][ijetbin][iptbin].GetValue().Write()
                     histos_u2[wname][ijetbin][iptbin].GetValue().SetDirectory(ofile)
@@ -152,7 +156,7 @@ def main():
 
         ofile.Close()
             
-    print "Finished.."
+    print("Finished..")
 
     return 
 
