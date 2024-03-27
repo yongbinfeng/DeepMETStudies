@@ -6,15 +6,15 @@ of u1(uparal) and u2(uperp), in bins of Z pt and jet multiplicity
 import ROOT
 import numpy as np
 from collections import OrderedDict
-import sys
-sys.path.append("/afs/cern.ch/work/y/yofeng/public/CMSPLOTS")
+import sys, os
+sys.path.append("../RecoilResol/CMSPLOTS/")
 from tdrstyle import setTDRStyle
 import CMS_lumi
 from Utils.utils import getPtBins, getJetBins
 import pickle
 
-isData = False
-isAMCNLO = True
+isData = True
+isAMCNLO = False
 isMADGRAPH = False
 
 subtractBkg = True
@@ -76,6 +76,7 @@ def plotRecoilFit(var, datahist, pdf, nGaussians, nParams, fitresult, njetmin, n
     pdf.plotOn(     frame, 
                     ROOT.RooFit.FillColor(7), 
                     ROOT.RooFit.VisualizeError(fitresult, 1), 
+                    ROOT.RooFit.DrawOption("F")
               )
     # redraw datahist
     # funny 'feature' in roofit: the datahist has to be drawn before pdf,
@@ -88,7 +89,7 @@ def plotRecoilFit(var, datahist, pdf, nGaussians, nParams, fitresult, njetmin, n
                    )
     # plot components
     colors = [ ROOT.kRed, ROOT.kGreen, ROOT.kCyan, ROOT.kOrange, ROOT.kPink]
-    for iG in xrange(nGaussians):
+    for iG in range(nGaussians):
         post = "{}_{}".format(iG, postfix)
         pdf.plotOn(     frame, 
                         ROOT.RooFit.Components("gauss"+post), 
@@ -137,7 +138,7 @@ def plotRecoilFit(var, datahist, pdf, nGaussians, nParams, fitresult, njetmin, n
     latex.DrawLatexNDC(0.20, 0.85-0.05*2, "Mean = %.1f"%xmean)
     latex.DrawLatexNDC(0.20, 0.85-0.05*3, "RMS = %.2f"%xrms)
     icol = 0
-    for iG in xrange(nGaussians):
+    for iG in range(nGaussians):
         latex.DrawLatexNDC(0.72, 0.85-0.05*icol, "#mu_{%d} = %.2f #pm %.2f"%(   iG, result['mean'+str(iG) ][0],    result['mean'+str(iG) ][1] ) )
         icol += 1
         latex.DrawLatexNDC(0.72, 0.85-0.05*icol, "#sigma_{%d} = %.2f #pm %.2f"%(iG, result['sigma'+str(iG)][0],    result['sigma'+str(iG)][1] ) )
@@ -147,6 +148,7 @@ def plotRecoilFit(var, datahist, pdf, nGaussians, nParams, fitresult, njetmin, n
             icol += 1
     frame.addObject( latex )
 
+    CMS_lumi.lumi_13TeV = "16.8 fb^{-1}" if isData else ""
     CMS_lumi.CMS_lumi( curr_canvases['top'], 4, 0)
 
     hpull = frame.pullHist()
@@ -216,7 +218,7 @@ def doFit(hist, njetmin, njetmax, ptmin, ptmax, ws, postfix="u1_pt0", nGaussians
     frac_initials.append( (0.10,  0.0,  0.20) ) # frac2
     frac_initials.append( (0.05,  0.0,  0.20) ) # frac3
     frac_initials.append( (0.05,  0.0,  0.20) ) # frac4
-    for iG in xrange(nGaussians):
+    for iG in range(nGaussians):
         post = "{}_{}".format(iG, postfix)
         means.append(  ROOT.RooRealVar("mean" +post,  "mean" +post,   xmean,      xmin-50.,   xmax+50.,   "GeV") )
         sigmas.append( ROOT.RooRealVar("sigma"+post,  "sigma"+post,   sigma_initials[iG][0], sigma_initials[iG][1],  sigma_initials[iG][2],  "GeV") )
@@ -312,7 +314,7 @@ def doFit(hist, njetmin, njetmax, ptmin, ptmax, ws, postfix="u1_pt0", nGaussians
         nTries += 1
 
     result = OrderedDict()
-    for iG in xrange(nGaussians):
+    for iG in range(nGaussians):
         result['mean'+str(iG) ]  = (means[iG].getVal(),  means[iG].getError()  )
         result['sigma'+str(iG)]  = (sigmas[iG].getVal(), sigmas[iG].getError() )
         if iG>0:
@@ -340,13 +342,13 @@ def main():
 
     haveScaleVariations = {
                             "Data"     : 0,
-                            "ZJets_NLO": 1,
+                            "ZJets_NLO": 0,
                             "ZJets_MG" : 0,
-                            "TTbar"    : 1,
+                            "TTbar"    : 0,
                             "WW2L"     : 0,
-                            "WZ3L"     : 0,
+                            "WZ2L"     : 0,
                             "ZZ2L"     : 0,
-                            "ZZ4L"     : 0,
+                            "ZZ2L2Q"   : 0,
                           }
 
     wnames = {
@@ -357,8 +359,8 @@ def main():
     ptbins = getPtBins()
     njetbins = getJetBins()
             
-    print ptbins
-    print njetbins
+    print(ptbins)
+    print(njetbins)
 
     #ptbins = np.array([0,0.5,1.0])
     #njetbins = np.array([-0.5,0.5])
@@ -367,25 +369,24 @@ def main():
     # in differen Z pt and jet multiplicity bins
     def readU1U2(sampname, wname):
         postfix="{}_{}".format(sampname, wname)
-        extra_weight = wname
         filename = "results/U1U2/histos_u1u2_{}_njets_pt_{}.root".format(sampname, wname)
 
-        print "read u1, u2 histograms from file ", filename
+        print("read u1, u2 histograms from file ", filename)
 
         hfile = ROOT.TFile(filename)
         histos_u1 = OrderedDict() 
         histos_u2 = OrderedDict()
-        for ijet in xrange(njetbins.size-1):
+        for ijet in range(njetbins.size-1):
             njetmin = njetbins[ijet]
             njetmax = njetbins[ijet+1]
             histos_u1[(njetmin, njetmax)] = OrderedDict()
             histos_u2[(njetmin, njetmax)] = OrderedDict()
-            for ipt in xrange(ptbins.size-1):
+            for ipt in range(ptbins.size-1):
                 ptmin = ptbins[ipt]
                 ptmax = ptbins[ipt+1]
 
                 wstring = "njetbin_{}_ptbin_{}_{}".format(ijet, ipt, postfix)
-                print wstring
+                print(wstring)
                 hname_u1 = "hist_uparal_{}".format(wstring)
                 hname_u2 = "hist_uperp_{}".format(wstring)
                 histos_u1[(njetmin, njetmax)][(ptmin, ptmax)] = hfile.Get( hname_u1 ).Clone(hname_u1.replace("hist_", "h_"))
@@ -399,13 +400,13 @@ def main():
 
     if isData and subtractBkg:
         # read ttbar bkg template and subtract from data
-        sampnames = ["TTbar", "WW2L", "WZ3L", "ZZ2L", "ZZ4L"]
+        sampnames = ["TTbar", "WW2L", "WZ2L", "ZZ2L", "ZZ2L2Q"]
 
         for sampBkgname in sampnames:
             histosBkg_u1, histosBkg_u2 = readU1U2(sampBkgname, wnames[haveScaleVariations[sampBkgname]])
 
-            for ijetbin in histos_u1.keys():
-                for iptbin in histos_u1[ijetbin].keys():
+            for ijetbin in list(histos_u1.keys()):
+                for iptbin in list(histos_u1[ijetbin].keys()):
                     h_u1 = histos_u1[ijetbin][iptbin]
                     h_u2 = histos_u2[ijetbin][iptbin]
                     hBkg_u1 = histosBkg_u1[ijetbin][iptbin]
@@ -415,41 +416,44 @@ def main():
                     h_u1.Add(hBkg_u1, -1.0)
                     h_u2.Add(hBkg_u2, -1.0)
         
-        print "finished subtracting ttbar background"
+        print("finished subtracting ttbar background")
 
     ws = ROOT.RooWorkspace('fit')
 
     results_u1 = OrderedDict()
     results_u2 = OrderedDict()
     ijet = 0
-    for ijetbin in histos_u1.keys():
+    for ijetbin in list(histos_u1.keys()):
         ipt = 0
         results_u1[ijetbin] = OrderedDict()
         results_u2[ijetbin] = OrderedDict()
-        for iptbin in histos_u1[ijetbin].keys():
+        for iptbin in list(histos_u1[ijetbin].keys()):
             results_u1[ijetbin][iptbin] = doFit( histos_u1[ijetbin][iptbin], ijetbin[0], ijetbin[1], iptbin[0], iptbin[1], ws, postfix="u1_njet{}_pt{}".format(ijet, ipt), nGaussians=NGAUSSIAN )
             results_u2[ijetbin][iptbin] = doFit( histos_u2[ijetbin][iptbin], ijetbin[0], ijetbin[1], iptbin[0], iptbin[1], ws, postfix="u2_njet{}_pt{}".format(ijet, ipt), nGaussians=NGAUSSIAN )
             ipt += 1
         ijet += 1
 
-    print results_u1
-    print results_u2
+    print(results_u1)
+    print(results_u2)
 
 
     doDump = True
     if doDump:
         tag = "{}Gauss".format(NGAUSSIAN)
+        outdir = "results/Fit/"
+        if os.path.exists(outdir)==False:
+            os.makedirs(outdir)
         ofilename = "results/Fit/results_{}_njets_pt_{}.pickle".format(sampname, "central")
 
-        print "write to pickle"
+        print("write to pickle")
         ofile = open( ofilename, 'wb' )
         pickle.dump( [results_u1, results_u2], ofile )
         ofile.close()
 
-        print "write to workspace"
+        print("write to workspace")
         ws.writeToFile( ofilename.replace("results_", "results_fit_").replace("pickle", "root") )
 
-    print "Finished.."
+    print("Finished..")
 
     return 
 
