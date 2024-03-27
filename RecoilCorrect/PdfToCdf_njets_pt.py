@@ -9,18 +9,18 @@ import ROOT
 import numpy as np
 from collections import OrderedDict
 import sys
-sys.path.append("/afs/cern.ch/work/y/yofeng/public/CMSPLOTS")
+sys.path.append("../RecoilResol/CMSPLOTS")
 from tdrstyle import setTDRStyle
 from myFunction import DrawHistos
 from Utils.utils import getPtBins, getJetBins
 from Smoother import Smoother
 
-isData = True
-isAMCNLO = False
+isData = False
+isAMCNLO = True
 isMADGRAPH = False
 
 wstrings = ["central", "mur_1_muf_0p5", "mur_1_muf_2", "mur_0p5_muf_1", "mur_2_muf_1", "mur_0p5_muf_0p5", "mur_2_muf_2"]
-WSTRING = wstrings[6]
+WSTRING = wstrings[0]
 
 assert isData+isAMCNLO+isMADGRAPH==1, "must pick one sample from data, or amc@nlo, or madgraph"""
 
@@ -39,7 +39,7 @@ def PdfToCdfTF(pdf, var, postfix=""):
 def convertPdfToCdfTF(ws, nbins, jetbin, uname, postfix=""):
     tfs = ROOT.TList()
     assert uname in ["u1", "u2"], "uname must be either u1 or u2"
-    for ibin in xrange(nbins):
+    for ibin in range(nbins):
         varname = "u_{}_{}_pt{}".format(uname, jetbin, ibin)
         var = ws.var(varname)
         pdfname = "sig_{}_{}_pt{}".format(uname, jetbin, ibin)
@@ -74,7 +74,7 @@ def rdhToGKS(ws, nbins, jetbin, uname, postfix=""):
     pdfs_gks = ROOT.TList()
     cdfs_gks = ROOT.TList()
     assert uname in ["u1", "u2"], "uname must be either u1 or u2"
-    for ibin in xrange(nbins):
+    for ibin in range(nbins):
         varname = "u_{}_{}_pt{}".format(uname, jetbin, ibin)
         var = ws.var(varname)
         rdhname = "datahist_{}_{}_pt{}".format(uname, jetbin, ibin)
@@ -88,7 +88,7 @@ def rdhToGKS(ws, nbins, jetbin, uname, postfix=""):
         gks = smo.smoothHisto
         #cdf = gks.GetCumulative()
         rdh_gks, pdf_gks, cdf = HistToCdfTF( gks, var, postfix)
-        print dh.GetName(), gks.GetName(), cdf.GetName()
+        print(dh.GetName(), gks.GetName(), cdf.GetName())
 
         dhs.Add(  dh )
         gkss.Add( gks )
@@ -113,7 +113,7 @@ def main():
     elif isMADGRAPH:
         sampname = "ZJets_MG"
 
-    inputname = "results/Fit/results_fit_{}_njets_pt_weight_{}.root".format(sampname, WSTRING)
+    inputname = "results/Fit/results_fit_{}_njets_pt_{}.root".format(sampname, WSTRING)
 
     ifile = ROOT.TFile(inputname)
     ws = ifile.Get("fit")
@@ -122,12 +122,12 @@ def main():
     njetbins = getJetBins()
 
     if doPdfToCdf:
-        print "start converting pdfs from fits to cdfs from ", inputname
+        print("start converting pdfs from fits to cdfs from ", inputname)
         ofilename = "results/Fit/fitfunctions_{}_njets_pt_{}.root".format(sampname, WSTRING)
         ofile = ROOT.TFile(ofilename, "RECREATE")
         tfs_u1 = ROOT.TList()
         tfs_u2 = ROOT.TList()
-        for ijet in xrange(njetbins.size-1):
+        for ijet in range(njetbins.size-1):
             nbins_pt = ptbins.size-1
             jetbin = 'njet%d'%ijet
             tfs_u1_njet = convertPdfToCdfTF(ws, nbins_pt, jetbin, "u1", sampname)
@@ -141,12 +141,12 @@ def main():
 
         h1_ptbins_name = "h1_ptbins_{}_{}".format(sampname, WSTRING)
         h1_ptbins = ROOT.TH1F(h1_ptbins_name, h1_ptbins_name, ptbins.size-1, ptbins)
-        for ipt in xrange(ptbins.size-1):
+        for ipt in range(ptbins.size-1):
             h1_ptbins.SetBinContent(ipt+1, ipt)
 
         h1_njetbins_name = "h1_njetbins_{}_{}".format(sampname, WSTRING)
         h1_njetbins = ROOT.TH1F(h1_njetbins_name, h1_njetbins_name, njetbins.size-1, njetbins)
-        for ijet in xrange(njetbins.size-1):
+        for ijet in range(njetbins.size-1):
             h1_njetbins.SetBinContent(ijet+1, ijet)
 
         h1_ptbins.SetDirectory( ofile )
@@ -157,15 +157,15 @@ def main():
 
         ofile.Close()
 
-        print "write to ", ofilename
+        print("write to ", ofilename)
 
     if doGKS:
-        print "starting creating Gaussian smeared smoother and create cdfs from ", inputname
+        print("starting creating Gaussian smeared smoother and create cdfs from ", inputname)
         ofilename = "results/GaussSmoother/gaussSmoother_{}_njets_pt_{}.root".format(sampname, "central")
         ofile = ROOT.TFile(ofilename, "RECREATE")
         cdfs_gks_u1 = ROOT.TList()
         cdfs_gks_u2 = ROOT.TList()
-        for ijet in xrange(njetbins.size-1):
+        for ijet in range(njetbins.size-1):
             nbins_pt = ptbins.size-1
             jetbin = "njet{}".format(ijet)
             _, _, _, _, cdfs_gks_u1_njet = rdhToGKS(ws, nbins_pt, jetbin, "u1", sampname)
@@ -179,12 +179,12 @@ def main():
 
         h1_ptbins_name = "h1_ptbins_{}_{}".format(sampname, "central")
         h1_ptbins = ROOT.TH1F(h1_ptbins_name, h1_ptbins_name, ptbins.size-1, ptbins)
-        for ipt in xrange(ptbins.size-1):
+        for ipt in range(ptbins.size-1):
             h1_ptbins.SetBinContent(ipt+1, ipt)
 
         h1_njetbins_name = "h1_njetbins_{}_{}".format(sampname, "central")
         h1_njetbins = ROOT.TH1F(h1_njetbins_name, h1_njetbins_name, njetbins.size-1, njetbins)
-        for ijet in xrange(njetbins.size-1):
+        for ijet in range(njetbins.size-1):
             h1_njetbins.SetBinContent(ijet+1, ijet)
 
         h1_ptbins.SetDirectory( ofile )
@@ -197,8 +197,8 @@ def main():
 
 
 
-    print "finished"
-    raw_input()
+    print("finished")
+    #input()
 
 if __name__ == "__main__":
    main()

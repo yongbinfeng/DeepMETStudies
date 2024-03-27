@@ -112,7 +112,7 @@ def plotRecoilFit(var, datahist, pdf, nGaussians, nParams, fitresult, njetmin, n
     padsize1 = 0.67
 
     label = "u1" if "u1" in postfix else "u2"
-    xtitle = "u_{#parallel} [GeV]" if label=='u1' else 'u_{#perp} [GeV]'
+    xtitle = "u_{#parallel} [GeV]" if label=='u1' else 'u_{#perp } [GeV]'
 
     frame.GetXaxis().SetTitle( xtitle )
     frame.GetYaxis().SetTitle("A.U.")
