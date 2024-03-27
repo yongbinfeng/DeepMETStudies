@@ -14,11 +14,11 @@ import CMS_lumi
 import pickle
 from Utils.utils import getPtBins, getJetBins
 
-isData     = True
+isData     = False
 isAMCNLO   = False
 isMADGRAPH = False
 isTTbar    = False
-isDiboson  = False
+isDiboson  = True
 
 assert isData+isAMCNLO+isMADGRAPH+isTTbar+isDiboson==1, "must pick one sample from data, or amc@nlo, or madgraph"
 
@@ -35,8 +35,8 @@ def main():
         samp.varyQCDScale = False
         samples = [samp]
     elif isAMCNLO:
-        inputfile = "inputs/inputs_Z_UL/input_zjets.txt"
-        samp = Sample(inputfile, isMC=True,  name = "ZJets_NLO", xsec = 5765.4*1e3)
+        inputfile = "inputs/inputs_Z_UL/input_zjets_all.txt"
+        samp = Sample(inputfile, isMC=True,  name = "ZJets_NLO", xsec = 2025.74*1e3)
         samp.donormalization = False
         samp.varyQCDScale = False
         samples = [samp]
@@ -47,29 +47,29 @@ def main():
         samp.varyQCDScale = False
         samples = [samp]
     elif isTTbar:
-        inputfile = "inputs/inputs_Z/input_ttbar.txt"
+        inputfile = "inputs/inputs_Z_UL/input_ttbar.txt"
         samp = Sample(inputfile, isMC=True,  name = "TTbar", xsec = 831.76*0.105*1e3)
         samp.donormalization = True
-        samp.varyQCDScale = True
+        samp.varyQCDScale = False
         samples = [samp]
     elif isDiboson:
-        input_WW2L    = "inputs/inputs_Z/input_WWTo2L2Nu.txt"
-        input_WZ3L    = "inputs/inputs_Z/input_WZTo3LNu.txt"
-        input_ZZ2L    = "inputs/inputs_Z/input_ZZTo2L2Nu.txt"
-        input_ZZ4L    = "inputs/inputs_Z/input_ZZTo4L.txt"
-        WW2LSamp  = Sample(input_WW2L,  xsec = 12.178*1e3,   name="WW2L")
-        WZ3LSamp  = Sample(input_WZ3L,  xsec = 5.26*1e3,     name="WZ3L")
-        ZZ2LSamp  = Sample(input_ZZ2L,  xsec = 0.564*1e3,    name="ZZ2L")
-        ZZ4LSamp  = Sample(input_ZZ4L,  xsec = 1.212*1e3,    name="ZZ4L")
+        input_WW2L    = "inputs/inputs_Z_UL/input_WWTo2L2Nu.txt"
+        input_WZ2L    = "inputs/inputs_Z_UL/input_WZTo2Q2L.txt"
+        input_ZZ2L    = "inputs/inputs_Z_UL/input_ZZTo2L2Nu.txt"
+        input_ZZ2L2Q  = "inputs/inputs_Z_UL/input_ZZTo2Q2L.txt"
+        WW2LSamp   = Sample(input_WW2L,  xsec = 12.178*1e3,   name="WW2L")
+        WZ2LSamp   = Sample(input_WZ2L, xsec = 5.595*1e3,   name="WZ2L")
+        ZZ2LSamp   = Sample(input_ZZ2L,  xsec = 0.564*1e3,    name="ZZ2L")
+        ZZ2L2QSamp = Sample(input_ZZ2L2Q, xsec = 3.22*1e3,   name="ZZ2L2Q")
         WW2LSamp.donormalization = True
-        WZ3LSamp.donormalization = True
+        WZ2LSamp.donormalization = True
         ZZ2LSamp.donormalization = True
-        ZZ4LSamp.donormalization = True
+        ZZ2L2QSamp.donormalization = True
         WW2LSamp.varyQCDScale = False
-        WZ3LSamp.varyQCDScale = False
+        WZ2LSamp.varyQCDScale = False
         ZZ2LSamp.varyQCDScale = False
-        ZZ4LSamp.varyQCDScale = False
-        samples = [ WW2LSamp, WZ3LSamp, ZZ2LSamp, ZZ4LSamp ]
+        ZZ2L2QSamp.varyQCDScale = False
+        samples = [ WW2LSamp, WZ2LSamp, ZZ2LSamp, ZZ2L2QSamp ]
 
     ptbins = getPtBins()
     njetbins = getJetBins()
