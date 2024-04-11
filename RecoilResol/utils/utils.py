@@ -35,7 +35,25 @@ def prepVars(rdf, u, utruth):
              .Define("{U}_perp"      .format(U=u),     f_uperp  ) \
              .Define("{U}_response"  .format(U=u),     f_ureponse ) \
              .Define("{U}_paral_diff".format(U=u),     f_uparal_diff)
+    return rdf
 
+def prepRecoilVars(rdf, v, metnames):
+    """
+    prepare the recoil x, y, and pt variables given V and MET pt
+    """
+    if isinstance(metnames, str):
+        metnames = [metnames]
+        
+    for metname in metnames:
+        f_ux = "-({V}_pt * TMath::Cos({V}_phi) + {MET}_pt * TMath::Cos({MET}_phi))".format(V=v, MET=metname)
+        f_uy = "-({V}_pt * TMath::Sin({V}_phi) + {MET}_pt * TMath::Sin({MET}_phi))".format(V=v, MET=metname)
+        f_ut = "TMath::Sqrt(u_{MET}_x * u_{MET}_x + u_{MET}_y * u_{MET}_y)".format(MET=metname)
+        
+        print(f"MET name {metname}, f_ux {f_ux}, f_uy {f_uy}, f_ut {f_ut}")
+    
+        rdf = rdf.Define("u_{MET}_x".format( MET=metname), f_ux) \
+                 .Define("u_{MET}_y".format( MET=metname), f_uy) \
+                 .Define("u_{MET}_pt".format(MET=metname), f_ut)
     return rdf
     
 get_response_code = '''
