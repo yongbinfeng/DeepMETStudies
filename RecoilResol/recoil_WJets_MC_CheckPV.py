@@ -27,8 +27,15 @@ rdf = rdf_org2
 
 rdf = rdf.Define("muon_pt", "Muon_pt[0]").Define("muon_phi", "Muon_phi[0]")
 
-rdf = rdf.Define("V_pt", "TMath::Sqrt(Muon_pt[0] * Muon_pt[0] + GenMET_pt * GenMET_pt + 2 * Muon_pt[0] * GenMET_pt * TMath::Cos(Muon_phi[0] - GenMET_phi))")
-rdf = rdf.Define("V_phi", "TMath::ATan2(Muon_pt[0] * TMath::Sin(Muon_phi[0]) + GenMET_pt * TMath::Sin(GenMET_phi), Muon_pt[0] * TMath::Cos(Muon_phi[0]) + GenMET_pt * TMath::Cos(GenMET_phi))")
+rdf = rdf.Define("prefsrLeps", "prefsrLeptons(GenPart_status, GenPart_statusFlags, GenPart_pdgId, GenPart_genPartIdxMother)") \
+         .Define("genl", "ROOT::Math::PtEtaPhiMVector(GenPart_pt[prefsrLeps[0]], GenPart_eta[prefsrLeps[0]], GenPart_phi[prefsrLeps[0]], GenPart_mass[prefsrLeps[0]])") \
+         .Define("genlanti", "ROOT::Math::PtEtaPhiMVector(GenPart_pt[prefsrLeps[1]], GenPart_eta[prefsrLeps[1]], GenPart_phi[prefsrLeps[1]], GenPart_mass[prefsrLeps[1]])") \
+         .Define("genV", "ROOT::Math::PxPyPzEVector(genl)+ROOT::Math::PxPyPzEVector(genlanti)") \
+         .Define("V_pt", "genV.Pt()") \
+         .Define("V_phi", "genV.Phi()")
+
+#rdf = rdf.Define("V_pt", "TMath::Sqrt(Muon_pt[0] * Muon_pt[0] + GenMET_pt * GenMET_pt + 2 * Muon_pt[0] * GenMET_pt * TMath::Cos(Muon_phi[0] - GenMET_phi))")
+#rdf = rdf.Define("V_phi", "TMath::ATan2(Muon_pt[0] * TMath::Sin(Muon_phi[0]) + GenMET_pt * TMath::Sin(GenMET_phi), Muon_pt[0] * TMath::Cos(Muon_phi[0]) + GenMET_pt * TMath::Cos(GenMET_phi))")
 
 rdf = rdf.Define("PFMET_pt", "MET_pt") \
          .Define("PFMET_phi", "MET_phi") \
