@@ -405,14 +405,10 @@ class SampleManager(object):
         if not os.path.exists(outdir):
             os.makedirs(outdir)
             
-        branchList = ROOT.vector('string')()
-        for branch in branches:
-            branchList.push_back(branch)
-        
         for mc in self.mcs:
             # include the normalizing factor
             mc.rdf = mc.rdf.Define("norm", "1.0 * {}".format(mc.normfactor))
             print("snapshot for ", mc.name)
-            mc.rdf.Snapshot("Events", os.path.join(outdir, mc.name+".root"), branches)
+            mc.rdf.Snapshot("Events", os.path.join(outdir, mc.name+".root"), branches + ["norm"])
         
         self.data.rdf.Snapshot("Events", os.path.join(outdir, self.data.name+".root"), branches)
