@@ -7,7 +7,7 @@ extened to general usage.
 
 import ROOT
 import numpy as np
-import sys
+import sys, os
 from collections import OrderedDict
 sys.path.append("../RecoilResol/CMSPLOTS/")
 from myFunction import DrawHistos
@@ -397,3 +397,22 @@ class SampleManager(object):
         for hname, plotinfo in self.to_draw.items():
             self._DrawPlot( plotinfo[0], plotinfo[1], plotinfo[2], hname)
         print("finished drawing..")
+        
+    def snapShot(self, outdir, branches):
+        """
+        write the ntuples to a root file
+        """
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+            
+        branchList = ROOT.vector('string')()
+        for branch in branches:
+            branchList.push_back(branch)
+        
+        for mc in self.mcs:
+            # include the normalizing factor
+            mc.rdf = mc.rdf.Define("norm", "1.0 * {}".format(mc.normfactor))
+            print("snapshot for ", mc.name)
+            mc.rdf.Snapshot("Events", os.path.join(outdir, mc.name+".root"), branches)
+        
+        self.data.rdf.Snapshot("Events", os.path.join(outdir, self.data.name+".root"), branches)

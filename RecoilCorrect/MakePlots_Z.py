@@ -17,8 +17,9 @@ from SampleManager import DrawConfig, Sample, SampleManager
 ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT(15)
 
-dotest = 0
+dotest = False
 VetoB = False
+doDump = True
 
 def main():
     print("Program start...")
@@ -57,6 +58,12 @@ def main():
     sampMan.groupMCs(["WW2L", "WZ2L", "ZZ2L", "ZZ2L2Q"], "Dibosons", 38, "Dibosons")
 
     sampMan.DefineAll("zpt", "Z_pt")
+    sampMan.DefineAll("leadMuon_pt", "Muon_pt[0]")
+    sampMan.DefineAll("leadMuon_eta", "Muon_eta[0]")
+    sampMan.DefineAll("leadMuon_phi", "Muon_phi[0]")
+    sampMan.DefineAll("subleadMuon_pt", "Muon_pt[1]")
+    sampMan.DefineAll("subleadMuon_eta", "Muon_eta[1]")
+    sampMan.DefineAll("subleadMuon_phi", "Muon_phi[1]")
 
     # define u1 and u2 for PUPPI and PF
     # u1 and u2 for DeepMET has already been defined in SampleManager
@@ -280,20 +287,31 @@ def main():
     #compRatios(  postfixs, colors, linestyles, legends, "QCDScale")
     #compMCRatios(postfixs, colors, linestyles, legends, "QCSScale") 
 
-
-    doDump = False
     if doDump:
         print("Dump corrections into root file...")
-        branchList = ROOT.vector('string')()
-        for branchName in ["zpt", "deepmet_pt", "u1", "u2", "u1_corr_njets_3Gauss", "u2_corr_njets_3Gauss", "u_pt_corr_njets_3Gauss", "deepmet_pt_corr_njets_3Gauss","weight", "weight_WoVpt", "vtx_n", "jet_CSVLoose_n"]:
-            branchList.push_back(branchName)
+        #branchList = ROOT.vector('string')()
+        #for branchName in ["zpt", "deepmet_pt", "u1", "u2", "u1_corr_njets_3Gauss", "u2_corr_njets_3Gauss", "u_pt_corr_njets_3Gauss", "deepmet_pt_corr_njets_3Gauss","weight", "weight_WoVpt", "vtx_n", "jet_CSVLoose_n"]:
+        #    branchList.push_back(branchName)
+        
+        branches = ["Z_pt", "Z_eta", "Z_phi", "m_ll", 
+                    "leadMuon_pt", "leadMuon_eta", "leadMuon_phi",
+                    "subleadMuon_pt", "subleadMuon_eta", "subleadMuon_phi",
+                    "DeepMETResolutionTune_pt", "DeepMETResolutionTune_phi",
+                    "MET_pt", "MET_phi",
+                    "PuppiMET_pt", "PuppiMET_phi",
+                    "u1", "u2", "u_pt", "u_phi",
+                    "u1_corr_central", "u2_corr_central", "u_pt_corr_central", 
+                    "deepmet_pt_corr_central", "deepmet_phi_corr_central",
+                    "weight", "weight_WoVpt", "PV_npvsGood"]
+        sampMan.snapShot("/eos/home-y/yofeng/output_root", branches)
+        
         #TTbarSamp.rdf.Snapshot("DeepMETCorr_TTbar", "results/deepmetcorr_TTbar.root", branchList)
-        DYSamp.rdf.Snapshot("DeepMETCorr_DY",       "results/deepmetcorr_DY.root", branchList)
+        #DYSamp.rdf.Snapshot("DeepMETCorr_DY",       "results/deepmetcorr_DY.root", branchList)
 
-        branchList = ROOT.vector('string')()
-        for branchName in ["zpt", "deepmet_pt", "u1", "u2", "weight", "weight_WoVpt", "vtx_n", "jet_CSVLoose_n"]:
-            branchList.push_back(branchName)
-        DataSamp.rdf.Snapshot("DeepMETCorr_Data",   "results/deepmetcorr_Data.root", branchList)
+        #branchList = ROOT.vector('string')()
+        #for branchName in ["zpt", "deepmet_pt", "u1", "u2", "weight", "weight_WoVpt", "vtx_n", "jet_CSVLoose_n"]:
+        #    branchList.push_back(branchName)
+        #DataSamp.rdf.Snapshot("DeepMETCorr_Data",   "results/deepmetcorr_Data.root", branchList)
 
 
     print("Program end...")

@@ -1,8 +1,11 @@
 import ROOT
 import os
 import sys
-from CMSPLOTS import CMS_lumi
-from CMSPLOTS import tdrstyle
+#from CMSPLOTS import CMS_lumi
+#from CMSPLOTS import tdrstyle
+import CMS_lumi
+import tdrstyle
+
 
 
 class bcolors:
