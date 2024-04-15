@@ -58,12 +58,17 @@ class DrawConfig(object):
 
 class Sample(object):
     def __init__(self, inputfiles, isMC=True, xsec=1.0, color=1, reweightzpt = False, legend="", name="", 
-                 isZSR=True, isWSR=False, applySF=False, bjetVeto=False):
+                 isZSR=True, isWSR=False, applySF=False, bjetVeto=False, prepareVars=True, select=True):
         if isMC:
-            self.nmcevt = self.getNMCEvt(inputfiles)
             self.mcxsec = xsec
+            if xsec !=0:
+                self.nmcevt = self.getNMCEvt(inputfiles)
+                self.normfactor = LUMI * self.mcxsec / self.nmcevt
+            else:
+                # use some pre-defined normalization values instead
+                self.nmcevt = 0
+                self.normfactor = 1.0
             self.color = color
-            self.normfactor = LUMI * self.mcxsec / self.nmcevt
             self.reweightzpt = reweightzpt 
         else:
             self.nmcevt = 0
@@ -84,8 +89,12 @@ class Sample(object):
         self.renormalizefactor = 1.0
         self.bjetVeto = bjetVeto
         self.initRDF(inputfiles)
-        self.prepareVars()
-        self.select()
+        if prepareVars:
+            self.prepareVars()
+        if select:
+            self.select()
+        else:
+            self.rdf = self.rdf_org
 
         self._garbagerdfs = []
 
@@ -219,6 +228,15 @@ class SampleManager(object):
         self.hdatas  = {}
         self.hsmcs   = {}
         self.hratios = {}
+        
+        self.weightname_default = "weight"
+        self.outdir = "plots"
+        
+    def SetDefaultWeightName(self, weightname):
+        self.weightname_default = weightname
+        
+    def SetOutDir(self, outdir):
+        self.outdir = outdir
 
     def ApplyCutAll(self, cutstring):
         self.data.ApplyCut(cutstring)
@@ -297,11 +315,13 @@ class SampleManager(object):
         else:
             raise ValueError('The argument is problematic. It has to be either 4 or 6')
 
-    def cacheDraw_fb(self, varname, hname, nbins, xmin, xmax, drawconfigs, weightname="weight"):
+    def cacheDraw_fb(self, varname, hname, nbins, xmin, xmax, drawconfigs, weightname=None):
         """ 
         cache the var to be drawn.
         But do not launch the action by the 'lazy action' in RDataFrame
         """
+        if weightname is None:
+            weightname = self.weightname_default
         h_data = self.data.rdf.Histo1D( (hname+"_data", hname, nbins, xmin, xmax), varname, weightname )
         h_mcs = []
         for imc in range(len(self.mcs)):
@@ -310,11 +330,13 @@ class SampleManager(object):
 
         self.to_draw[hname] = (h_data, h_mcs, drawconfigs)
 
-    def cacheDraw_vb(self, varname, hname, xbins, drawconfigs, weightname="weight"):
+    def cacheDraw_vb(self, varname, hname, xbins, drawconfigs, weightname=None):
         """
         cache the var to be drawn.
         But do not launch the action by the 'lazy action' in RDataFrame
         """
+        if weightname is None:
+            weightname = self.weightname_default
         assert isinstance(xbins, np.ndarray), "input must be np array"
         nbins = xbins.size - 1
         h_data = self.data.rdf.Histo1D( (hname+"_data", hname, nbins, xbins), varname, weightname )
@@ -387,7 +409,7 @@ class SampleManager(object):
         
         self.hdatas[ drawconfigs.outputname] = h_data
         self.hsmcs[  drawconfigs.outputname] = hs_gmc
-        self.hratios[drawconfigs.outputname] = DrawHistos( [h_data, hs_gmc], drawconfigs.legends, drawconfigs.xmin, drawconfigs.xmax, drawconfigs.xlabel, drawconfigs.ymin, drawconfigs.ymax, drawconfigs.ylabel, drawconfigs.outputname, dology=drawconfigs.dology, dologx=drawconfigs.dologx, showratio=drawconfigs.showratio, yrmax = drawconfigs.yrmax, yrmin = drawconfigs.yrmin, yrlabel = drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos = drawconfigs.legendPos, redrawihist = drawconfigs.redrawihist, )
+        self.hratios[drawconfigs.outputname] = DrawHistos( [h_data, hs_gmc], drawconfigs.legends, drawconfigs.xmin, drawconfigs.xmax, drawconfigs.xlabel, drawconfigs.ymin, drawconfigs.ymax, drawconfigs.ylabel, drawconfigs.outputname, dology=drawconfigs.dology, dologx=drawconfigs.dologx, showratio=drawconfigs.showratio, yrmax = drawconfigs.yrmax, yrmin = drawconfigs.yrmin, yrlabel = drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos = drawconfigs.legendPos, redrawihist = drawconfigs.redrawihist, outdir = self.outdir)
         
 
     def launchDraw(self):
