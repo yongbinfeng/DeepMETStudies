@@ -411,4 +411,7 @@ class SampleManager(object):
             print("snapshot for ", mc.name)
             mc.rdf.Snapshot("Events", os.path.join(outdir, mc.name+".root"), branches + ["norm"])
         
+        print("snapshot for ", self.data.name)
         self.data.rdf.Snapshot("Events", os.path.join(outdir, self.data.name+".root"), branches)
+        
+        print("finished snapshot..")
