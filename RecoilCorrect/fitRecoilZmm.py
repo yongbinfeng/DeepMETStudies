@@ -18,6 +18,7 @@ isAMCNLO = False
 isMADGRAPH = False
 
 subtractBkg = True
+scaleBkg = True
 
 assert isData+isAMCNLO+isMADGRAPH==1, "must pick one sample from data, or amc@nlo, or madgraph"
 
@@ -336,15 +337,15 @@ def main():
     if isData:
         sampname = "Data"
     elif isAMCNLO:
-        sampname = "ZJets_NLO"
+        sampname = "DY"
     elif isMADGRAPH:
         sampname = "ZJets_MG"
 
     haveScaleVariations = {
                             "Data"     : 0,
-                            "ZJets_NLO": 0,
+                            "DY"       : 0,
                             "ZJets_MG" : 0,
-                            "TTbar"    : 0,
+                            "ttbar"    : 0,
                             "WW2L"     : 0,
                             "WZ2L"     : 0,
                             "ZZ2L"     : 0,
@@ -400,7 +401,7 @@ def main():
 
     if isData and subtractBkg:
         # read ttbar bkg template and subtract from data
-        sampnames = ["TTbar", "WW2L", "WZ2L", "ZZ2L", "ZZ2L2Q"]
+        sampnames = ["ttbar", "WW2L", "WZ2L", "ZZ2L", "ZZ2L2Q"]
 
         for sampBkgname in sampnames:
             histosBkg_u1, histosBkg_u2 = readU1U2(sampBkgname, wnames[haveScaleVariations[sampBkgname]])
@@ -413,8 +414,11 @@ def main():
                     hBkg_u2 = histosBkg_u2[ijetbin][iptbin]
 
                     # subtract ttbar bkg contribution from data
-                    h_u1.Add(hBkg_u1, -1.0)
-                    h_u2.Add(hBkg_u2, -1.0)
+                    scale = 1.0
+                    if scaleBkg:
+                        scale = 1.1
+                    h_u1.Add(hBkg_u1, -scale)
+                    h_u2.Add(hBkg_u2, -scale)
         
         print("finished subtracting ttbar background")
 
@@ -438,12 +442,15 @@ def main():
 
 
     doDump = True
+    postfix = "central"
+    if scaleBkg:
+        postfix += "_bkgScale"
     if doDump:
         tag = "{}Gauss".format(NGAUSSIAN)
         outdir = "results/Fit/"
         if os.path.exists(outdir)==False:
             os.makedirs(outdir)
-        ofilename = "results/Fit/results_{}_njets_pt_{}.pickle".format(sampname, "central")
+        ofilename = "results/Fit/results_{}_njets_pt_{}.pickle".format(sampname, postfix)
 
         print("write to pickle")
         ofile = open( ofilename, 'wb' )

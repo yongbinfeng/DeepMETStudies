@@ -34,6 +34,8 @@ Code used to study the corrections and uncertainties of DeepMET. In principle it
 
 First compile the macros in `Functions.cc`
 
+Then prepare the slimmed ntuples using `PrepareSlimmedNtuples.py`
+
 Then prepare the uparal(u1) and uperp (u2) distributions using `MakeU1U2.py`. One could change the flags `isData`, `isAMCNLO`,
 `isMADGRAPH`, `isTTbar`, `isTTbar` to prepare the distributions for different samples.
 

@@ -8,15 +8,15 @@ and u2(uperp) distributions, intead of doing fits.
 import ROOT
 import numpy as np
 from collections import OrderedDict
-import sys
+import sys, os
 sys.path.append("../RecoilResol/CMSPLOTS")
 from tdrstyle import setTDRStyle
 from myFunction import DrawHistos
 from Utils.utils import getPtBins, getJetBins
 from Smoother import Smoother
 
-isData = False
-isAMCNLO = True
+isData = True
+isAMCNLO = False
 isMADGRAPH = False
 
 wstrings = ["central", "mur_1_muf_0p5", "mur_1_muf_2", "mur_0p5_muf_1", "mur_2_muf_1", "mur_0p5_muf_0p5", "mur_2_muf_2"]
@@ -25,7 +25,11 @@ WSTRING = wstrings[0]
 assert isData+isAMCNLO+isMADGRAPH==1, "must pick one sample from data, or amc@nlo, or madgraph"""
 
 doPdfToCdf = True
+scaleBkg = True
 doGKS = False
+
+if scaleBkg and isData:
+    WSTRING += "_bkgScale"
 
 ROOT.gROOT.SetBatch(True)
 
@@ -100,7 +104,7 @@ def rdhToGKS(ws, nbins, jetbin, uname, postfix=""):
         if doPlot:
             # plot the comparison between orignal and smoothed
             xtitle = "u_{#parallel} [GeV]" if uname=="u1" else "u_{#perp} [GeV]"
-            DrawHistos([dh, gks], ["Original", "Smoothed"], dh.GetXaxis().GetXmin(), dh.GetXaxis().GetXmax(), xtitle, 0., 1.2*dh.GetMaximum(), "Events / GeV", "hcomp_{}_{}_pt{}_{}".format(uname, jetbin, ibin, postfix), dology=False, showchi=True, mycolors=[1, 2], drawoptions=["", "HIST"], legendoptions=["PE", "L"], ratiobase=1, doNewman=True, legendPos=[0.88, 0.84, 0.72, 0.74])
+            DrawHistos([dh, gks], ["Original", "Smoothed"], dh.GetXaxis().GetXmin(), dh.GetXaxis().GetXmax(), xtitle, 0., 1.2*dh.GetMaximum(), "Events / GeV", "hcomp_{}_{}_pt{}_{}".format(uname, jetbin, ibin, postfix), dology=False, showpull=True, mycolors=[1, 2], drawoptions=["", "HIST"], legendoptions=["PE", "L"], ratiobase=1, doNewman=True, legendPos=[0.88, 0.84, 0.72, 0.74])
     return dhs, gkss, rdhs_gks, pdfs_gks, cdfs_gks
 
 
@@ -109,7 +113,7 @@ def main():
     if isData:
         sampname = "Data"
     elif isAMCNLO:
-        sampname = "ZJets_NLO"
+        sampname = "DY"
     elif isMADGRAPH:
         sampname = "ZJets_MG"
 
@@ -161,7 +165,10 @@ def main():
 
     if doGKS:
         print("starting creating Gaussian smeared smoother and create cdfs from ", inputname)
-        ofilename = "results/GaussSmoother/gaussSmoother_{}_njets_pt_{}.root".format(sampname, "central")
+        odir = "results/GaussSmoother"
+        if not os.path.exists(odir):
+            os.makedirs(odir)
+        ofilename = "{}/gaussSmoother_{}_njets_pt_{}.root".format(odir, sampname, "central")
         ofile = ROOT.TFile(ofilename, "RECREATE")
         cdfs_gks_u1 = ROOT.TList()
         cdfs_gks_u2 = ROOT.TList()

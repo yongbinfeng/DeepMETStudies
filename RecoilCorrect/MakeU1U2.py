@@ -14,11 +14,11 @@ import CMS_lumi
 import pickle
 from Utils.utils import getPtBins, getJetBins
 
-isData     = False
+isData     = True
 isAMCNLO   = False
 isMADGRAPH = False
 isTTbar    = False
-isDiboson  = True
+isDiboson  = False
 
 assert isData+isAMCNLO+isMADGRAPH+isTTbar+isDiboson==1, "must pick one sample from data, or amc@nlo, or madgraph"
 
@@ -28,48 +28,55 @@ ROOT.ROOT.EnableImplicitMT(18)
 
 def main():
     
+    input_data    = "inputs/inputs_Z_UL_Post/input_data.txt"
+    input_dy      = "inputs/inputs_Z_UL_Post/input_zjets.txt"
+    input_ttbar   = "inputs/inputs_Z_UL_Post/input_ttbar.txt"
+    input_WW2L    = "inputs/inputs_Z_UL_Post/input_WWTo2L2Nu.txt"
+    input_WZ2L    = "inputs/inputs_Z_UL_Post/input_WZTo2Q2L.txt"
+    input_ZZ2L    = "inputs/inputs_Z_UL_Post/input_ZZTo2L2Nu.txt"
+    input_ZZ2L2Q  = "inputs/inputs_Z_UL_Post/input_ZZTo2Q2L.txt"
+    input_dytau   = "inputs/inputs_Z_UL_Post/input_zjets_tautau.txt"
+
     if isData:
-        inputfile = "inputs/inputs_Z_UL/input_data.txt"
-        samp = Sample(inputfile, isMC=False, name = "Data")
+        samp = Sample(input_data, isMC=False, legend="Data", name="Data", prepareVars=False, select=False)
         samp.donormalization = False
         samp.varyQCDScale = False
+        samp.Define("norm", "1")
         samples = [samp]
     elif isAMCNLO:
-        inputfile = "inputs/inputs_Z_UL/input_zjets_all.txt"
-        samp = Sample(inputfile, isMC=True,  name = "ZJets_NLO", xsec = 2025.74*1e3)
+        samp = Sample(input_dy,    xsec = 0,  color=5,  reweightzpt = False, legend="DY", name="DY", prepareVars=False, select=False)
         samp.donormalization = False
         samp.varyQCDScale = False
         samples = [samp]
     elif isMADGRAPH:
+        # outdated for now
         inputfile = "inputs/inputs_Z/input_zjets_madgraph.txt"
         samp = Sample(inputfile, isMC=True,  name = "ZJets_MG")
         samp.donormalization = False
         samp.varyQCDScale = False
         samples = [samp]
     elif isTTbar:
-        inputfile = "inputs/inputs_Z_UL/input_ttbar.txt"
-        samp = Sample(inputfile, isMC=True,  name = "TTbar", xsec = 831.76*0.105*1e3)
+        samp = Sample(input_ttbar, xsec = 0,  color=46, reweightzpt = False, legend="t#bar{t}", name="ttbar", prepareVars=False, select=False)
         samp.donormalization = True
         samp.varyQCDScale = False
         samples = [samp]
     elif isDiboson:
-        input_WW2L    = "inputs/inputs_Z_UL/input_WWTo2L2Nu.txt"
-        input_WZ2L    = "inputs/inputs_Z_UL/input_WZTo2Q2L.txt"
-        input_ZZ2L    = "inputs/inputs_Z_UL/input_ZZTo2L2Nu.txt"
-        input_ZZ2L2Q  = "inputs/inputs_Z_UL/input_ZZTo2Q2L.txt"
-        WW2LSamp   = Sample(input_WW2L,  xsec = 12.178*1e3,   name="WW2L")
-        WZ2LSamp   = Sample(input_WZ2L, xsec = 5.595*1e3,   name="WZ2L")
-        ZZ2LSamp   = Sample(input_ZZ2L,  xsec = 0.564*1e3,    name="ZZ2L")
-        ZZ2L2QSamp = Sample(input_ZZ2L2Q, xsec = 3.22*1e3,   name="ZZ2L2Q")
+        WW2LSamp  = Sample(input_WW2L,  xsec = 0,  color=38, reweightzpt = False, legend="WW2L",     name="WW2L",  prepareVars=False, select=False)
+        WZ2LSamp  = Sample(input_WZ2L,  xsec = 0,  color=39, reweightzpt = False, legend="WZ2L",     name="WZ2L",  prepareVars=False, select=False)
+        ZZ2LSamp  = Sample(input_ZZ2L,  xsec = 0,  color=37, reweightzpt = False, legend="ZZ2L",     name="ZZ2L",  prepareVars=False, select=False)
+        ZZ2L2QSamp  = Sample(input_ZZ2L2Q,  xsec = 0, color=36, reweightzpt = False, legend="ZZ2L2Q", name="ZZ2L2Q",  prepareVars=False, select=False) 
+        DYTauSamp   = Sample(input_dytau, xsec = 0, color=8,  reweightzpt = False, legend="DY#rightarrow#tau#tau", name="DYTauTau", prepareVars=False, select=False)
         WW2LSamp.donormalization = True
         WZ2LSamp.donormalization = True
         ZZ2LSamp.donormalization = True
         ZZ2L2QSamp.donormalization = True
+        DYTauSamp.donormalization = True
         WW2LSamp.varyQCDScale = False
         WZ2LSamp.varyQCDScale = False
         ZZ2LSamp.varyQCDScale = False
         ZZ2L2QSamp.varyQCDScale = False
-        samples = [ WW2LSamp, WZ2LSamp, ZZ2LSamp, ZZ2L2QSamp ]
+        DYTauSamp.varyQCDScale = False
+        samples = [ WW2LSamp, WZ2LSamp, ZZ2LSamp, ZZ2L2QSamp, DYTauSamp]
 
     ptbins = getPtBins()
     njetbins = getJetBins()
@@ -92,7 +99,7 @@ def main():
                 ptmax = ptbins[ipt+1]
     
                 wstring = "njetbin_{}_ptbin_{}_{}".format(ijet, ipt, postfix)
-                rdf = rdf.Define(wstring, "(jet_n>={} && jet_n<={}) * (Z_pt>={} && Z_pt<{} ) * weight * {}".format(njetmin, njetmax, ptmin, ptmax, extra_weight))
+                rdf = rdf.Define(wstring, "(jet_n>={} && jet_n<={}) * (Z_pt>={} && Z_pt<{} ) * weight * norm * {}".format(njetmin, njetmax, ptmin, ptmax, extra_weight))
                 hname_u1 = "hist_uparal_{}".format(wstring)
                 histos_u1[(njetmin,njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 240+int(ptmax)-int(ptmin), -120.0+int(ptmin), 120.0+int(ptmax)), "u1",  wstring )
                 hname_u2 = "hist_uperp_{}".format(wstring)
@@ -129,13 +136,13 @@ def main():
             samp.rdf = samp.rdf.Define(wname, wstring)
             histos_u1[wname], histos_u2[wname] = prepareU1U2(samp.rdf, postfix="{}_{}".format(samp.name, wname), extra_weight=wname)
 
-        if samp.donormalization:
-            print("\n\nScale the {} MC to the xsec with normalization factor {}".format(samp.name, samp.normfactor))
-            for wname in histos_u1:
-                for ijetbin in histos_u1[wname]:
-                    for iptbin in histos_u1[wname][ijetbin]:
-                        histos_u1[wname][ijetbin][iptbin].Scale(samp.normfactor)
-                        histos_u2[wname][ijetbin][iptbin].Scale(samp.normfactor)
+        #if samp.donormalization:
+        #    print("\n\nScale the {} MC to the xsec with normalization factor {}".format(samp.name, samp.normfactor))
+        #    for wname in histos_u1:
+        #        for ijetbin in histos_u1[wname]:
+        #            for iptbin in histos_u1[wname][ijetbin]:
+        #                histos_u1[wname][ijetbin][iptbin].Scale(samp.normfactor)
+        #                histos_u2[wname][ijetbin][iptbin].Scale(samp.normfactor)
 
 
         print("\n\nWriting to output file...")

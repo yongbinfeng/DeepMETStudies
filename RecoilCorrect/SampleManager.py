@@ -52,6 +52,9 @@ class DrawConfig(object):
         self.colors = kwargs.get('colors', [])
 
         self.redrawihist = kwargs.get('redrawihist', 0)
+        
+        self.addOverflow = kwargs.get('addOverflow', False)
+        self.addUnderflow = kwargs.get('addUnderflow', False)
 
         self.outputname = kwargs.get('outputname', 'test')
 
@@ -180,7 +183,7 @@ class Sample(object):
         else:
             self.rdf_org = self.rdf_org.Define("weight_WoVpt", "isData")
             
-        self.rdf_org = self.rdf_org.Define("jet_n", "Sum((Jet_jetId && 2 !=0) && Jet_pt > 20.0 && abs(Jet_eta)<3.0)")
+        self.rdf_org = self.rdf_org.Define("jet_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<3.0)")
 
         if self.isZSR:
             # make Z boson
@@ -409,7 +412,7 @@ class SampleManager(object):
         
         self.hdatas[ drawconfigs.outputname] = h_data
         self.hsmcs[  drawconfigs.outputname] = hs_gmc
-        self.hratios[drawconfigs.outputname] = DrawHistos( [h_data, hs_gmc], drawconfigs.legends, drawconfigs.xmin, drawconfigs.xmax, drawconfigs.xlabel, drawconfigs.ymin, drawconfigs.ymax, drawconfigs.ylabel, drawconfigs.outputname, dology=drawconfigs.dology, dologx=drawconfigs.dologx, showratio=drawconfigs.showratio, yrmax = drawconfigs.yrmax, yrmin = drawconfigs.yrmin, yrlabel = drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos = drawconfigs.legendPos, redrawihist = drawconfigs.redrawihist, outdir = self.outdir)
+        self.hratios[drawconfigs.outputname] = DrawHistos( [h_data, hs_gmc], drawconfigs.legends, drawconfigs.xmin, drawconfigs.xmax, drawconfigs.xlabel, drawconfigs.ymin, drawconfigs.ymax, drawconfigs.ylabel, drawconfigs.outputname, dology=drawconfigs.dology, dologx=drawconfigs.dologx, showratio=drawconfigs.showratio, yrmax = drawconfigs.yrmax, yrmin = drawconfigs.yrmin, yrlabel = drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos = drawconfigs.legendPos, redrawihist = drawconfigs.redrawihist, outdir = self.outdir, addOverflow = drawconfigs.addOverflow, addUnderflow = drawconfigs.addUnderflow)
         
 
     def launchDraw(self):
