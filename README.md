@@ -6,6 +6,18 @@ The code needs python3 and [RDataFrame](https://root.cern/doc/master/classROOT_1
 source setenv.sh
 ```
 
+## Produce the slimmed ntuples
+The slimmed ntuples are produced using the `PrepareSlimmedNtuples.py` script. The script reads the input files, applies the selection and produces the output files. This way we can reduce the size of the ntuples and subsequent IO processings in order to speed up the analysis.
+
+First go to `RecoilResol` directory and compile the helper functions:
+```bash
+root [0] .L Functions.cc+
+```
+Then run the script:
+```bash
+python PrepareSlimmedNtuples.py
+```
+
 ## Recoil Resolutions
 
 Some scripts used to compare the responses and (un)scaled resolutions of different recoil estimators.
@@ -20,10 +32,9 @@ root [0] .L Functions.cc+
 
 Then run the scripts:
 ```bash
-python recoil_resol_MC.py --era 2016
-python recoil_resol_Data.py --era 2016
+python recoil_resol_dataMC.py
 ```
-to make the resolution plots for data and MC on $Z\to\mu\mu$ events. The `--era` flag can be `2016`, `2017` or `2018`.
+to make the resolution plots for data and MC on $Z\to\mu\mu$ events. The script will read the slimmed ntuples and make the plots of the responses and resolutions of different METs, with and without response corrections, before and after the calibrations.
 
 
 ## Recoil Corrections
@@ -31,11 +42,6 @@ to make the resolution plots for data and MC on $Z\to\mu\mu$ events. The `--era`
 Code used to study the corrections and uncertainties of DeepMET. In principle it should also work on any type of MET with minor modification.
 
 ### Run the correction code.
-
-First compile the macros in `Functions.cc`
-
-Then prepare the slimmed ntuples using `PrepareSlimmedNtuples.py`
-
 Then prepare the uparal(u1) and uperp (u2) distributions using `MakeU1U2.py`. One could change the flags `isData`, `isAMCNLO`,
 `isMADGRAPH`, `isTTbar`, `isTTbar` to prepare the distributions for different samples.
 
