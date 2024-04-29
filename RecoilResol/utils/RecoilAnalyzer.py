@@ -10,10 +10,11 @@ class RecoilAnalyzer(object):
     resolutions, we try to 'prepare' them all together first, and then 'get' all 
     of them. In this case the event loop only need to be run once!
     """
-    def __init__(self, rdf, recoils, rdfMC = None):
+    def __init__(self, rdf, recoils, rdfMC = None, name = "RecoilAnalyzer"):
         self.rdf = rdf
         self.rdfMC = rdfMC
         self.recoils = recoils
+        self.name = name
         self.profs = OrderedDict()
         self.histo2ds_paral_diff = OrderedDict()
         self.histo2ds_perp       = OrderedDict()
@@ -35,19 +36,19 @@ class RecoilAnalyzer(object):
         # xbins should be numpy arrays
         nbins_x = xbins.size-1 
         for itype in self.recoils:
-            hparal = "h_{RECOIL}_paral_VS_{XVAR}".format(RECOIL=itype, XVAR=xvar)
+            hparal = "h_{RECOIL}_paral_VS_{XVAR}_{NAME}".format(RECOIL=itype, XVAR=xvar, NAME=self.name)
             print(hparal, hparal, nbins_x, xbins, option, xvar, "u_{RECOIL}_paral".format(RECOIL=itype))
             self.profs[xvar][itype] = self.rdf.Profile1D((hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype))
         # add GEN
-        hparal_Gen = "h_GEN_VS_{XVAR}".format(XVAR=xvar)
+        hparal_Gen = "h_GEN_VS_{XVAR}_{NAME}".format(XVAR=xvar, NAME=self.name)
         self.profs[xvar]['GEN'] = self.rdf.Profile1D((hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt")
         
         if self.rdfMC:
             for itype in self.recoils:
-                hparal = "h_{RECOIL}_paral_VS_{XVAR}_MC".format(RECOIL=itype, XVAR=xvar)
+                hparal = "h_{RECOIL}_paral_VS_{XVAR}_MC_{NAME}".format(RECOIL=itype, XVAR=xvar, NAME=self.name)
                 self.profs[xvar][itype + "_MC"] = self.rdfMC.Profile1D((hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype))
             # add GEN
-            hparal_Gen = "h_GEN_VS_{XVAR}_MC".format(XVAR=xvar)
+            hparal_Gen = "h_GEN_VS_{XVAR}_MC_{NAME}".format(XVAR=xvar, NAME=self.name)
             self.profs[xvar]['GEN_MC'] = self.rdfMC.Profile1D((hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt")
 
     def prepareResolutions(self, xvar, xbins, nbins_y, ymin, ymax, weight="1.0"):
@@ -57,16 +58,16 @@ class RecoilAnalyzer(object):
         self.histo2ds_perp[xvar]       = OrderedDict()
         nbins_x = xbins.size-1
         for itype in self.recoils:
-            h_paral_diff  = "h_{RECOIL}_paral_diff_VS_{XVAR}".format(RECOIL=itype, XVAR=xvar)
-            h_perp        = "h_{RECOIL}_perp_VS_{XVAR}".format(RECOIL=itype, XVAR=xvar)
+            h_paral_diff  = "h_{RECOIL}_paral_diff_VS_{XVAR}_{NAME}".format(RECOIL=itype, XVAR=xvar, NAME=self.name)
+            h_perp        = "h_{RECOIL}_perp_VS_{XVAR}_{NAME}".format(RECOIL=itype, XVAR=xvar, NAME=self.name)
 
             self.histo2ds_paral_diff[xvar][itype] = self.rdf.Histo2D((h_paral_diff, h_paral_diff, nbins_x, xbins, nbins_y, ymin, ymax), xvar, "u_{RECOIL}_paral_diff".format(RECOIL=itype))
             self.histo2ds_perp[xvar][itype]       = self.rdf.Histo2D((h_perp,       h_perp,       nbins_x, xbins, nbins_y, ymin, ymax), xvar, "u_{RECOIL}_perp".format(RECOIL=itype))
             
         if self.rdfMC:
             for itype in self.recoils:
-                h_paral_diff  = "h_{RECOIL}_paral_diff_VS_{XVAR}_MC".format(RECOIL=itype, XVAR=xvar)
-                h_perp        = "h_{RECOIL}_perp_VS_{XVAR}_MC".format(RECOIL=itype, XVAR=xvar)
+                h_paral_diff  = "h_{RECOIL}_paral_diff_VS_{XVAR}_MC_{NAME}".format(RECOIL=itype, XVAR=xvar, NAME=self.name)
+                h_perp        = "h_{RECOIL}_perp_VS_{XVAR}_MC_{NAME}".format(RECOIL=itype, XVAR=xvar, NAME=self.name)
 
                 self.histo2ds_paral_diff[xvar][itype + "_MC"] = self.rdfMC.Histo2D((h_paral_diff, h_paral_diff, nbins_x, xbins, nbins_y, ymin, ymax), xvar, "u_{RECOIL}_paral_diff".format(RECOIL=itype))
                 self.histo2ds_perp[xvar][itype + "_MC"]       = self.rdfMC.Histo2D((h_perp,       h_perp,       nbins_x, xbins, nbins_y, ymin, ymax), xvar, "u_{RECOIL}_perp".format(RECOIL=itype))
@@ -100,16 +101,16 @@ class RecoilAnalyzer(object):
 
     def prepareResolutions1D(self, nbins_x, xmin, xmax):
         for itype in self.recoils:
-            h_paral_diff_1D = "h_{RECOIL}_paral_diff_1D".format(RECOIL=itype)
-            h_perp_1D = "h_{RECOIL}_perp_1D".format(RECOIL=itype)
+            h_paral_diff_1D = "h_{RECOIL}_paral_diff_1D_{NAME}".format(RECOIL=itype, NAME=self.name)
+            h_perp_1D = "h_{RECOIL}_perp_1D_{NAME}".format(RECOIL=itype, NAME=self.name)
 
             self.histos1d_paral_diff[itype] = self.rdf.Histo1D((h_paral_diff_1D, h_paral_diff_1D, nbins_x, xmin, xmax), "u_{RECOIL}_paral_diff".format(RECOIL=itype))
             self.histos1d_perp[itype]       = self.rdf.Histo1D((h_perp_1D,       h_perp_1D,       nbins_x, xmin, xmax), "u_{RECOIL}_perp".format(RECOIL=itype))
             
         if self.rdfMC:
             for itype in self.recoils:
-                h_paral_diff_1D = "h_{RECOIL}_paral_diff_1D_MC".format(RECOIL=itype)
-                h_perp_1D = "h_{RECOIL}_perp_1D_MC".format(RECOIL=itype)
+                h_paral_diff_1D = "h_{RECOIL}_paral_diff_1D_MC_{NAME}".format(RECOIL=itype, NAME=self.name)
+                h_perp_1D = "h_{RECOIL}_perp_1D_MC_{NAME}".format(RECOIL=itype, NAME=self.name)
 
                 self.histos1d_paral_diff[itype + "_MC"] = self.rdfMC.Histo1D((h_paral_diff_1D, h_paral_diff_1D, nbins_x, xmin, xmax), "u_{RECOIL}_paral_diff".format(RECOIL=itype))
                 self.histos1d_perp[itype + "_MC"]       = self.rdfMC.Histo1D((h_perp_1D,       h_perp_1D,       nbins_x, xmin, xmax), "u_{RECOIL}_perp".format(RECOIL=itype))

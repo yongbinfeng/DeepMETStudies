@@ -3,6 +3,7 @@ plot the data-MC comparisons pre/post DeepMET corrections.
 and the systematic uncs.
 '''
 import ROOT
+import math
 import numpy as np
 from collections import OrderedDict
 import sys
@@ -20,9 +21,13 @@ ROOT.ROOT.EnableImplicitMT(15)
 doDefaultCorrection = True
 doGaussianSmooth = True
 doBkgScaled = True
+reweightZpt = True
 
 def main():
     print("Program start...")
+    
+    ROOT.gROOT.ProcessLine('TFile* f_zpt = TFile::Open("results/ZPlots.root ")')
+    ROOT.gROOT.ProcessLine('TH1D* h_zpt_ratio  = (TH1D*)f_zpt->Get("hratios_0")')
 
     input_data    = "inputs/inputs_Z_UL_Post/input_data.txt"
     input_dy      = "inputs/inputs_Z_UL_Post/input_zjets.txt"
@@ -46,7 +51,23 @@ def main():
     sampMan.groupMCs(["WW2L", "WZ2L", "ZZ2L", "ZZ2L2Q"], "Dibosons", 38, "Dibosons")
     
     DataSamp.Define("norm", "1")
-    sampMan.DefineAll("weight_corr", "weight * norm")
+    if reweightZpt:
+        # make sure the normalization is not changed after reweighting
+        DYSamp.Define("zptweight_bare", "ZptReWeight(Z_pt, h_zpt_ratio, 0)")
+        DYSamp.Define("weight_bare", "weight * zptweight_bare")
+        DYSamp.Define("dumbVal", "1")
+        h_weighted = DYSamp.rdf.Histo1D(("h_weighted", "h_weighted", 2, 0, 2.0), "dumbVal", "weight_bare")
+        h_woweight = DYSamp.rdf.Histo1D(("h_woweight", "h_woweight", 2, 0, 2.0), "dumbVal", "weight")
+        zptnorm = h_weighted.Integral() / h_woweight.Integral()
+        print("without zpt reweighting norm: ", h_woweight.Integral())
+        print("with zpt reweighting norm: ", h_weighted.Integral())
+        print("Zpt reweighting norm: ", zptnorm)
+        DYSamp.Define("zptweight", f"zptweight_bare * {zptnorm}")
+        
+        DYSamp.Define("weight_corr", "weight * zptweight * norm")
+        sampMan.DefineAll("weight_corr", "weight * norm", excludes=['DY'])
+    else:
+        sampMan.DefineAll("weight_corr", "weight * norm")
     
     sampMan.SetDefaultWeightName("weight_corr")
     
@@ -61,15 +82,15 @@ def main():
         ROOT.gROOT.ProcessLine('TList* tfs_MC_u1_njets_pt_central = (TList*)fitfunctions_DY_central->Get("tfs_DY_u1_njets_pt_central")')
         ROOT.gROOT.ProcessLine('TList* tfs_MC_u2_njets_pt_central = (TList*)fitfunctions_DY_central->Get("tfs_DY_u2_njets_pt_central")')
 
-        DYSamp.Define("u1_corr_central",   "UCorrection_Quant(u1, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, tfs_Data_u1_njets_pt_central, tfs_MC_u1_njets_pt_central, 0.00001)")
-        DYSamp.Define("u2_corr_central",   "UCorrection_Quant(u2, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, tfs_Data_u2_njets_pt_central, tfs_MC_u2_njets_pt_central, 0.00001)")
-        DYSamp.Define("u_pt_corr_central", "TMath::Sqrt(u1_corr_central*u1_corr_central + u2_corr_central*u2_corr_central)")
-        sampMan.DefineAll("u1_corr_central",     "u1"  , excludes=['DY'])
-        sampMan.DefineAll("u2_corr_central",     "u2"  , excludes=['DY'])
-        sampMan.DefineAll("u_pt_corr_central",   "u_pt", excludes=['DY'])
-        sampMan.DefineAll("deepmet_corr_central", "METVec(Z_pt, Z_phi, u1_corr_central, u2_corr_central)")
-        sampMan.DefineAll("deepmet_pt_corr_central", "deepmet_corr_central.Mod()") 
-        sampMan.DefineAll("deepmet_phi_corr_central", "TVector2::Phi_mpi_pi(deepmet_corr_central.Phi())")
+    #    DYSamp.Define("u1_corr_central",   "UCorrection_Quant(u1, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, tfs_Data_u1_njets_pt_central, tfs_MC_u1_njets_pt_central, 0.00001)")
+    #    DYSamp.Define("u2_corr_central",   "UCorrection_Quant(u2, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, tfs_Data_u2_njets_pt_central, tfs_MC_u2_njets_pt_central, 0.00001)")
+    #    DYSamp.Define("u_pt_corr_central", "TMath::Sqrt(u1_corr_central*u1_corr_central + u2_corr_central*u2_corr_central)")
+    #    sampMan.DefineAll("u1_corr_central",     "u1"  , excludes=['DY'])
+    #    sampMan.DefineAll("u2_corr_central",     "u2"  , excludes=['DY'])
+    #    sampMan.DefineAll("u_pt_corr_central",   "u_pt", excludes=['DY'])
+    #    sampMan.DefineAll("deepmet_corr_central", "METVec(Z_pt, Z_phi, u1_corr_central, u2_corr_central)")
+    #    sampMan.DefineAll("deepmet_pt_corr_central", "deepmet_corr_central.Mod()") 
+    #    sampMan.DefineAll("deepmet_phi_corr_central", "TVector2::Phi_mpi_pi(deepmet_corr_central.Phi())")
         
     if doGaussianSmooth:
         ## corrections from Gaussian Smearing
@@ -137,21 +158,21 @@ def main():
     sampMan.cacheDraw("MET_phi", "histo_zjets_pfmet_phi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='PF #phi', ymax=1e10))
     sampMan.cacheDraw("PuppiMET_pt", "histo_zjets_puppimet_pt", met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='PUPPI MET [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
     sampMan.cacheDraw("PuppiMET_phi", "histo_zjets_puppimet_phi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='PUPPI #phi', ymax=1e10))
-    sampMan.cacheDraw("DeepMETResolutionTune_pt", "histo_zjets_deepmet_pt", met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='Deep MET [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
-    sampMan.cacheDraw("DeepMETResolutionTune_phi", "histo_zjets_deepmet_phi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='Deep MET #phi', ymax=1e10, yrmin=0.4, yrmax=1.6))
+    sampMan.cacheDraw("DeepMETResolutionTune_pt", "histo_zjets_deepmet_pt", met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='p^{miss}_{T} [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
+    sampMan.cacheDraw("DeepMETResolutionTune_phi", "histo_zjets_deepmet_phi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='p^{miss}_{T} #phi', ymax=1e10, yrmin=0.4, yrmax=1.6))
     
     # recoil
     sampMan.cacheDraw("u1", "histo_zjets_u1", u1_bins, DrawConfig(xmin=-40.0, xmax=100, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True))
     sampMan.cacheDraw("u2", "histo_zjets_u2", u2_bins, DrawConfig(xmin=-80., xmax=80., xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True))
-    sampMan.cacheDraw("u_pt",    "histo_zjets_u_pt", u_bins,  DrawConfig(xmin=0, xmax=150, xlabel='u [GeV]', addOverflow=True, addUnderflow=True))
+    sampMan.cacheDraw("u_pt",    "histo_zjets_u_pt", u_bins,  DrawConfig(xmin=0, xmax=150, xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True))
     
     # corrected deepmet
-    def DrawCorrection(postfix):
-        sampMan.cacheDraw("deepmet_pt_corr_"+postfix, "histo_zjets_deepmet_pt_corr_"+postfix, met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='Deep MET Corrected [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
-        sampMan.cacheDraw("deepmet_phi_corr_"+postfix, "histo_zjets_deepmet_phi_corr_"+postfix, 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='Deep MET Corrected #phi'))
-        sampMan.cacheDraw("u1_corr_"+postfix, "histo_zjets_u1_corr_"+postfix, u1_bins, DrawConfig(xmin=-40.0, xmax=100, xlabel='u_{#parallel} Corrected [GeV]', addOverflow=True, addUnderflow=True))
-        sampMan.cacheDraw("u2_corr_"+postfix, "histo_zjets_u2_corr_"+postfix, u2_bins, DrawConfig(xmin=-80., xmax=80., xlabel='u_{#perp } Corrected [GeV]', addOverflow=True, addUnderflow=True))
-        sampMan.cacheDraw("u_pt_corr_"+postfix,    "histo_zjets_u_pt_corr_"+postfix, u_bins,  DrawConfig(xmin=0, xmax=150, xlabel='u Corrected [GeV]', addOverflow=True, addUnderflow=True))
+    def DrawCorrection(postfix, h_met_unc = None, h_u1_unc = None, h_u2_unc = None, h_u_unc = None):
+        sampMan.cacheDraw("deepmet_pt_corr_"+postfix, "histo_zjets_deepmet_pt_corr_"+postfix, met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='p^{miss}_{T} [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True, hratiopanel = h_met_unc))
+        sampMan.cacheDraw("deepmet_phi_corr_"+postfix, "histo_zjets_deepmet_phi_corr_"+postfix, 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='p^{miss}_{T} #phi'))
+        sampMan.cacheDraw("u1_corr_"+postfix, "histo_zjets_u1_corr_"+postfix, u1_bins, DrawConfig(xmin=-40.0, xmax=100, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u1_unc))
+        sampMan.cacheDraw("u2_corr_"+postfix, "histo_zjets_u2_corr_"+postfix, u2_bins, DrawConfig(xmin=-80., xmax=80., xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u2_unc))
+        sampMan.cacheDraw("u_pt_corr_"+postfix,    "histo_zjets_u_pt_corr_"+postfix, u_bins,  DrawConfig(xmin=0, xmax=150, xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u_unc))
 
     if doDefaultCorrection:
         DrawCorrection("central")
@@ -177,8 +198,8 @@ def main():
             legendNCols = 1
             legendPos=[0.20, 0.88, 0.35, 0.74]
             
-        DrawHistos(histos_met, legends, 0., 150., "Deep MET Corrected [GeV]", rmin, rmax, "Data / MC", "histo_zjets_ratio_deepmet_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
-        DrawHistos(histos_u_pt, legends, 0., 150., "u Corrected [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
+        DrawHistos(histos_met, legends, 0., 150., "p^{miss}_{T} [GeV]", rmin, rmax, "Data / MC", "histo_zjets_ratio_deepmet_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
+        DrawHistos(histos_u_pt, legends, 0., 150., "u_{T} [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
         DrawHistos(histos_u1, legends, -40.0, 100., "u_{#parallel} Corrected [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u1_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
         DrawHistos(histos_u2, legends, -80.0, 80., "u_{#perp } Corrected [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u2_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols) 
 
@@ -189,21 +210,30 @@ def main():
         histos_u1   = [THStack2TH1(sampMan.hsmcs["histo_zjets_u1_{}".format(hname)        ], "MCRatio") for hname in hnames]
         histos_u2   = [THStack2TH1(sampMan.hsmcs["histo_zjets_u2_{}".format(hname)        ], "MCRatio") for hname in hnames] 
 
-        histos_met_base = histos_met[0].Clone(histos_met[0].GetName()+"_Cloned")
-        histos_u_pt_base = histos_u_pt[0].Clone(histos_u_pt[0].GetName()+"_Cloned")
-        histos_u1_base = histos_u1[0].Clone(histos_u1[0].GetName()+"_Cloned")
-        histos_u2_base = histos_u2[0].Clone(histos_u2[0].GetName()+"_Cloned")
+        histo_met_base = histos_met[0].Clone(histos_met[0].GetName()+"_Cloned")
+        histo_u_pt_base = histos_u_pt[0].Clone(histos_u_pt[0].GetName()+"_Cloned")
+        histo_u1_base = histos_u1[0].Clone(histos_u1[0].GetName()+"_Cloned")
+        histo_u2_base = histos_u2[0].Clone(histos_u2[0].GetName()+"_Cloned")
+        
+        histo_met_uncs = histos_met[0].Clone(histos_met[0].GetName()+"_Uncs")
+        histo_met_uncs.SetLineColor(0)
+        histo_u_pt_uncs = histos_u_pt[0].Clone(histos_u_pt[0].GetName()+"_Uncs")
+        histo_u_pt_uncs.SetLineColor(0)
+        histo_u1_uncs = histos_u1[0].Clone(histos_u1[0].GetName()+"_Uncs")
+        histo_u1_uncs.SetLineColor(0)
+        histo_u2_uncs = histos_u2[0].Clone(histos_u2[0].GetName()+"_Uncs")
+        histo_u2_uncs.SetLineColor(0)
 
         for hmet, hupt, hu1, hu2 in zip(histos_met, histos_u_pt, histos_u1, histos_u2):
-            hmet.Divide(  histos_met_base )
+            hmet.Divide(  histo_met_base )
             hmet.SetFillColor(0)
-            hupt.Divide( histos_u_pt_base )
+            hupt.Divide( histo_u_pt_base )
             hupt.SetFillColor(0)
-            hu1.Divide(  histos_u1_base )
+            hu1.Divide(  histo_u1_base )
             hu1.SetFillColor(0)
-            hu2.Divide(  histos_u2_base )
+            hu2.Divide(  histo_u2_base )
             hu2.SetFillColor(0)
-
+            
         if len(hnames)>5:
             legendNCols = 2
             legendPos=[0.20, 0.88, 0.70, 0.74]
@@ -211,18 +241,44 @@ def main():
             legendNCols = 1
             legendPos=[0.20, 0.88, 0.35, 0.74]
 
-        DrawHistos(histos_met, legends, 0., 150., "Deep MET Corrected [GeV]", rmin, rmax, "Ratio", "histo_zjets_MCratio_deepmet_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
-        DrawHistos(histos_u_pt, legends, 0., 150., "u Corrected [GeV]", 0.7, 1.3, "Ratio", "histo_zjets_MCratio_u_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
-        DrawHistos(histos_u1, legends, -40.0, 100., "u_{#parallel} Corrected [GeV]", 0.7, 1.3, "Ratio", "histo_zjets_MCratio_u1_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
-        DrawHistos(histos_u2, legends, -80.0, 80., "u_{#perp } Corrected [GeV]", 0.7, 1.3, "Ratio", "histo_zjets_MCratio_u2_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
+        DrawHistos(histos_met, legends, 0., 150., "p^{miss}_{T} [GeV]", rmin, rmax, "Variation / Nominal", "histo_zjets_MCratio_deepmet_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
+        DrawHistos(histos_u_pt, legends, 0., 150., "u_{T} [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
+        DrawHistos(histos_u1, legends, -40.0, 100., "u_{#parallel} [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u1_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
+        DrawHistos(histos_u2, legends, -80.0, 80., "u_{#perp } [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u2_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
+        
+        def AddUnc(hmet_unc, hmets):
+            for ibin in range(1, hmet_unc.GetNbinsX()+1):
+                hmet_unc.SetBinContent(ibin, 1.0)
+                unc2 = 0.0
+                for hmet in hmets:
+                    unc2 += math.pow(hmet.GetBinContent(ibin) - 1.0, 2.0)
+                hmet_unc.SetBinError(ibin, math.sqrt(unc2))
+            return hmet_unc
+        
+        histo_met_uncs  = AddUnc(histo_met_uncs, histos_met)
+        histo_u_pt_uncs = AddUnc(histo_u_pt_uncs, histos_u_pt)
+        histo_u1_uncs   = AddUnc(histo_u1_uncs, histos_u1)
+        histo_u2_uncs   = AddUnc(histo_u2_uncs, histos_u2)
+        
+        return histo_met_uncs, histo_u_pt_uncs, histo_u1_uncs, histo_u2_uncs
+        
 
     colors = [1,2, 3]
-    linestyles = [1,1, 1]
+    linestyles = [1,3, 8]
 
     legends = ["2-Gaussian Fit", "Gaussian Smoothing", "With Background Scaling"]
     compRatios(  ["corr_central", "corr_central_GKS", "corr_central_bkgScale"], colors, linestyles, legends, "FitVSSmoothing")
-    compMCRatios(["corr_central", "corr_central_GKS", "corr_central_bkgScale"], colors, linestyles, legends, "FitVSSmoothing")
-
+    histos_met_uncs, histos_u_pt_uncs, histo_u1_uncs, histo_u2_uncs = compMCRatios(["corr_central", "corr_central_GKS", "corr_central_bkgScale"], colors, linestyles, legends, "FitVSSmoothing")
+    
+    DrawCorrection("central", histos_met_uncs, histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs)
+    sampMan.launchDraw()
+    
+    if not reweightZpt:
+        hratio_zpt = list(sampMan.hratios["histo_zjets_zpt"].values())[0]
+        ofile = ROOT.TFile("results/ZPlots.root", "RECREATE")
+        hratio_zpt.Write()
+        ofile.Close()
+    
     print("Program end...")
 
     input()

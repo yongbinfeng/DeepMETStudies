@@ -43,6 +43,7 @@ class DrawConfig(object):
 
         self.showratio = kwargs.get('showratio', True)
         self.ratiobase = kwargs.get('ratiobase', 1)
+        self.hratiopanel = kwargs.get('hratiopanel', None)
         self.yrmin = kwargs.get('yrmin', 0.71)
         self.yrmax = kwargs.get('yrmax', 1.29)
         self.yrlabel = kwargs.get('yrlabel', 'Data / MC ')
@@ -412,7 +413,7 @@ class SampleManager(object):
         
         self.hdatas[ drawconfigs.outputname] = h_data
         self.hsmcs[  drawconfigs.outputname] = hs_gmc
-        self.hratios[drawconfigs.outputname] = DrawHistos( [h_data, hs_gmc], drawconfigs.legends, drawconfigs.xmin, drawconfigs.xmax, drawconfigs.xlabel, drawconfigs.ymin, drawconfigs.ymax, drawconfigs.ylabel, drawconfigs.outputname, dology=drawconfigs.dology, dologx=drawconfigs.dologx, showratio=drawconfigs.showratio, yrmax = drawconfigs.yrmax, yrmin = drawconfigs.yrmin, yrlabel = drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos = drawconfigs.legendPos, redrawihist = drawconfigs.redrawihist, outdir = self.outdir, addOverflow = drawconfigs.addOverflow, addUnderflow = drawconfigs.addUnderflow)
+        self.hratios[drawconfigs.outputname] = DrawHistos( [h_data, hs_gmc], drawconfigs.legends, drawconfigs.xmin, drawconfigs.xmax, drawconfigs.xlabel, drawconfigs.ymin, drawconfigs.ymax, drawconfigs.ylabel, drawconfigs.outputname, dology=drawconfigs.dology, dologx=drawconfigs.dologx, showratio=drawconfigs.showratio, yrmax = drawconfigs.yrmax, yrmin = drawconfigs.yrmin, yrlabel = drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos = drawconfigs.legendPos, redrawihist = drawconfigs.redrawihist, outdir = self.outdir, addOverflow = drawconfigs.addOverflow, addUnderflow = drawconfigs.addUnderflow, hratiopanel = drawconfigs.hratiopanel)
         
 
     def launchDraw(self):
@@ -422,6 +423,8 @@ class SampleManager(object):
         for hname, plotinfo in self.to_draw.items():
             self._DrawPlot( plotinfo[0], plotinfo[1], plotinfo[2], hname)
         print("finished drawing..")
+        # clear the to_draw list
+        self.to_draw = OrderedDict()
         
     def snapShot(self, outdir, branches):
         """

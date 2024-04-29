@@ -1,10 +1,14 @@
 import ROOT
 import sys
+sys.path.append("../RecoilResol/CMSPLOTS")
 from CMSPLOTS.myFunction import DrawHistos
 from collections import OrderedDict
 from utils.utils import getpTBins, getnVtxBins, get_response_code
 from utils.RecoilAnalyzer import RecoilAnalyzer
 import argparse
+
+noLumi = False
+MCOnly = True
 
 ROOT.gROOT.SetBatch(True)
 
@@ -14,68 +18,64 @@ ROOT.gSystem.Load("Functions_cc.so")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--era", default="2016", help="Era")
+parser.add_argument("--applySc", action="store_true", help="Apply response corrections and include the plots in the output")
+parser.add_argument("--no-applySc", action="store_false", dest="applySc", help="Do not apply response corrections and do not include the plots in the output")
+parser.set_defaults(applySc=True)
+
 args = parser.parse_args()
 
+doTest = (args.era == "test")
 do2016 = (args.era == "2016")
-do2017 = (args.era == "2017")
-do2018 = (args.era == "2018")
+
+assert doTest + do2016 == 1, "Please specify an era: test, 2016, 2017, 2018"
 
 era = args.era
-outdir = f"plots/MC/{era}"
+outdir = f"plots/MC_CompPUPPI/{era}"
 
-#rdf = ROOT.ROOT.RDataFrame("Events", "/eos/cms/store/user/yofeng/WRecoilNanoAOD_Skimmed_v10_tempMET/myNanoProdMc2016_NANO_[1-9]_Skim.root")
-if do2016:
-   #rdf_org = ROOT.ROOT.RDataFrame("Events", "/eos/uscms/store/user/lpcsusyhiggs/ntuples/nAODv9/2016/DYJetsToLLM50NLO/all_DYJetsToLLM50NLO_file00[1-9]_part_1of3_Muons.root")
-   rdf_org = ROOT.ROOT.RDataFrame("Events", "/eos/cms/store/group/cmst3/group/wmass/yofeng/NanoAOD/DYJetsToMuMu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_testPVRobustDM/240226_075056/0000/NanoV9MCPostVFP_1*.root")
-elif do2017:
-   rdf_org = ROOT.ROOT.RDataFrame("Events", "/eos/uscms/store/user/lpcsusyhiggs/ntuples/nAODv9/2017/DYJetsToLLM50NLO/all_DYJetsToLLM50NLO_file0[1-4][1-9]*_part_1of3_Muons.root")
-else:
-   rdf_org = ROOT.ROOT.RDataFrame("Events", "/eos/uscms/store/user/lpcsusyhiggs/ntuples/nAODv9/2018/DYJetsToLLM50NLO/all_DYJetsToLLM50NLO_file0[1-4][1-9]*_part_1of3_Muons.root")
+applySc = args.applySc
+print("apply Response corrections: ", applySc)
 
-rdf_org1 = rdf_org.Filter("nMuon > 1")
-rdf_org1 = rdf_org1.Define("Muon_pass0", "Muon_pt[0] > 25.0 && abs(Muon_eta[0]) < 2.4 && Muon_pfRelIso04_all[0] < 0.15 && Muon_looseId[0]")
-rdf_org1 = rdf_org1.Define("Muon_pass1", "Muon_pt[1] > 25.0 && abs(Muon_eta[1]) < 2.4 && Muon_pfRelIso04_all[1] < 0.15 && Muon_looseId[1]")
+chain = ROOT.TChain("Events")
+chain.Add("/afs/cern.ch/work/y/yofeng/public/outputroot/Data.root")
+rdf_data = ROOT.ROOT.RDataFrame(chain)
 
-rdf_org2 = rdf_org1.Filter("Muon_pass0 && Muon_pass1")
-rdf = rdf_org2
-#rdf = rdf_org1.Define("Muon_pt0", "Muon_pt[0]").Filter("Muon_pt0 > 25.0")
+chainMC = ROOT.TChain("Events")
+chainMC.Add("/afs/cern.ch/work/y/yofeng/public/outputroot/DY.root")
+rdf_MC = ROOT.ROOT.RDataFrame(chainMC)
 
-rdf = rdf.Define("pT_muons", "TMath::Sqrt(Muon_pt[0]*Muon_pt[0] + Muon_pt[1]*Muon_pt[1] + 2*Muon_pt[0]*Muon_pt[1]*TMath::Cos(Muon_phi[0]-Muon_phi[1]))")
-rdf = rdf.Define("phi_muons", "TMath::ATan2(Muon_pt[0]*TMath::Sin(Muon_phi[0]) + Muon_pt[1]*TMath::Sin(Muon_phi[1]), Muon_pt[0]*TMath::Cos(Muon_phi[0]) + Muon_pt[1]*TMath::Cos(Muon_phi[1]))")
+def prepareVars(rdf):
+   rdf = rdf.Define("pT_muons", "Z_pt").Define("phi_muons", "Z_phi")
+   rdf = rdf.Define("u_GEN_pt", "pT_muons") \
+            .Define("u_GEN_x", "-pT_muons*TMath::Cos(phi_muons)") \
+            .Define("u_GEN_y", "-pT_muons*TMath::Sin(phi_muons)") \
+            .Define("u_PUPPI_x",  "-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt*TMath::Cos(PuppiMET_phi))") \
+            .Define("u_PUPPI_y",  "-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt*TMath::Sin(PuppiMET_phi))") \
+            .Define("u_PUPPI_pt", "TMath::Sqrt(u_PUPPI_x * u_PUPPI_x + u_PUPPI_y * u_PUPPI_y)") \
+            .Define("u_PF_x",     "-(pT_muons*TMath::Cos(phi_muons) + MET_pt*TMath::Cos(MET_phi))") \
+            .Define("u_PF_y",     "-(pT_muons*TMath::Sin(phi_muons) + MET_pt*TMath::Sin(MET_phi))") \
+            .Define("u_PF_pt",    "TMath::Sqrt(u_PF_x * u_PF_x + u_PF_y * u_PF_y)") \
+            .Define("u_DeepMET_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETResolutionTune_pt*TMath::Cos(DeepMETResolutionTune_phi))") \
+            .Define("u_DeepMET_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETResolutionTune_pt*TMath::Sin(DeepMETResolutionTune_phi))") \
+            .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)") \
+            .Define("u_DeepMETCorr_x", "-(pT_muons*TMath::Cos(phi_muons) + deepmet_pt_corr_central*TMath::Cos(deepmet_phi_corr_central) )") \
+            .Define("u_DeepMETCorr_y", "-(pT_muons*TMath::Sin(phi_muons) + deepmet_pt_corr_central*TMath::Sin(deepmet_phi_corr_central) )") \
+            .Define("u_DeepMETCorr_pt", "TMath::Sqrt(u_DeepMETCorr_x * u_DeepMETCorr_x + u_DeepMETCorr_y * u_DeepMETCorr_y)") \
+            .Define("u_DeepMETNoPUPPI_x", "-(pT_muons*TMath::Cos(phi_muons) + DeepMETPVRobustNoPUPPI_pt*TMath::Cos(DeepMETPVRobustNoPUPPI_phi) )") \
+            .Define("u_DeepMETNoPUPPI_y", "-(pT_muons*TMath::Sin(phi_muons) + DeepMETPVRobustNoPUPPI_pt*TMath::Sin(DeepMETPVRobustNoPUPPI_phi) )") \
+            .Define("u_DeepMETNoPUPPI_pt", "TMath::Sqrt(u_DeepMETNoPUPPI_x * u_DeepMETNoPUPPI_x + u_DeepMETNoPUPPI_y * u_DeepMETNoPUPPI_y)") 
+   return rdf
 
-rdf = rdf.Define("u_PUPPI_x",  "-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt*TMath::Cos(PuppiMET_phi))") \
-         .Define("u_PUPPI_y",  "-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt*TMath::Sin(PuppiMET_phi))") \
-         .Define("u_PUPPI_pt", "TMath::Sqrt(u_PUPPI_x * u_PUPPI_x + u_PUPPI_y * u_PUPPI_y)") \
-         .Define("u_PF_x",     "-(pT_muons*TMath::Cos(phi_muons) + MET_pt*TMath::Cos(MET_phi))") \
-         .Define("u_PF_y",     "-(pT_muons*TMath::Sin(phi_muons) + MET_pt*TMath::Sin(MET_phi))") \
-         .Define("u_PF_pt",    "TMath::Sqrt(u_PF_x * u_PF_x + u_PF_y * u_PF_y)") \
-         .Define("u_GEN_x",    "-(pT_muons * TMath::Cos(phi_muons) + GenMET_pt * TMath::Cos(GenMET_phi))") \
-         .Define("u_GEN_y",    "-(pT_muons * TMath::Sin(phi_muons) + GenMET_pt * TMath::Sin(GenMET_phi))") \
-         .Define("u_GEN_pt",   "TMath::Sqrt(u_GEN_x * u_GEN_x + u_GEN_y * u_GEN_y)") \
-         .Define("u_DeepMET_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETResolutionTune_pt*TMath::Cos(DeepMETResolutionTune_phi))") \
-         .Define("u_DeepMET_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETResolutionTune_pt*TMath::Sin(DeepMETResolutionTune_phi))") \
-         .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)") \
-         .Define("u_DeepMETPVRobust_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETPVRobust_pt*TMath::Cos(DeepMETPVRobust_phi))") \
-         .Define("u_DeepMETPVRobust_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETPVRobust_pt*TMath::Sin(DeepMETPVRobust_phi))") \
-         .Define("u_DeepMETPVRobust_pt", "TMath::Sqrt(u_DeepMETPVRobust_x * u_DeepMETPVRobust_x + u_DeepMETPVRobust_y * u_DeepMETPVRobust_y)") \
-         .Define("u_DeepMETPVRobustNoPUPPI_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETPVRobustNoPUPPI_pt*TMath::Cos(DeepMETPVRobustNoPUPPI_phi))") \
-         .Define("u_DeepMETPVRobustNoPUPPI_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETPVRobustNoPUPPI_pt*TMath::Sin(DeepMETPVRobustNoPUPPI_phi))") \
-         .Define("u_DeepMETPVRobustNoPUPPI_pt", "TMath::Sqrt(u_DeepMETPVRobustNoPUPPI_x * u_DeepMETPVRobustNoPUPPI_x + u_DeepMETPVRobustNoPUPPI_y * u_DeepMETPVRobustNoPUPPI_y)")
+rdf_MC = prepareVars(rdf_MC)
 
-recoils = ["PUPPI", "PF", "DeepMET", "DeepMETPVRobust", "DeepMETPVRobustNoPUPPI"]
-recoils = ["PUPPI", "PF", "DeepMET"]
-
-#for itype in recoils:
-#    # prepare the paral, perp, response, diff variables
-#    rdf = prepVars(rdf, "u_{RECOIL}".format(RECOIL=itype), "u_GEN")
+recoils = ["PF", "PUPPI", "DeepMET", "DeepMETNoPUPPI"]
 
 colors = {
             "PF": 1,
             "PUPPI": 2,
             "GEN": 6,
             "DeepMET": 4,
-            "DeepMETPVRobust": 6,
-            "DeepMETPVRobustNoPUPPI": 7
+            "DeepMETCorr": 8,
+            "DeepMETNoPUPPI": 8,
          }
 
 labels = {
@@ -85,14 +85,24 @@ labels = {
             "GEN": "GEN",
             "TKPHO": "TK+Photon",
             "DeepMET": "DeepMET",
-            "DeepMETPVRobust": "DeepMET PVRobust",
-            "DeepMETPVRobustNoPUPPI": "DeepMET PVRobust NoPUPPI"
+            "DeepMETCorr": "DeepMET",
+            "DeepMETNoPUPPI": "DeepMET w/o PUPPI",
          }
+
+linestyles = {}
+
+for itype in recoils:
+   colors[itype + "_MC"] = colors[itype]
+   
+   linestyles[itype] = 1
+   linestyles[itype + "_MC"] = 2
 
 xbins_qT = getpTBins()
 xbins_nVtx = getnVtxBins() 
 
-recoilanalyzer = RecoilAnalyzer(rdf, recoils)
+# loop over the different qT bins
+suffix = ""
+recoilanalyzer = RecoilAnalyzer(rdf_MC, recoils, name = "recoilanalyzer")
 recoilanalyzer.prepareVars()
 recoilanalyzer.prepareResponses(   'u_GEN_pt', xbins_qT)
 recoilanalyzer.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -104,64 +114,70 @@ hresols_paral_diff, hresols_perp = recoilanalyzer.getResolutions('u_GEN_pt')
 hresponses_nVtx = recoilanalyzer.getResponses('PV_npvsGood')
 hresols_paral_diff_VS_nVtx, hresols_perp_VS_nVtx = recoilanalyzer.getResolutions('PV_npvsGood')
 
+if applySc:
+   ROOT.gInterpreter.Declare(get_response_code)
+   # create branch with the scale factors
+   for itype in recoils:
+       #"dynamic scopes" to create a variable holding histograms
+       ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}{suffix}= {HNAME} ".format(RECOIL=itype, suffix = suffix, HNAME=hresponses[itype].GetName()))
+       #ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}_MC{suffix}= {HNAME} ".format(RECOIL=itype, suffix=suffix, HNAME=hresponses[itype+"_MC"].GetName()))
+       #rdf_data = rdf_data.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}{suffix})'.format(RECOIL=itype, suffix=suffix)) \
+       #         .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+       #         .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
 
-ROOT.gInterpreter.Declare(get_response_code)
-# create branch with the scale factors
-for itype in recoils:
-    #"dynamic scopes" to create a variable holding histograms
-    ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}= {HNAME} ".format(RECOIL=itype, HNAME=hresponses[itype].GetName()))
-    rdf = rdf.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL})'.format(RECOIL=itype)) \
-             .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
-             .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
+       rdf_MC = rdf_MC.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}{suffix})'.format(RECOIL=itype, suffix=suffix)) \
+                  .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+                  .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
 
-#for itype in recoils:
-#    # prepare the paral, perp, response, diff variables
-#    rdf = prepVars(rdf, "u_{RECOIL}Sc".format(RECOIL=itype), "u_GEN")
 
-recoilsSc = [itype + "Sc" for itype in recoils]
-recoilanalyzerSc = RecoilAnalyzer(rdf, recoilsSc)
-recoilanalyzerSc.prepareVars()
-recoilanalyzerSc.prepareResponses(   'u_GEN_pt', xbins_qT)
-recoilanalyzerSc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
-recoilanalyzerSc.prepareResponses(   'PV_npvsGood', xbins_nVtx)
-recoilanalyzerSc.prepareResolutions( 'PV_npvsGood', xbins_nVtx, 400, -200, 200)
+   recoilsSc = [itype + "Sc" for itype in recoils]
+   recoilanalyzerSc = RecoilAnalyzer(rdf_MC, recoilsSc, name = "recoilanalyzer_Scaled" + suffix)
+   recoilanalyzerSc.prepareVars()
+   recoilanalyzerSc.prepareResponses(   'u_GEN_pt', xbins_qT)
+   recoilanalyzerSc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
+   recoilanalyzerSc.prepareResponses(   'PV_npvsGood', xbins_nVtx)
+   recoilanalyzerSc.prepareResolutions( 'PV_npvsGood', xbins_nVtx, 400, -200, 200)
 
-hresponsesSc = recoilanalyzerSc.getResponses('u_GEN_pt')
-hresolsSc_paral_diff, hresolsSc_perp = recoilanalyzerSc.getResolutions('u_GEN_pt')
-hresponsesSc_nVtx = recoilanalyzerSc.getResponses('PV_npvsGood')
-hresolsSc_paral_diff_VS_nVtx, hresolsSc_perp_VS_nVtx = recoilanalyzerSc.getResolutions('PV_npvsGood')
-
-h_pvIndex = rdf.Histo1D(("pv_Index", "pv_Index", 11, -1.5, 10.5), "PVRobustIndex")
-DrawHistos([h_pvIndex], ["RobustPV Index"], -1.5, 10.5, "Index", 1e-5, 10.0, "A.U.", "pv_Index", donormalize=True, outdir=outdir, noLumi=True, mycolors=[1])
+   hresponsesSc = recoilanalyzerSc.getResponses('u_GEN_pt')
+   hresolsSc_paral_diff, hresolsSc_perp = recoilanalyzerSc.getResolutions('u_GEN_pt')
+   hresponsesSc_nVtx = recoilanalyzerSc.getResponses('PV_npvsGood')
+   hresolsSc_paral_diff_VS_nVtx, hresolsSc_perp_VS_nVtx = recoilanalyzerSc.getResolutions('PV_npvsGood')
 
 qtmax = 150.0
 
-DrawHistos(hresponses.values(), [labels[itype] for itype in hresponses.keys()], 0, qtmax, "q_{T} [GeV]", 0., 1.15, "Reponse -<u_{#parallel}>/<q_{T}>", "reco_recoil_response", drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=True, outdir=outdir)
+def GetLegends(hdict):
+    return [labels[itype] for itype in hdict.keys() if "_MC" not in itype]
 
-DrawHistos(hresols_paral_diff.values(), [labels[itype] for itype in hresols_paral_diff.keys()], 0, qtmax, "q_{T} [GeV]", 0, 39.0, "#sigma u_{#parallel} [GeV]", "reco_recoil_resol_paral", drawashist=True, dology=False, legendPos=[0.20, 0.73, 0.38, 0.92], mycolors=[colors[itype] for itype in hresols_paral_diff.keys()], noLumi=True, outdir=outdir)
+def GetLineStyles(hdict):
+    return [1 if "_MC" not in itype else 2 for itype in hdict.keys()]
 
-DrawHistos(hresols_perp.values(), [labels[itype] for itype in hresols_perp.keys()], 0, qtmax, "q_{T} [GeV]", 0, 32.0, "#sigma u_{#perp } [GeV]", "reco_recoil_resol_perp", drawashist=True, dology=False, legendPos=[0.20, 0.73, 0.40, 0.92], mycolors=[colors[itype] for itype in hresols_perp.keys()], noLumi=True, outdir=outdir)
+DrawHistos(hresponses.values(), GetLegends(hresponses), 0, qtmax, "q_{T} [GeV]", 0., 1.15, "Response -<u_{#parallel}>/<q_{T}>", "reco_recoil_response" + suffix, drawashist=True, dology=False, legendPos=[0.50, 0.20, 0.80, 0.40], mycolors=[colors[itype] for itype in hresponses.keys()], linestyles = GetLineStyles(hresponses), noLumi=noLumi, outdir=outdir, MCOnly=MCOnly)
 
-DrawHistos(hresponses_nVtx.values(), [labels[itype] for itype in hresponses_nVtx.keys()], 0, 50., "# Vertices", 0., 1.15, "Reponse -<u_{#parallel}>/<q_{T}>", "reco_recoil_response_VS_nVtx", drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=True, outdir=outdir)
+DrawHistos(hresols_paral_diff.values(), GetLegends(hresols_paral_diff), 0, qtmax, "q_{T} [GeV]", 0, 39.0, "#sigma (u_{#parallel}) [GeV]", "reco_recoil_resol_paral" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_paral_diff.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_paral_diff), MCOnly=MCOnly)
 
-DrawHistos(hresols_paral_diff_VS_nVtx.values(), [labels[itype] for itype in hresols_paral_diff_VS_nVtx.keys()], 0, 50., "# Vertices", 0, 50.0, "#sigma u_{#parallel} [GeV]", "reco_recoil_resol_paral_VS_nVtx", drawashist=True, dology=False, legendPos=[0.20, 0.73, 0.38, 0.92], mycolors=[colors[itype] for itype in hresols_paral_diff_VS_nVtx.keys()], noLumi=True, outdir=outdir)
+DrawHistos(hresols_perp.values(), GetLegends(hresols_perp), 0, qtmax, "q_{T} [GeV]", 0, 32.0, "#sigma (u_{#perp } ) [GeV]", "reco_recoil_resol_perp" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_perp), MCOnly=MCOnly)
 
-DrawHistos(hresols_perp_VS_nVtx.values(), [labels[itype] for itype in hresols_perp_VS_nVtx.keys()], 0, 50., "# Vertices", 0, 50.0, "#sigma u_{#perp } [GeV]", "reco_recoil_resol_perp_VS_nVtx", drawashist=True, dology=False, legendPos=[0.20, 0.73, 0.40, 0.92], mycolors=[colors[itype] for itype in hresols_perp_VS_nVtx.keys()], noLumi=True, outdir=outdir)
+DrawHistos(hresponses_nVtx.values(), GetLegends(hresponses_nVtx), 0, 50., "# Vertices", 0., 1.15, "Response -<u_{#parallel}>/<q_{T}>", "reco_recoil_response_VS_nVtx" + suffix, drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresponses_nVtx), MCOnly=MCOnly)
 
-##
-## Scaled 
-##
-DrawHistos(hresponsesSc.values(), [labels[itype] for itype in hresponses.keys()], 0, qtmax, "q_{T} [GeV]", 0., 1.15, "Scaled Reponse -<u_{#parallel}>/<q_{T}>", "reco_recoil_response_Scaled", drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=True, outdir=outdir)
+DrawHistos(hresols_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), 0, 50., "# Vertices", 0, 50.0, "#sigma (u_{#parallel}) [GeV]", "reco_recoil_resol_paral_VS_nVtx" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_paral_diff_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_paral_diff_VS_nVtx), MCOnly=MCOnly)
 
-DrawHistos(hresolsSc_paral_diff.values(), [labels[itype] for itype in hresols_paral_diff.keys()], 0, qtmax, "q_{T} [GeV]", 0, 60.0, "Scaled #sigma u_{#parallel} [GeV]", "reco_recoil_resol_paral_Scaled", drawashist=True, dology=False, legendPos=[0.20, 0.73, 0.38, 0.92], mycolors=[colors[itype] for itype in hresols_paral_diff.keys()], noLumi=True, outdir=outdir)
+DrawHistos(hresols_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), 0, 50., "# Vertices", 0, 50.0, "#sigma (u_{#perp } ) [GeV]", "reco_recoil_resol_perp_VS_nVtx" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_perp_VS_nVtx), MCOnly=MCOnly)
 
-DrawHistos(hresolsSc_perp.values(), [labels[itype] for itype in hresols_perp.keys()], 0, qtmax, "q_{T} [GeV]", 0, 50.0, "Scaled #sigma u_{#perp} [GeV]", "reco_recoil_resol_perp_Scaled", drawashist=True, dology=False, legendPos=[0.20, 0.73, 0.40, 0.92], mycolors=[colors[itype] for itype in hresols_perp.keys()], noLumi=True, outdir=outdir)
+if applySc:
+   #
+   # Scaled 
+   #
+   DrawHistos(hresponsesSc.values(), GetLegends(hresponses), 0, qtmax, "q_{T} [GeV]", 0., 1.15, "Scaled Response -<u_{#parallel}>/<q_{T}>", "reco_recoil_response_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresponses), MCOnly=MCOnly)
 
-DrawHistos(hresponsesSc_nVtx.values(), [labels[itype] for itype in hresponses_nVtx.keys()], 0, 50., "# Vertices", 0., 1.15, "Scaled Reponse -<u_{#parallel}>/<q_{T}>", "reco_recoil_response_VS_nVtx_Scaled", drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=True, outdir=outdir)
+   DrawHistos(hresolsSc_paral_diff.values(), GetLegends(hresols_paral_diff), 0, qtmax, "q_{T} [GeV]", 0, 60.0, "Response-corrected #sigma (u_{#parallel}) [GeV]", "reco_recoil_resol_paral_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_paral_diff.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_paral_diff), MCOnly=MCOnly)
 
-DrawHistos(hresolsSc_paral_diff_VS_nVtx.values(), [labels[itype] for itype in hresols_paral_diff_VS_nVtx.keys()], 0, 50., "# Vertices", 0, 50.0, "Scaled #sigma u_{#parallel} [GeV]", "reco_recoil_resol_paral_VS_nVtx_Scaled", drawashist=True, dology=False, legendPos=[0.20, 0.73, 0.38, 0.92], mycolors=[colors[itype] for itype in hresols_paral_diff_VS_nVtx.keys()], noLumi=True, outdir=outdir)
+   DrawHistos(hresolsSc_perp.values(), GetLegends(hresols_perp), 0, qtmax, "q_{T} [GeV]", 0, 50.0, "Response-corrected #sigma (u_{#perp } ) [GeV]", "reco_recoil_resol_perp_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_perp), MCOnly=MCOnly)
 
-DrawHistos(hresolsSc_perp_VS_nVtx.values(), [labels[itype] for itype in hresols_perp_VS_nVtx.keys()], 0, 50., "# Vertices", 0, 50.0, "Scaled #sigma u_{#perp} [GeV]", "reco_recoil_resol_perp_VS_nVtx_Scaled", drawashist=True, dology=False, legendPos=[0.20, 0.73, 0.40, 0.92], mycolors=[colors[itype] for itype in hresols_perp_VS_nVtx.keys()], noLumi=True, outdir=outdir)
+   DrawHistos(hresponsesSc_nVtx.values(), GetLegends(hresponses_nVtx), 0, 50., "# Vertices", 0., 1.15, "Response -<u_{#parallel}>/<q_{T}>", "reco_recoil_response_VS_nVtx_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresponses_nVtx), MCOnly=MCOnly)
+
+   DrawHistos(hresolsSc_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), 0, 50., "# Vertices", 0, 50.0, "Response-corrected #sigma (u_{#parallel}) [GeV]", "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_paral_diff_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_paral_diff_VS_nVtx), MCOnly=MCOnly)
+
+   DrawHistos(hresolsSc_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), 0, 50., "# Vertices", 0, 50.0, "Response-corrected #sigma (u_{#perp } ) [GeV]", "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_perp_VS_nVtx), MCOnly=MCOnly)
 
 
 #f1 = ROOT.TFile("root_h/output.root", "RECREATE")

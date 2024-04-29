@@ -687,6 +687,9 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
 
     # print("draw options ", drawoptions)
     # print("legend options ", legendoptions)
+    
+    if showratio and hratiopanel:
+        legend.AddEntry(hratiopanel, "Uncertainty", "F")
 
     if redrawihist >= 0:
         myhistos_clone[redrawihist].Draw(
