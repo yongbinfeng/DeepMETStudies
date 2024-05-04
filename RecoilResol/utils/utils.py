@@ -66,4 +66,14 @@ float get_response(float qt, TProfile* h_response)
     }
     return h_response->GetBinContent( ibin );
 }
+
+float get_response(float qt, TH1* h_response)
+{
+    int maxbin = h_response->GetNbinsX();
+    int ibin = h_response->FindBin( qt );
+    if( ibin>maxbin ){
+        ibin = maxbin;
+    }
+    return h_response->GetBinContent( ibin );
+}
 '''
