@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import sys
-from CMSPLOTS.myFunction import getResolution, getErrors
+from CMSPLOTS.myFunction import getResolution
 from utils.utils import prepVars
 
 class RecoilAnalyzer(object):
@@ -10,11 +10,12 @@ class RecoilAnalyzer(object):
     resolutions, we try to 'prepare' them all together first, and then 'get' all 
     of them. In this case the event loop only need to be run once!
     """
-    def __init__(self, rdf, recoils, rdfMC = None, name = "RecoilAnalyzer"):
+    def __init__(self, rdf, recoils, rdfMC = None, name = "RecoilAnalyzer", useRMS = False):
         self.rdf = rdf
         self.rdfMC = rdfMC
         self.recoils = recoils
         self.name = name
+        self.useRMS = useRMS
         self.profs = OrderedDict()
         self.histo2ds_paral_diff = OrderedDict()
         self.histo2ds_perp       = OrderedDict()
@@ -90,14 +91,15 @@ class RecoilAnalyzer(object):
         hresols_paral = OrderedDict()
         hresols_perp  = OrderedDict()
         for itype in self.recoils:
-            hresols_paral[itype] = getResolution( self.histo2ds_paral_diff[xvar][itype] )
-            hresols_perp[itype]  = getResolution( self.histo2ds_perp[xvar][itype] )
+            hresols_paral[itype] = getResolution( self.histo2ds_paral_diff[xvar][itype], useRMS=self.useRMS)
+            hresols_perp[itype]  = getResolution( self.histo2ds_perp[xvar][itype], useRMS=self.useRMS)
             
         if self.rdfMC:
             for itype in self.recoils:
-                hresols_paral[itype + "_MC"] = getResolution( self.histo2ds_paral_diff[xvar][itype + "_MC"] )
-                hresols_perp[itype + "_MC"]  = getResolution( self.histo2ds_perp[xvar][itype + "_MC"] )
+                hresols_paral[itype + "_MC"] = getResolution( self.histo2ds_paral_diff[xvar][itype + "_MC"], useRMS=self.useRMS)
+                hresols_perp[itype + "_MC"]  = getResolution( self.histo2ds_perp[xvar][itype + "_MC"], useRMS=self.useRMS)
         return hresols_paral, hresols_perp
+    
 
     def prepareResolutions1D(self, nbins_x, xmin, xmax):
         for itype in self.recoils:
@@ -130,4 +132,3 @@ class RecoilAnalyzer(object):
             vresols_perp[itype] = (quants[0], (quants[2]-quants[1])/2.0, quants[0]-quants[1], quants[2]-quants[0])
     
         return vresols_paral, vresols_perp
-

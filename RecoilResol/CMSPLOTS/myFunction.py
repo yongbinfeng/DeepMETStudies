@@ -150,15 +150,32 @@ def myRead(inputfile):
     return files, colors, labels, lhistos
 
 
-def getResolution(th2d):
+def getResolution(th2d, useRMS = False):
+    if useRMS:
+        return getRMSResolution(th2d)
+    else:
+        return getQuantileResolution(th2d)
+
+
+def getQuantileResolution(th2d):
     # return the resolution distribution of th2d, as a format of th1d
     hqup = th2d.QuantilesX(0.84, th2d.GetName()+"_q84")
     hqdn = th2d.QuantilesX(0.16, th2d.GetName()+"_q16")
 
-    hresol = hqup.Clone(th2d.GetName() + "_resol")
+    hresol = hqup.Clone(th2d.GetName() + "_resolQuantile")
     hresol.Add(hqdn, -1.0)
     hresol.Scale(0.5)
 
+    return hresol
+
+
+def getRMSResolution(th2d):
+    hprof = th2d.ProfileX(th2d.GetName()+"_profX", 1, -1, "s")
+    hresol = th2d.ProjectionX(th2d.GetName()+"_resolRMS", 0, -1, "e")
+    for ibin in range(1, hresol.GetNbinsX()+1):
+        print("ibin ", ibin, hresol.GetBinContent(ibin), hprof.GetBinContent(ibin), hprof.GetBinError(ibin))
+        hresol.SetBinContent(ibin, hprof.GetBinError(ibin))
+        hresol.SetBinError(ibin, 0)
     return hresol
 
 

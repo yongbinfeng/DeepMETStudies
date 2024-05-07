@@ -15,11 +15,11 @@ import pickle
 from SampleManager import DrawConfig, Sample, SampleManager
 
 ROOT.gROOT.SetBatch(True)
-ROOT.ROOT.EnableImplicitMT(15)
+ROOT.ROOT.EnableImplicitMT(10)
 
 dotest = False
 VetoB = False
-doDefaultCorrection = True
+doDefaultCorrection = False
 
 def main():
     print("Program start...")
@@ -129,7 +129,7 @@ def main():
                 "MET_pt", "MET_phi",
                 "PuppiMET_pt", "PuppiMET_phi",
                 "u1", "u2", "u_pt", "u_phi",
-                "weight", "weight_WoVpt", "PV_npvsGood", "jet_n"]
+                "weight", "weight_WoVpt", "PV_npvs", "PV_npvsGood", "jet_n"]
     # more deepmet related variables
     branches += ["DeepMETPVRobust_pt", "DeepMETPVRobust_phi",
                  "DeepMETPVRobustNoPUPPI_pt", "DeepMETPVRobustNoPUPPI_phi",

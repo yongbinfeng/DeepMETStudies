@@ -2,7 +2,7 @@ import ROOT
 import sys, os
 import numpy as np
 sys.path.append("../RecoilResol/CMSPLOTS")
-from CMSPLOTS.myFunction import DrawHistos, getMedian, getResolution
+from CMSPLOTS.myFunction import DrawHistos, getMedian, getResolution, getQuantileResolution
 from collections import OrderedDict
 from utils.utils import getpTBins, getnVtxBins, get_response_code
 import argparse
@@ -63,11 +63,13 @@ def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
       histos_ratios_diff[recoil] = rdf_MC.Histo2D((hname, hname, nbins_ht, htbins, 400, -0.5, 0.5), "GenHT", "{RECOIL}MET_ratio_diff".format(RECOIL=recoil))
 
    hresols = OrderedDict()
+   hresolsRMS = OrderedDict()
    hresols_ratio = OrderedDict()
    hresponses = OrderedDict()
    for recoil in recoils:
       hresponses[recoil] = getMedian(histos_ratios[recoil]) 
-      hresols[recoil] = getResolution(histos_2d_diffs[recoil])
+      hresols[recoil] = getQuantileResolution(histos_2d_diffs[recoil])
+      hresolsRMS[recoil] = getResolution(histos_2d_diffs[recoil], useRMS=True)
       hresols_ratio[recoil] = getResolution(histos_ratios_diff[recoil])
 
    colors = {
@@ -123,12 +125,14 @@ def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
          hname = "h2d_ratio_diff_{RECOIL}Sc_vs_HT".format(RECOIL=recoil)
          histos_ratios_diff_sc[recoil] = rdf_MC.Histo2D((hname, hname, nbins_ht, htbins, 400, -0.5, 0.5), "GenHT", "{RECOIL}MET_Sc_ratio_diff".format(RECOIL=recoil))
 
-      hresols_sc = OrderedDict()
       hresponses_sc = OrderedDict()
+      hresols_sc = OrderedDict()
+      hresolsRMS_sc = OrderedDict()
       hresols_ratio_sc = OrderedDict()
       for recoil in recoils:
          hresponses_sc[recoil] = getMedian(histos_ratios_sc[recoil]) 
-         hresols_sc[recoil] = getResolution(histos_2d_diffs_sc[recoil])
+         hresols_sc[recoil] = getQuantileResolution(histos_2d_diffs_sc[recoil])
+         hresolsRMS_sc[recoil] = getResolution(histos_2d_diffs_sc[recoil], useRMS=True)
          hresols_ratio_sc[recoil] = getResolution(histos_ratios_diff_sc[recoil])
 
    def GetLegends(hdict):
@@ -140,6 +144,12 @@ def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
    DrawHistos(hresponses.values(), GetLegends(hresponses), htmin, htmax, "Gen H_{T} [GeV]", 0., 1.20, "Response -<p^{miss}_{T}>/<Gen p^{miss}_{T}>", "met_response" + suffix, drawashist=True, dology=False, legendPos=[0.50, 0.20, 0.80, 0.40], mycolors=[colors[itype] for itype in hresponses.keys()], linestyles = GetLineStyles(hresponses), noLumi=noLumi, outdir=outdir, MCOnly=MCOnly, lheader=lheader)
 
    DrawHistos(hresols.values(), GetLegends(hresols), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols), MCOnly=MCOnly, lheader=lheader)
+   
+   DrawHistos(hresolsRMS.values(), GetLegends(hresolsRMS), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_RMS" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresolsRMS.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresolsRMS), MCOnly=MCOnly, lheader=lheader)
+   
+   # difference between quantile and RMS resol
+   DrawHistos([hresols["DeepMET"], hresolsRMS["DeepMET"]], ["DeepMET", "DeepMET RMS"], htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_RMSVsQuantitle_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, lheader=lheader, showratio=True, yrlabel="RMS/Quantile", yrmin=0.91, yrmax=1.09)
+   
 
    DrawHistos(hresols_ratio.values(), GetLegends(hresols_ratio), htmin, htmax, "Gen H_{T} [GeV]", 0, 0.5, "#sigma (p^{miss}_{T}) / <p^{miss}_{T}>", "met_resol_ratio" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_ratio.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_ratio), MCOnly=MCOnly, lheader=lheader)
 
@@ -151,6 +161,10 @@ def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
       DrawHistos(hresponses_sc.values(), GetLegends(hresponses), htmin, htmax, "Gen H_{T} [GeV]", 0., 1.20, "Scaled Response -<p^{miss}_{T}>/<Gen p^{miss}_{T}>", "met_response_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresponses), MCOnly=MCOnly, lheader=lheader)
 
       DrawHistos(hresols_sc.values(), GetLegends(hresols), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "Response-corrected #sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols), MCOnly=MCOnly, lheader=lheader)
+      
+      DrawHistos(hresolsRMS_sc.values(), GetLegends(hresolsRMS), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "Response-corrected #sigma (p^{miss}_{T}) [GeV]", "met_resol_RMS_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresolsRMS.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresolsRMS), MCOnly=MCOnly, lheader=lheader)
+      
+      DrawHistos([hresols_sc["DeepMET"], hresolsRMS_sc["DeepMET"]], ["DeepMET", "DeepMET RMS"], htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled_RMSVsQuantitle_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, lheader=lheader, showratio=True, yrlabel="RMS/Quantile", yrmin=0.91, yrmax=1.09)
 
       DrawHistos(hresols_ratio_sc.values(), GetLegends(hresols_ratio), htmin, htmax, "Gen H_{T} [GeV]", 0, 0.5, "Response-corrected #sigma (p^{miss}_{T}) / <p^{miss}_{T}>", "met_resol_ratio_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_ratio.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_ratio), MCOnly=MCOnly, lheader=lheader)
 
