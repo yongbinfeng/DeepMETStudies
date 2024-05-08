@@ -23,6 +23,8 @@ doGaussianSmooth = True
 doBkgScaled = True
 reweightZpt = True
 
+doSnapshot = True
+
 def main():
     print("Program start...")
     
@@ -82,15 +84,15 @@ def main():
         ROOT.gROOT.ProcessLine('TList* tfs_MC_u1_njets_pt_central = (TList*)fitfunctions_DY_central->Get("tfs_DY_u1_njets_pt_central")')
         ROOT.gROOT.ProcessLine('TList* tfs_MC_u2_njets_pt_central = (TList*)fitfunctions_DY_central->Get("tfs_DY_u2_njets_pt_central")')
 
-    #    DYSamp.Define("u1_corr_central",   "UCorrection_Quant(u1, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, tfs_Data_u1_njets_pt_central, tfs_MC_u1_njets_pt_central, 0.00001)")
-    #    DYSamp.Define("u2_corr_central",   "UCorrection_Quant(u2, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, tfs_Data_u2_njets_pt_central, tfs_MC_u2_njets_pt_central, 0.00001)")
-    #    DYSamp.Define("u_pt_corr_central", "TMath::Sqrt(u1_corr_central*u1_corr_central + u2_corr_central*u2_corr_central)")
-    #    sampMan.DefineAll("u1_corr_central",     "u1"  , excludes=['DY'])
-    #    sampMan.DefineAll("u2_corr_central",     "u2"  , excludes=['DY'])
-    #    sampMan.DefineAll("u_pt_corr_central",   "u_pt", excludes=['DY'])
-    #    sampMan.DefineAll("deepmet_corr_central", "METVec(Z_pt, Z_phi, u1_corr_central, u2_corr_central)")
-    #    sampMan.DefineAll("deepmet_pt_corr_central", "deepmet_corr_central.Mod()") 
-    #    sampMan.DefineAll("deepmet_phi_corr_central", "TVector2::Phi_mpi_pi(deepmet_corr_central.Phi())")
+        DYSamp.Define("u1_corr_central",   "UCorrection_Quant(u1, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, tfs_Data_u1_njets_pt_central, tfs_MC_u1_njets_pt_central, 0.00001, 1)")
+        DYSamp.Define("u2_corr_central",   "UCorrection_Quant(u2, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, tfs_Data_u2_njets_pt_central, tfs_MC_u2_njets_pt_central, 0.00001)")
+        DYSamp.Define("u_pt_corr_central", "TMath::Sqrt(u1_corr_central*u1_corr_central + u2_corr_central*u2_corr_central)")
+        sampMan.DefineAll("u1_corr_central",     "u1"  , excludes=['DY'])
+        sampMan.DefineAll("u2_corr_central",     "u2"  , excludes=['DY'])
+        sampMan.DefineAll("u_pt_corr_central",   "u_pt", excludes=['DY'])
+        sampMan.DefineAll("deepmet_corr_central", "METVec(Z_pt, Z_phi, u1_corr_central, u2_corr_central)")
+        sampMan.DefineAll("deepmet_pt_corr_central", "deepmet_corr_central.Mod()") 
+        sampMan.DefineAll("deepmet_phi_corr_central", "TVector2::Phi_mpi_pi(deepmet_corr_central.Phi())")
         
     if doGaussianSmooth:
         ## corrections from Gaussian Smearing
@@ -101,7 +103,7 @@ def main():
         ROOT.gROOT.ProcessLine('TList* cdfs_DY_u1_njets_pt_central = (TList*)gaussSmoother_DY_njets_pt_central->Get("cdfs_DY_u1_njets_pt_central")')
         ROOT.gROOT.ProcessLine('TList* cdfs_DY_u2_njets_pt_central = (TList*)gaussSmoother_DY_njets_pt_central->Get("cdfs_DY_u2_njets_pt_central")')
 
-        DYSamp.Define("u1_corr_central_GKS",   "UCorrection_Quant(u1, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, cdfs_Data_u1_njets_pt_central, cdfs_DY_u1_njets_pt_central, 0.00001)")
+        DYSamp.Define("u1_corr_central_GKS",   "UCorrection_Quant(u1, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, cdfs_Data_u1_njets_pt_central, cdfs_DY_u1_njets_pt_central, 0.00001, 1)")
         DYSamp.Define("u2_corr_central_GKS",   "UCorrection_Quant(u2, jet_n, Z_pt, h1_njetbins_Data_central, h1_ptbins_Data_central, cdfs_Data_u2_njets_pt_central, cdfs_DY_u2_njets_pt_central, 0.00001)")
         DYSamp.Define("u_pt_corr_central_GKS", "TMath::Sqrt(u1_corr_central_GKS*u1_corr_central_GKS + u2_corr_central_GKS*u2_corr_central_GKS)")
         sampMan.DefineAll("u1_corr_central_GKS",     "u1"  , excludes=['DY'])
@@ -120,7 +122,7 @@ def main():
         
         # assume the central correction is the same as the default correction
         # and is already running
-        DYSamp.Define("u1_corr_central_bkgScale",   "UCorrection_Quant(u1, jet_n, Z_pt, h1_njetbins_Data_central_bkgScale, h1_ptbins_Data_central_bkgScale, tfs_Data_u1_njets_pt_central_bkgScale, tfs_MC_u1_njets_pt_central, 0.00001)")
+        DYSamp.Define("u1_corr_central_bkgScale",   "UCorrection_Quant(u1, jet_n, Z_pt, h1_njetbins_Data_central_bkgScale, h1_ptbins_Data_central_bkgScale, tfs_Data_u1_njets_pt_central_bkgScale, tfs_MC_u1_njets_pt_central, 0.00001,1)")
         DYSamp.Define("u2_corr_central_bkgScale",   "UCorrection_Quant(u2, jet_n, Z_pt, h1_njetbins_Data_central_bkgScale, h1_ptbins_Data_central_bkgScale, tfs_Data_u2_njets_pt_central_bkgScale, tfs_MC_u2_njets_pt_central, 0.00001)")
         DYSamp.Define("u_pt_corr_central_bkgScale", "TMath::Sqrt(u1_corr_central_bkgScale*u1_corr_central_bkgScale + u2_corr_central_bkgScale*u2_corr_central_bkgScale)")
         sampMan.DefineAll("u1_corr_central_bkgScale",     "u1"  , excludes=['DY'])
@@ -278,6 +280,32 @@ def main():
         ofile = ROOT.TFile("results/ZPlots.root", "RECREATE")
         hratio_zpt.Write()
         ofile.Close()
+        
+    if doSnapshot:
+        # save output ntuples    
+        branches = ["Z_pt", "Z_eta", "Z_phi", "m_ll", 
+                    "leadMuon_pt", "leadMuon_eta", "leadMuon_phi",
+                    "subleadMuon_pt", "subleadMuon_eta", "subleadMuon_phi",
+                    "DeepMETResolutionTune_pt", "DeepMETResolutionTune_phi",
+                    "MET_pt", "MET_phi",
+                    "PuppiMET_pt", "PuppiMET_phi",
+                    "u1", "u2", "u_pt", "u_phi",
+                    "weight", "weight_WoVpt", "PV_npvs", "PV_npvsGood", "jet_n"]
+        # more deepmet related variables
+        branches += ["DeepMETPVRobust_pt", "DeepMETPVRobust_phi",
+                     "DeepMETPVRobustNoPUPPI_pt", "DeepMETPVRobustNoPUPPI_phi",
+                     "DeepMETResponseTune_pt", "DeepMETResponseTune_phi"]
+    
+        if doDefaultCorrection:
+            branches += ["u1_corr_central", "u2_corr_central", "u_pt_corr_central", "deepmet_pt_corr_central", "deepmet_phi_corr_central"]
+
+        if doGaussianSmooth:
+            branches += ["u1_corr_central_GKS", "u2_corr_central_GKS", "u_pt_corr_central_GKS", "deepmet_pt_corr_central_GKS", "deepmet_phi_corr_central_GKS"]
+
+        if doBkgScaled and doDefaultCorrection:
+            branches += ["u1_corr_central_bkgScale", "u2_corr_central_bkgScale", "u_pt_corr_central_bkgScale", "deepmet_pt_corr_central_bkgScale", "deepmet_phi_corr_central_bkgScale"]
+
+        sampMan.snapShot("/afs/cern.ch/work/y/yofeng/public/outputroot_withcorrection", branches, addNorm=False)
     
     print("Program end...")
 

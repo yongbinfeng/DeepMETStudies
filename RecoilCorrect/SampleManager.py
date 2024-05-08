@@ -426,18 +426,23 @@ class SampleManager(object):
         # clear the to_draw list
         self.to_draw = OrderedDict()
         
-    def snapShot(self, outdir, branches):
+    def snapShot(self, outdir, branches, addNorm = True):
         """
         write the ntuples to a root file
         """
         if not os.path.exists(outdir):
             os.makedirs(outdir)
             
+        branches_mc = branches
+        if addNorm:
+            branches_mc += ["norm"]
+            
         for mc in self.mcs:
-            # include the normalizing factor
-            mc.rdf = mc.rdf.Define("norm", "1.0 * {}".format(mc.normfactor))
+            if addNorm:
+                # include the normalizing factor
+                mc.rdf = mc.rdf.Define("norm", "1.0 * {}".format(mc.normfactor))
             print("snapshot for ", mc.name)
-            mc.rdf.Snapshot("Events", os.path.join(outdir, mc.name+".root"), branches + ["norm"])
+            mc.rdf.Snapshot("Events", os.path.join(outdir, mc.name+".root"), branches_mc)
         
         print("snapshot for ", self.data.name)
         self.data.rdf.Snapshot("Events", os.path.join(outdir, self.data.name+".root"), branches)

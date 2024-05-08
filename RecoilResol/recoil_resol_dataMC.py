@@ -8,11 +8,11 @@ from utils.RecoilAnalyzer import RecoilAnalyzer
 import argparse
 
 noLumi = False
+#nPV = "PV_npvsGood"
+nPV = "PV_npvs"
 
 ROOT.gROOT.SetBatch(True)
-
 ROOT.ROOT.EnableImplicitMT(10)
-
 ROOT.gSystem.Load("Functions_cc.so")
 
 parser = argparse.ArgumentParser()
@@ -35,11 +35,11 @@ applySc = args.applySc
 print("apply Response corrections: ", applySc)
 
 chain = ROOT.TChain("Events")
-chain.Add("/afs/cern.ch/work/y/yofeng/public/outputroot/Data.root")
+chain.Add("/afs/cern.ch/work/y/yofeng/public/outputroot_withcorrection/Data.root")
 rdf_data = ROOT.ROOT.RDataFrame(chain)
 
 chainMC = ROOT.TChain("Events")
-chainMC.Add("/afs/cern.ch/work/y/yofeng/public/outputroot/DY.root")
+chainMC.Add("/afs/cern.ch/work/y/yofeng/public/outputroot_withcorrection/DY.root")
 rdf_MC = ROOT.ROOT.RDataFrame(chainMC)
 
 def prepareVars(rdf):
@@ -115,13 +115,13 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
    recoilanalyzer.prepareVars()
    recoilanalyzer.prepareResponses(   'u_GEN_pt', xbins_qT)
    recoilanalyzer.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
-   recoilanalyzer.prepareResponses(   'PV_npvsGood', xbins_nVtx)
-   recoilanalyzer.prepareResolutions( 'PV_npvsGood', xbins_nVtx, 400, -200, 200)
+   recoilanalyzer.prepareResponses(   nPV, xbins_nVtx)
+   recoilanalyzer.prepareResolutions( nPV, xbins_nVtx, 400, -200, 200)
 
    hresponses = recoilanalyzer.getResponses('u_GEN_pt')
    hresols_paral_diff, hresols_perp = recoilanalyzer.getResolutions('u_GEN_pt')
-   hresponses_nVtx = recoilanalyzer.getResponses('PV_npvsGood')
-   hresols_paral_diff_VS_nVtx, hresols_perp_VS_nVtx = recoilanalyzer.getResolutions('PV_npvsGood')
+   hresponses_nVtx = recoilanalyzer.getResponses(nPV)
+   hresols_paral_diff_VS_nVtx, hresols_perp_VS_nVtx = recoilanalyzer.getResolutions(nPV)
 
    if applySc:
       if idx == 0:
@@ -145,13 +145,13 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
       recoilanalyzerSc.prepareVars()
       recoilanalyzerSc.prepareResponses(   'u_GEN_pt', xbins_qT)
       recoilanalyzerSc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
-      recoilanalyzerSc.prepareResponses(   'PV_npvsGood', xbins_nVtx)
-      recoilanalyzerSc.prepareResolutions( 'PV_npvsGood', xbins_nVtx, 400, -200, 200)
+      recoilanalyzerSc.prepareResponses(   nPV, xbins_nVtx)
+      recoilanalyzerSc.prepareResolutions( nPV, xbins_nVtx, 400, -200, 200)
 
       hresponsesSc = recoilanalyzerSc.getResponses('u_GEN_pt')
       hresolsSc_paral_diff, hresolsSc_perp = recoilanalyzerSc.getResolutions('u_GEN_pt')
-      hresponsesSc_nVtx = recoilanalyzerSc.getResponses('PV_npvsGood')
-      hresolsSc_paral_diff_VS_nVtx, hresolsSc_perp_VS_nVtx = recoilanalyzerSc.getResolutions('PV_npvsGood')
+      hresponsesSc_nVtx = recoilanalyzerSc.getResponses(nPV)
+      hresolsSc_paral_diff_VS_nVtx, hresolsSc_perp_VS_nVtx = recoilanalyzerSc.getResolutions(nPV)
 
    qtmax = 150.0
 

@@ -15,12 +15,11 @@ import pickle
 
 isData = True
 isAMCNLO = False
-isMADGRAPH = False
 
 subtractBkg = True
-scaleBkg = True
+scaleBkg = False
 
-assert isData+isAMCNLO+isMADGRAPH==1, "must pick one sample from data, or amc@nlo, or madgraph"
+assert isData+isAMCNLO==1, "must pick one sample from data, or amc@nlo, or madgraph"
 
 NGAUSSIAN = 2
 
@@ -62,7 +61,7 @@ def ratio_formatting(subframe, padsize2=0.33):
     yAxs.SetNdivisions(8)
     return
 
-def plotRecoilFit(var, datahist, pdf, nGaussians, nParams, fitresult, njetmin, njetmax, ptmin, ptmax, xmean, xrms, result, postfix):
+def plotRecoilFit(var, datahist, pdf, nGaussians, nParams, fitresult, njetmin, njetmax, ptmin, ptmax, xmean, xrms, result, postfix, isData = False):
     """ 
     plot fit result.
     the function names pre-defined in doFit.
@@ -165,10 +164,8 @@ def plotRecoilFit(var, datahist, pdf, nGaussians, nParams, fitresult, njetmin, n
 
     if isData:
         tag = "Data"
-    elif isAMCNLO:
+    else:
         tag = "MC"
-    elif isMADGRAPH:
-        tag = "MG_MC"
     curr_canvases['base'].Print("plots/fit_{}_{}_{}Gauss.pdf".format(tag, postfix, nGaussians))
     curr_canvases['base'].Print("plots/fit_{}_{}_{}Gauss.png".format(tag, postfix, nGaussians))
 
@@ -182,7 +179,7 @@ def plotRecoilFit(var, datahist, pdf, nGaussians, nParams, fitresult, njetmin, n
     return chi2
 
 
-def doFit(hist, njetmin, njetmax, ptmin, ptmax, ws, postfix="u1_pt0", nGaussians = 3):
+def doFit(hist, njetmin, njetmax, ptmin, ptmax, ws, postfix="u1_pt0", nGaussians = 3, isData = False):
     """ do the fit on u1(uparal) or u2(uperp) """ 
 
     assert "u1" in postfix or "u2" in postfix, "the fit has to be on either u1 or u2 !"
@@ -322,7 +319,7 @@ def doFit(hist, njetmin, njetmax, ptmin, ptmax, ws, postfix="u1_pt0", nGaussians
             result['frac'+str(iG)] = (fracs[iG-1].getVal(), fracs[iG-1].getError() )
 
     # plot the fit
-    chi2 = plotRecoilFit(var, datahist, sig, nGaussians, nParams, fitresult, njetmin, njetmax, ptmin, ptmax, xmean, xrms, result, postfix)
+    chi2 = plotRecoilFit(var, datahist, sig, nGaussians, nParams, fitresult, njetmin, njetmax, ptmin, ptmax, xmean, xrms, result, postfix, isData = isData)
 
     result['chi2']   = (chi2,            0.               )
 
@@ -332,14 +329,33 @@ def doFit(hist, njetmin, njetmax, ptmin, ptmax, ws, postfix="u1_pt0", nGaussians
     return result
 
 
-def main():
+def main(cat = 0):
+    isData = False
+    isAMCNLO = False
+    subtractBkg = False
+    scaleBkg = False
+    
+    assert cat in [0, 1, 2, 3], "category must be 0, 1, 2, or 3"
+    
+    if cat == 0:
+        isData = True
+    
+    if cat == 1:
+        isAMCNLO = True
+    
+    if cat == 2:
+        isData = True
+        subtractBkg = True
+    
+    if cat == 3:
+        isData = True
+        subtractBkg = True
+        scaleBkg = True
     
     if isData:
         sampname = "Data"
     elif isAMCNLO:
         sampname = "DY"
-    elif isMADGRAPH:
-        sampname = "ZJets_MG"
 
     haveScaleVariations = {
                             "Data"     : 0,
@@ -432,8 +448,8 @@ def main():
         results_u1[ijetbin] = OrderedDict()
         results_u2[ijetbin] = OrderedDict()
         for iptbin in list(histos_u1[ijetbin].keys()):
-            results_u1[ijetbin][iptbin] = doFit( histos_u1[ijetbin][iptbin], ijetbin[0], ijetbin[1], iptbin[0], iptbin[1], ws, postfix="u1_njet{}_pt{}".format(ijet, ipt), nGaussians=NGAUSSIAN )
-            results_u2[ijetbin][iptbin] = doFit( histos_u2[ijetbin][iptbin], ijetbin[0], ijetbin[1], iptbin[0], iptbin[1], ws, postfix="u2_njet{}_pt{}".format(ijet, ipt), nGaussians=NGAUSSIAN )
+            results_u1[ijetbin][iptbin] = doFit( histos_u1[ijetbin][iptbin], ijetbin[0], ijetbin[1], iptbin[0], iptbin[1], ws, postfix="u1_njet{}_pt{}".format(ijet, ipt), nGaussians=NGAUSSIAN, isData=isData)
+            results_u2[ijetbin][iptbin] = doFit( histos_u2[ijetbin][iptbin], ijetbin[0], ijetbin[1], iptbin[0], iptbin[1], ws, postfix="u2_njet{}_pt{}".format(ijet, ipt), nGaussians=NGAUSSIAN, isData=isData)
             ipt += 1
         ijet += 1
 
@@ -446,7 +462,6 @@ def main():
     if scaleBkg:
         postfix += "_bkgScale"
     if doDump:
-        tag = "{}Gauss".format(NGAUSSIAN)
         outdir = "results/Fit/"
         if os.path.exists(outdir)==False:
             os.makedirs(outdir)
@@ -465,4 +480,6 @@ def main():
     return 
 
 if __name__ == "__main__":
-   main()
+    print("\n\n\n") 
+    for cat in [1, 2, 3]:
+        main(cat=cat)

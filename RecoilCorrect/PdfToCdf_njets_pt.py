@@ -7,29 +7,11 @@ and u2(uperp) distributions, intead of doing fits.
 
 import ROOT
 import numpy as np
-from collections import OrderedDict
 import sys, os
 sys.path.append("../RecoilResol/CMSPLOTS")
-from tdrstyle import setTDRStyle
 from myFunction import DrawHistos
 from Utils.utils import getPtBins, getJetBins
 from Smoother import Smoother
-
-isData = True
-isAMCNLO = False
-isMADGRAPH = False
-
-wstrings = ["central", "mur_1_muf_0p5", "mur_1_muf_2", "mur_0p5_muf_1", "mur_2_muf_1", "mur_0p5_muf_0p5", "mur_2_muf_2"]
-WSTRING = wstrings[0]
-
-assert isData+isAMCNLO+isMADGRAPH==1, "must pick one sample from data, or amc@nlo, or madgraph"""
-
-doPdfToCdf = True
-scaleBkg = True
-doGKS = False
-
-if scaleBkg and isData:
-    WSTRING += "_bkgScale"
 
 ROOT.gROOT.SetBatch(True)
 
@@ -108,14 +90,41 @@ def rdhToGKS(ws, nbins, jetbin, uname, postfix=""):
     return dhs, gkss, rdhs_gks, pdfs_gks, cdfs_gks
 
 
-def main():
+def main(cat = 0, opt = 0):
+    
+    isData = False
+    isAMCNLO = False
+    scaleBkg = False
+    
+    doPdfToCdf = False
+    doGKS = False
+    
+    assert cat in [0, 1, 2], "cat must be either 0, 1, or 2"
+    assert opt in [0, 1], "opt must be either 0 or 1"
+    
+    if cat == 0:
+        isData = True
+    elif cat == 1:
+        isAMCNLO = True
+    elif cat == 2:
+        isData = True
+        scaleBkg = True
+        
+    if opt == 0:
+        doPdfToCdf = True
+    elif opt == 1:
+        doGKS = True
+    
+    wstrings = ["central", "mur_1_muf_0p5", "mur_1_muf_2", "mur_0p5_muf_1", "mur_2_muf_1", "mur_0p5_muf_0p5", "mur_2_muf_2"]
+    WSTRING = wstrings[0]
+
+    if scaleBkg and isData:
+        WSTRING += "_bkgScale"
 
     if isData:
         sampname = "Data"
     elif isAMCNLO:
         sampname = "DY"
-    elif isMADGRAPH:
-        sampname = "ZJets_MG"
 
     inputname = "results/Fit/results_fit_{}_njets_pt_{}.root".format(sampname, WSTRING)
 
@@ -208,4 +217,8 @@ def main():
     #input()
 
 if __name__ == "__main__":
-   main()
+    #main(0, 0)
+    #main(0, 1)
+    #main(1, 0)
+    main(1, 1)
+    #main(2, 0)

@@ -10,23 +10,31 @@ import numpy as np
 import os
 from collections import OrderedDict
 from SampleManager import Sample
-import CMS_lumi
-import pickle
 from Utils.utils import getPtBins, getJetBins
 
-isData     = True
-isAMCNLO   = False
-isMADGRAPH = False
-isTTbar    = False
-isDiboson  = False
-
-assert isData+isAMCNLO+isMADGRAPH+isTTbar+isDiboson==1, "must pick one sample from data, or amc@nlo, or madgraph"
-
+reweightzpt = True
 ROOT.gROOT.SetBatch(True)
-
 ROOT.ROOT.EnableImplicitMT(18)
 
-def main():
+def makeU1U2(cat = 0):
+    isData = False
+    isAMCNLO = False
+    isMADGRAPH = False
+    isTTbar = False
+    isDiboson = False
+    
+    assert cat in [0, 1, 2, 3, 4], "Invalid category"
+    
+    if cat == 0:
+        isData    = True
+    elif cat == 1:
+        isAMCNLO  = True
+    elif cat == 2:
+        isMADGRAPH = True
+    elif cat == 3:
+        isTTbar = True
+    elif cat == 4:
+        isDiboson = True
     
     input_data    = "inputs/inputs_Z_UL_Post/input_data.txt"
     input_dy      = "inputs/inputs_Z_UL_Post/input_zjets.txt"
@@ -44,9 +52,26 @@ def main():
         samp.Define("norm", "1")
         samples = [samp]
     elif isAMCNLO:
+        ROOT.gROOT.ProcessLine('TFile* f_zpt = TFile::Open("results/ZPlots.root ")')
+        ROOT.gROOT.ProcessLine('TH1D* h_zpt_ratio  = (TH1D*)f_zpt->Get("hratios_0")')
+        
         samp = Sample(input_dy,    xsec = 0,  color=5,  reweightzpt = False, legend="DY", name="DY", prepareVars=False, select=False)
         samp.donormalization = False
         samp.varyQCDScale = False
+        
+        if reweightzpt:
+            samp.Define("zptweight_bare", "ZptReWeight(Z_pt, h_zpt_ratio, 0)")
+            samp.Define("weight_bare", "weight * zptweight_bare")
+            samp.Define("dumbVal", "1")
+            h_weighted = samp.rdf.Histo1D(("h_weighted", "h_weighted", 2, 0, 2.0), "dumbVal", "weight_bare")
+            h_woweight = samp.rdf.Histo1D(("h_woweight", "h_woweight", 2, 0, 2.0), "dumbVal", "weight")
+            zptnorm = h_weighted.Integral() / h_woweight.Integral()
+            print("without zpt reweighting norm: ", h_woweight.Integral())
+            print("with zpt reweighting norm: ", h_weighted.Integral())
+            print("Zpt reweighting norm: ", zptnorm)
+            samp.Define("zptweight", f"zptweight_bare * {zptnorm}")
+            samp.Define("weight_corr", "weight * zptweight")
+            
         samples = [samp]
     elif isMADGRAPH:
         # outdated for now
@@ -77,6 +102,10 @@ def main():
         ZZ2L2QSamp.varyQCDScale = False
         DYTauSamp.varyQCDScale = False
         samples = [ WW2LSamp, WZ2LSamp, ZZ2LSamp, ZZ2L2QSamp, DYTauSamp]
+        
+    weightstr = "weight"
+    if reweightzpt and isAMCNLO:
+        weightstr = "weight_corr"
 
     ptbins = getPtBins()
     njetbins = getJetBins()
@@ -99,9 +128,10 @@ def main():
                 ptmax = ptbins[ipt+1]
     
                 wstring = "njetbin_{}_ptbin_{}_{}".format(ijet, ipt, postfix)
-                rdf = rdf.Define(wstring, "(jet_n>={} && jet_n<={}) * (Z_pt>={} && Z_pt<{} ) * weight * norm * {}".format(njetmin, njetmax, ptmin, ptmax, extra_weight))
+                rdf = rdf.Define(wstring, "(jet_n>={} && jet_n<={}) * (Z_pt>={} && Z_pt<{} ) * {} * norm * {}".format(njetmin, njetmax, ptmin, ptmax, weightstr, extra_weight))
                 hname_u1 = "hist_uparal_{}".format(wstring)
-                histos_u1[(njetmin,njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 240+int(ptmax)-int(ptmin), -120.0+int(ptmin), 120.0+int(ptmax)), "u1",  wstring )
+                #histos_u1[(njetmin,njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 240+int(ptmax)-int(ptmin), -120.0+int(ptmin), 120.0+int(ptmax)), "u1",  wstring )
+                histos_u1[(njetmin, njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 240, -120.0-0.5*(ptmax-ptmin), 120.0+0.5*(ptmax-ptmin)),  "u1diff",  wstring )
                 hname_u2 = "hist_uperp_{}".format(wstring)
                 histos_u2[(njetmin, njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u2, hname_u2, 240, -120.0,       120.0),       "u2",  wstring )
 
@@ -134,6 +164,7 @@ def main():
             # everything in one loop.
             print(wname, wstring)
             samp.rdf = samp.rdf.Define(wname, wstring)
+            samp.rdf = samp.rdf.Define("u1diff", "u1 - Z_pt")
             histos_u1[wname], histos_u2[wname] = prepareU1U2(samp.rdf, postfix="{}_{}".format(samp.name, wname), extra_weight=wname)
 
         #if samp.donormalization:
@@ -168,4 +199,5 @@ def main():
     return 
 
 if __name__ == "__main__":
-   main()
+    for cat in [0, 1, 3, 4]:
+        makeU1U2(cat = cat)

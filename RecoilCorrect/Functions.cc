@@ -93,7 +93,7 @@ Float_t UCorrection(float u, float zpt, TF1* f_mc_sigma, TF1* f_data_sigma)
     return u_corr;
 }
 
-Float_t UCorrection_Quant(float u, float zpt, TH1F* hptbins, TList* tfs_Data, TList* tfs_MC, float qcut = 0.005)
+Float_t UCorrection_Quant(float u, float zpt, TH1F* hptbins, TList* tfs_Data, TList* tfs_MC, float qcut = 0.005, bool isU1Diff = false)
 {
     float zptmax = hptbins->GetXaxis()->GetXmax();
     float zptmin = hptbins->GetXaxis()->GetXmin();
@@ -104,15 +104,24 @@ Float_t UCorrection_Quant(float u, float zpt, TH1F* hptbins, TList* tfs_Data, TL
     TF1* tf1_Data = (TF1*)tfs_Data->At(index);
 
     if( u > tf1_MC->GetXmax() || u < tf1_MC->GetXmin() ) return u;
-    float qt = tf1_MC->Eval(u); // quantile, cdf
+    
+    float u_temp = u;
+    if (isU1Diff) {
+        u_temp -= zpt;
+    }
+    float qt = tf1_MC->Eval(u_temp); // quantile, cdf
     // no correction on outliers
     if(qcut>0) {
         if( qt<qcut || qt>1-qcut ) return u;
     }
-    return tf1_Data->GetX( qt );
+    float u_corr = tf1_Data->GetX( qt );
+    if (isU1Diff) {
+        u_corr += zpt;
+    }
+    return u_corr;
 }
 
-Float_t UCorrection_Quant(float u, int njet, float zpt, TH1F* hjetbins, TH1F* hptbins, TList* tfs_Data, TList* tfs_MC, float qcut = 0.005)
+Float_t UCorrection_Quant(float u, int njet, float zpt, TH1F* hjetbins, TH1F* hptbins, TList* tfs_Data, TList* tfs_MC, float qcut = 0.005, bool isU1Diff = false)
 {
     float zptmax = hptbins->GetXaxis()->GetXmax();
     float njetmax = hjetbins->GetXaxis()->GetXmax();
@@ -126,12 +135,21 @@ Float_t UCorrection_Quant(float u, int njet, float zpt, TH1F* hjetbins, TH1F* hp
     TF1* tf1_Data = (TF1*)((TList*)tfs_Data->At(njetbin))->At(index);
 
     if( u > tf1_MC->GetXmax() || u < tf1_MC->GetXmin() ) return u;
-    float qt = tf1_MC->Eval(u); // quantile, cdf
+
+    float u_temp = u;
+    if (isU1Diff) {
+        u_temp -= zpt;
+    }
+    float qt = tf1_MC->Eval(u_temp); // quantile, cdf
     // no correction on outliers
     if(qcut>0) {
         if( qt<qcut || qt>1-qcut ) return u;
     }
-    return tf1_Data->GetX( qt );
+    float u_corr = tf1_Data->GetX( qt );
+    if (isU1Diff) {
+        u_corr += zpt;
+    }
+    return u_corr;
 }
 
 Float_t ZptReWeight(float zpt, TH1D* h_zpt_ratio_data_vs_MC, bool isData = false)
