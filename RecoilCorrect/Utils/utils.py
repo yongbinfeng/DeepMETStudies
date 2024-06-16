@@ -7,3 +7,7 @@ def getPtBins():
 def getJetBins():
     njetbins = np.array([-0.5,0.5,1.5,9999])
     return njetbins
+
+def getInclusiveJetBins():
+    njetbins = np.array([-0.5, 9999])
+    return njetbins

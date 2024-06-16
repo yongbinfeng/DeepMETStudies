@@ -164,6 +164,16 @@ Float_t UCorrection_Quant(float u, int njet, float zpt, TH1F *hjetbins, TH1F *hp
     {
         u_corr += zpt;
     }
+    if (isnan(u_corr))
+    {
+        std::cout << "u_corr is nan" << std::endl;
+        std::cout << "u: " << u << " zpt: " << zpt << " njet: " << njet << std::endl;
+        std::cout << "qt: " << qt << std::endl;
+        std::cout << "tf1_MC: " << tf1_MC->GetName() << std::endl;
+        std::cout << "tf1_Data: " << tf1_Data->GetName() << std::endl;
+        // return original value
+        return u;
+    }
     return u_corr;
 }
 

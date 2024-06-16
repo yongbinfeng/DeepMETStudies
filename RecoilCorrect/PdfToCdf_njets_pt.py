@@ -10,7 +10,7 @@ import numpy as np
 import sys, os
 sys.path.append("../RecoilResol/CMSPLOTS")
 from myFunction import DrawHistos
-from Utils.utils import getPtBins, getJetBins
+from Utils.utils import getPtBins, getJetBins, getInclusiveJetBins
 from Smoother import Smoother
 
 ROOT.gROOT.SetBatch(True)
@@ -90,7 +90,7 @@ def rdhToGKS(ws, nbins, jetbin, uname, postfix=""):
     return dhs, gkss, rdhs_gks, pdfs_gks, cdfs_gks
 
 
-def main(cat = 0, opt = 0):
+def main(proc = 0, opt = 0, jetbins = True):
     
     isData = False
     isAMCNLO = False
@@ -99,14 +99,14 @@ def main(cat = 0, opt = 0):
     doPdfToCdf = False
     doGKS = False
     
-    assert cat in [0, 1, 2], "cat must be either 0, 1, or 2"
+    assert proc in [0, 1, 2], "proc must be either 0, 1, or 2"
     assert opt in [0, 1], "opt must be either 0 or 1"
     
-    if cat == 0:
+    if proc == 0:
         isData = True
-    elif cat == 1:
+    elif proc == 1:
         isAMCNLO = True
-    elif cat == 2:
+    elif proc == 2:
         isData = True
         scaleBkg = True
         
@@ -126,17 +126,23 @@ def main(cat = 0, opt = 0):
     elif isAMCNLO:
         sampname = "DY"
 
-    inputname = "results/Fit/results_fit_{}_njets_pt_{}.root".format(sampname, WSTRING)
+    ptbins = getPtBins()
+    if jetbins:
+        inputname = "results/Fit/results_fit_{}_njets_pt_{}.root".format(sampname, WSTRING)
+        njetbins = getJetBins()
+    else:
+        inputname = "results/Fit/results_fit_{}_njetsInclusive_pt_{}.root".format(sampname, WSTRING)
+        njetbins = getInclusiveJetBins()
 
     ifile = ROOT.TFile(inputname)
     ws = ifile.Get("fit")
 
-    ptbins = getPtBins()
-    njetbins = getJetBins()
-
     if doPdfToCdf:
         print("start converting pdfs from fits to cdfs from ", inputname)
-        ofilename = "results/Fit/fitfunctions_{}_njets_pt_{}.root".format(sampname, WSTRING)
+        if jetbins:
+            ofilename = "results/Fit/fitfunctions_{}_njets_pt_{}.root".format(sampname, WSTRING)
+        else:
+            ofilename = "results/Fit/fitfunctions_{}_njetsInclusive_pt_{}.root".format(sampname, WSTRING)
         ofile = ROOT.TFile(ofilename, "RECREATE")
         tfs_u1 = ROOT.TList()
         tfs_u2 = ROOT.TList()
@@ -177,7 +183,10 @@ def main(cat = 0, opt = 0):
         odir = "results/GaussSmoother"
         if not os.path.exists(odir):
             os.makedirs(odir)
-        ofilename = "{}/gaussSmoother_{}_njets_pt_{}.root".format(odir, sampname, "central")
+        if jetbins:
+            ofilename = "{}/gaussSmoother_{}_njets_pt_{}.root".format(odir, sampname, "central")
+        else:
+            ofilename = "{}/gaussSmoother_{}_njetsInclusive_pt_{}.root".format(odir, sampname, "central")
         ofile = ROOT.TFile(ofilename, "RECREATE")
         cdfs_gks_u1 = ROOT.TList()
         cdfs_gks_u2 = ROOT.TList()
@@ -217,8 +226,14 @@ def main(cat = 0, opt = 0):
     #input()
 
 if __name__ == "__main__":
-    #main(0, 0)
-    #main(0, 1)
-    #main(1, 0)
+    # pdf2cdf for data and MC
+    main(0, 0)
+    main(1, 0)
+    # gks for data and MC
+    main(0, 1)
     main(1, 1)
-    #main(2, 0)
+    # scale bkg variation, data only
+    main(2, 0)
+    # data, pdf2cdf, inlcusive jet bins
+    main(0, 0, False)
+    main(1, 0, False)

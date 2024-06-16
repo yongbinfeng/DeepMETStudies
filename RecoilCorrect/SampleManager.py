@@ -49,7 +49,7 @@ class DrawConfig(object):
         self.yrlabel = kwargs.get('yrlabel', 'Data / MC ')
 
         self.legends = kwargs.get('legends', [])
-        self.legendPos = kwargs.get('legendPos', [0.92, 0.88, 0.70, 0.66])
+        self.legendPos = kwargs.get('legendPos', [0.92, 0.85, 0.70, 0.58])
         self.colors = kwargs.get('colors', [])
 
         self.redrawihist = kwargs.get('redrawihist', 0)
@@ -107,30 +107,43 @@ class Sample(object):
         # the tree must be held by some vars, or else it would be 
         # closed after this function and the rdf would crash
         self.tree = ROOT.TChain("Events")
-        for line in open( inputfiles, "r"):
-            fname = line.rstrip()
-            print(fname)
-            self.tree.Add( fname )
+        if inputfiles.endswith(".root"):
+            self.tree.Add( inputfiles )
+        else:
+            print("Adding RDF from the list of files in ", inputfiles)
+            for line in open( inputfiles, "r"):
+                fname = line.rstrip()
+                print(fname)
+                self.tree.Add( fname )
 
         self.rdf_org = ROOT.ROOT.RDataFrame( self.tree )
         #print self.rdf_org.Count().GetValue()
+        
+    def getNMCEvtFromOneFile(self, inputfile, suffix = ""):
+        ifile = ROOT.TFile(inputfile)
+        ttree = ifile.Get("Events")
+        hist = ROOT.TH1F(f"h1_{suffix}", f"h1_{suffix}", 2, -2, 2)
+        ttree.Draw(f"(genWeight >0 ? 1: -1) >> {hist.GetName()}")
+        Npos = hist.GetBinContent(2)
+        Nneg = hist.GetBinContent(1)
+        ifile.Close()
+        return Npos, Nneg
 
     def getNMCEvt(self, inputfiles):
         Npos = 0
         Nneg = 0
-        print("count total number of MC events from:")
+        print("count total number of MC events from: ", inputfiles)
         nfiles = 0
-        for line in open( inputfiles, "r"):
-            fname = line.rstrip()
-            print(fname)
-            ifile = ROOT.TFile(fname)
-            ttree = ifile.Get("Events")
-            hist = ROOT.TH1F("h1_{}".format(nfiles), "h1_{}".format(nfiles), 2, -2, 2)
-            ttree.Draw(f"(genWeight >0 ? 1: -1) >> {hist.GetName()}")
-            Npos += hist.GetBinContent(2)
-            Nneg += hist.GetBinContent(1)
-            ifile.Close()
-            nfiles += 1
+        if inputfiles.endswith(".root"):
+            Npos, Nneg = self.getNMCEvtFromOneFile(inputfiles)
+        else:
+            for line in open( inputfiles, "r"):
+                fname = line.rstrip()
+                print(fname)
+                Npos_temp, Nneg_temp = self.getNMCEvtFromOneFile(fname, suffix = nfiles)
+                Npos += Npos_temp
+                Nneg += Nneg_temp
+                nfiles += 1
         print("total number of events: {}, in which {} are positive, {} are negative".format(Npos+Nneg, Npos, Nneg))
         return Npos-Nneg
 

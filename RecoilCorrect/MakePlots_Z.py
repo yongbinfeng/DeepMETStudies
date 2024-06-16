@@ -8,10 +8,7 @@ import numpy as np
 from collections import OrderedDict
 import sys
 sys.path.append("../RecoilResol/CMSPLOTS")
-from tdrstyle import setTDRStyle
 from myFunction import DrawHistos, THStack2TH1
-import CMS_lumi
-import pickle
 
 from SampleManager import DrawConfig, Sample, SampleManager
 
@@ -21,9 +18,13 @@ ROOT.ROOT.EnableImplicitMT(15)
 doDefaultCorrection = True
 doGaussianSmooth = True
 doBkgScaled = True
+doJetsInclusive = True
+
 reweightZpt = True
 
-doSnapshot = True
+doSnapshot = False
+if not reweightZpt:
+    doSnapshot = False
 
 def main():
     print("Program start...")
@@ -67,9 +68,11 @@ def main():
         DYSamp.Define("zptweight", f"zptweight_bare * {zptnorm}")
         
         DYSamp.Define("weight_corr", "weight * zptweight * norm")
-        sampMan.DefineAll("weight_corr", "weight * norm", excludes=['DY'])
+        TTbarSamp.Define("weight_corr", "weight * norm * 1.4")
+        sampMan.DefineAll("weight_corr", "weight * norm", excludes=['DY', 'ttbar'])
     else:
-        sampMan.DefineAll("weight_corr", "weight * norm")
+        sampMan.DefineAll("weight_corr", "weight * norm", excludes=['ttbar'])
+        TTbarSamp.Define("weight_corr", "weight * norm * 1.4")
     
     sampMan.SetDefaultWeightName("weight_corr")
     
@@ -113,6 +116,27 @@ def main():
         sampMan.DefineAll("deepmet_pt_corr_central_GKS", "deepmet_corr_central_GKS.Mod()") 
         sampMan.DefineAll("deepmet_phi_corr_central_GKS", "TVector2::Phi_mpi_pi(deepmet_corr_central_GKS.Phi())")
         
+    if doJetsInclusive:
+        ## corrections using jet inclusive bins
+        ROOT.gROOT.ProcessLine('TFile* fitfunctions_Data_jetsInclusive = TFile::Open("results/Fit/fitfunctions_Data_njetsInclusive_pt_central.root")')
+        ROOT.gROOT.ProcessLine('TH1F* h1_ptbins_Data_central_jetsInclusive = (TH1F*)fitfunctions_Data_jetsInclusive->Get("h1_ptbins_Data_central")')
+        ROOT.gROOT.ProcessLine('TH1F* h1_njetbins_Data_central_jetsInclusive = (TH1F*)fitfunctions_Data_jetsInclusive->Get("h1_njetbins_Data_central")')
+        ROOT.gROOT.ProcessLine('TList* tfs_Data_u1_njets_pt_central_jetsInclusive  = (TList*)fitfunctions_Data_jetsInclusive->Get("tfs_Data_u1_njets_pt_central")')
+        ROOT.gROOT.ProcessLine('TList* tfs_Data_u2_njets_pt_central_jetsInclusive  = (TList*)fitfunctions_Data_jetsInclusive->Get("tfs_Data_u2_njets_pt_central")')
+        ROOT.gROOT.ProcessLine('TFile* fitfunctions_DY_central_jetsInclusive = TFile::Open("results/Fit/fitfunctions_DY_njetsInclusive_pt_central.root")')
+        ROOT.gROOT.ProcessLine('TList* tfs_MC_u1_njets_pt_central_jetsInclusive = (TList*)fitfunctions_DY_central_jetsInclusive->Get("tfs_DY_u1_njets_pt_central")')
+        ROOT.gROOT.ProcessLine('TList* tfs_MC_u2_njets_pt_central_jetsInclusive = (TList*)fitfunctions_DY_central_jetsInclusive->Get("tfs_DY_u2_njets_pt_central")')
+
+        DYSamp.Define("u1_corr_central_jetsInclusive",   "UCorrection_Quant(u1, jet_n, Z_pt, h1_njetbins_Data_central_jetsInclusive, h1_ptbins_Data_central_jetsInclusive, tfs_Data_u1_njets_pt_central_jetsInclusive, tfs_MC_u1_njets_pt_central_jetsInclusive, 0.00001, 1)")
+        DYSamp.Define("u2_corr_central_jetsInclusive",   "UCorrection_Quant(u2, jet_n, Z_pt, h1_njetbins_Data_central_jetsInclusive, h1_ptbins_Data_central_jetsInclusive, tfs_Data_u2_njets_pt_central_jetsInclusive, tfs_MC_u2_njets_pt_central_jetsInclusive, 0.00001)")
+        DYSamp.Define("u_pt_corr_central_jetsInclusive", "TMath::Sqrt(u1_corr_central_jetsInclusive*u1_corr_central_jetsInclusive + u2_corr_central_jetsInclusive*u2_corr_central_jetsInclusive)")
+        sampMan.DefineAll("u1_corr_central_jetsInclusive",     "u1"  , excludes=['DY'])
+        sampMan.DefineAll("u2_corr_central_jetsInclusive",     "u2"  , excludes=['DY'])
+        sampMan.DefineAll("u_pt_corr_central_jetsInclusive",   "u_pt", excludes=['DY'])
+        sampMan.DefineAll("deepmet_corr_central_jetsInclusive", "METVec(Z_pt, Z_phi, u1_corr_central_jetsInclusive, u2_corr_central_jetsInclusive)")
+        sampMan.DefineAll("deepmet_pt_corr_central_jetsInclusive", "deepmet_corr_central_jetsInclusive.Mod()") 
+        sampMan.DefineAll("deepmet_phi_corr_central_jetsInclusive", "TVector2::Phi_mpi_pi(deepmet_corr_central_jetsInclusive.Phi())")
+        
     if doBkgScaled and doDefaultCorrection:
         ROOT.gROOT.ProcessLine('TFile* fitfunctions_Data_bkgScale = TFile::Open("results/Fit/fitfunctions_Data_njets_pt_central_bkgScale.root")')
         ROOT.gROOT.ProcessLine('TH1F* h1_ptbins_Data_central_bkgScale   = (TH1F*)fitfunctions_Data_bkgScale->Get("h1_ptbins_Data_central_bkgScale")')
@@ -133,16 +157,17 @@ def main():
         sampMan.DefineAll("deepmet_phi_corr_central_bkgScale", "TVector2::Phi_mpi_pi(deepmet_corr_central_bkgScale.Phi())")
         
 
-    met_pt_bins = np.array([0., 2.0, 4., 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 33, 36, 39, 42, 45, 48, 51, 55, 60, 65, 70, 75, 80, 90, 100, 110, 120, 135, 150])
+    met_pt_bins = np.array([0., 2.0, 4., 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 33, 36, 39, 42, 45, 48, 51, 55, 60, 65, 70, 75, 80, 90, 100, 110, 125, 150])
     u1_bins = np.array([-40.,-36.,-32., -28., -25., -22.0, -20.0, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 53, 56, 59, 64, 68, 72, 76, 80, 85, 90, 100])
     u2_bins = np.array([-80., -70., -65., -60., -56., -52, -48, -44, -40, -37, -34, -31, -28, -25., -22., -20, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 16, 18, 20, 22, 25, 28, 31, 34, 37, 40, 44, 48, 52, 56, 60, 65, 70, 80])
-    u_bins = np.array([0., 2., 4., 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 43, 46, 49, 52, 56, 60, 64, 68, 72, 76, 80, 85, 90, 95, 100, 105, 110, 115, 120, 130, 140, 150])
+    u_bins = np.array([0., 2., 4., 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 43, 46, 49, 52, 56, 60, 64, 68, 72, 76, 80, 85, 90, 95, 100, 105, 110, 125, 140, 150])
     phimin = -ROOT.TMath.Pi()
     phimax = ROOT.TMath.Pi()
 
     # z kinematics
-    #sampMan.cacheDraw("Z_pt", "histo_zjets_zpt_WoZptWeight", 30, 0, 60, DrawConfig(xmin=0, xmax=60, xlabel='p^{ll}_{T} [GeV]'), weightname="weight_WoVpt")
-    sampMan.cacheDraw("Z_pt", "histo_zjets_zpt", 30, 0, 60, DrawConfig(xmin=0, xmax=60, xlabel='p^{ll}_{T} [GeV]'))
+    zptbins = np.array([0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0, 32.0, 34.0, 36.0, 38.0, 40.0, 42.0, 44.0, 46.0, 48.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0, 180.0])
+    #sampMan.cacheDraw("Z_pt", "histo_zjets_zpt_WoZptWeight", zptbins, DrawConfig(xmin=0, xmax=180, xlabel='p^{ll}_{T} [GeV]'), weightname="weight_WoVpt")
+    sampMan.cacheDraw("Z_pt", "histo_zjets_zpt", zptbins, DrawConfig(xmin=0, xmax=180, xlabel='p^{ll}_{T} [GeV]'))
     sampMan.cacheDraw("Z_eta", "histo_zjets_zeta", 30, -3, 3, DrawConfig(xmin=-3, xmax=3, xlabel='#eta^{ll}'))
     sampMan.cacheDraw("Z_phi", "histo_zjets_zphi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='#phi^{ll}'))
     sampMan.cacheDraw("m_ll", "histo_zjets_mll", 30, 80, 100, DrawConfig(xmin=80, xmax=100, xlabel='m^{ll} [GeV]'))
@@ -170,15 +195,19 @@ def main():
     
     # corrected deepmet
     def DrawCorrection(postfix, h_met_unc = None, h_u1_unc = None, h_u2_unc = None, h_u_unc = None):
-        sampMan.cacheDraw("deepmet_pt_corr_"+postfix, "histo_zjets_deepmet_pt_corr_"+postfix, met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='p^{miss}_{T} [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True, hratiopanel = h_met_unc))
+        sampMan.cacheDraw("deepmet_pt_corr_"+postfix, "histo_zjets_deepmet_pt_corr_"+postfix, met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='p^{miss}_{T} [GeV]', yrmin=0.79, yrmax=1.21, addOverflow=True, addUnderflow=True, hratiopanel = h_met_unc))
         sampMan.cacheDraw("deepmet_phi_corr_"+postfix, "histo_zjets_deepmet_phi_corr_"+postfix, 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='p^{miss}_{T} #phi'))
         sampMan.cacheDraw("u1_corr_"+postfix, "histo_zjets_u1_corr_"+postfix, u1_bins, DrawConfig(xmin=-40.0, xmax=100, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u1_unc))
         sampMan.cacheDraw("u2_corr_"+postfix, "histo_zjets_u2_corr_"+postfix, u2_bins, DrawConfig(xmin=-80., xmax=80., xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u2_unc))
-        sampMan.cacheDraw("u_pt_corr_"+postfix,    "histo_zjets_u_pt_corr_"+postfix, u_bins,  DrawConfig(xmin=0, xmax=150, xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u_unc))
+        sampMan.cacheDraw("u_pt_corr_"+postfix,    "histo_zjets_u_pt_corr_"+postfix, u_bins,  DrawConfig(xmin=0, xmax=150, xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u_unc, yrmin=0.79, yrmax=1.21))
 
     if doDefaultCorrection:
         DrawCorrection("central")
+    if doGaussianSmooth:
         DrawCorrection("central_GKS")
+    if doJetsInclusive:
+        DrawCorrection("central_jetsInclusive")
+    if doBkgScaled and doDefaultCorrection:
         DrawCorrection("central_bkgScale")
     
     sampMan.launchDraw()
@@ -265,14 +294,24 @@ def main():
         return histo_met_uncs, histo_u_pt_uncs, histo_u1_uncs, histo_u2_uncs
         
 
-    colors = [1,2, 3]
-    linestyles = [1,3, 8]
+    colors = [1,2, 3, 4]
+    linestyles = [1,3, 8, 9]
 
-    legends = ["2-Gaussian Fit", "Gaussian Smoothing", "With Background Scaling"]
-    compRatios(  ["corr_central", "corr_central_GKS", "corr_central_bkgScale"], colors, linestyles, legends, "FitVSSmoothing")
-    histos_met_uncs, histos_u_pt_uncs, histo_u1_uncs, histo_u2_uncs = compMCRatios(["corr_central", "corr_central_GKS", "corr_central_bkgScale"], colors, linestyles, legends, "FitVSSmoothing")
+    legends = ["Double-Gaussian fit", "Gaussian smoothing", "With inclusive jet bins", "With background scaling"]
+    corrs = []
+    if doDefaultCorrection:
+        corrs.append("corr_central")
+    if doGaussianSmooth:
+        corrs.append("corr_central_GKS")
+    if doJetsInclusive:
+        corrs.append("corr_central_jetsInclusive")
+    if doBkgScaled and doDefaultCorrection:
+        corrs.append("corr_central_bkgScale")
+    compRatios(  corrs, colors, linestyles, legends, "FitVSSmoothing")
+    histos_met_uncs, histos_u_pt_uncs, histo_u1_uncs, histo_u2_uncs = compMCRatios(corrs, colors, linestyles, legends, "FitVSSmoothing")
     
-    DrawCorrection("central", histos_met_uncs, histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs)
+    #DrawCorrection("central", histos_met_uncs, histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs)
+    DrawCorrection("central_jetsInclusive", histos_met_uncs, histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs)
     sampMan.launchDraw()
     
     if not reweightZpt:
@@ -301,6 +340,9 @@ def main():
 
         if doGaussianSmooth:
             branches += ["u1_corr_central_GKS", "u2_corr_central_GKS", "u_pt_corr_central_GKS", "deepmet_pt_corr_central_GKS", "deepmet_phi_corr_central_GKS"]
+        
+        if doJetsInclusive:
+            branches += ["u1_corr_central_jetsInclusive", "u2_corr_central_jetsInclusive", "u_pt_corr_central_jetsInclusive", "deepmet_pt_corr_central_jetsInclusive", "deepmet_phi_corr_central_jetsInclusive"]
 
         if doBkgScaled and doDefaultCorrection:
             branches += ["u1_corr_central_bkgScale", "u2_corr_central_bkgScale", "u_pt_corr_central_bkgScale", "deepmet_pt_corr_central_bkgScale", "deepmet_phi_corr_central_bkgScale"]

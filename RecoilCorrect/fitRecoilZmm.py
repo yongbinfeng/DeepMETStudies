@@ -10,16 +10,8 @@ import sys, os
 sys.path.append("../RecoilResol/CMSPLOTS/")
 from tdrstyle import setTDRStyle
 import CMS_lumi
-from Utils.utils import getPtBins, getJetBins
+from Utils.utils import getPtBins, getJetBins, getInclusiveJetBins
 import pickle
-
-isData = True
-isAMCNLO = False
-
-subtractBkg = True
-scaleBkg = False
-
-assert isData+isAMCNLO==1, "must pick one sample from data, or amc@nlo, or madgraph"
 
 NGAUSSIAN = 2
 
@@ -329,25 +321,25 @@ def doFit(hist, njetmin, njetmax, ptmin, ptmax, ws, postfix="u1_pt0", nGaussians
     return result
 
 
-def main(cat = 0):
+def main(proc = 0, jetbins = True):
     isData = False
     isAMCNLO = False
     subtractBkg = False
     scaleBkg = False
     
-    assert cat in [0, 1, 2, 3], "category must be 0, 1, 2, or 3"
+    assert proc in [0, 1, 2, 3], "procegory must be 0, 1, 2, or 3"
     
-    if cat == 0:
+    if proc == 0:
         isData = True
     
-    if cat == 1:
+    if proc == 1:
         isAMCNLO = True
     
-    if cat == 2:
+    if proc == 2:
         isData = True
         subtractBkg = True
     
-    if cat == 3:
+    if proc == 3:
         isData = True
         subtractBkg = True
         scaleBkg = True
@@ -374,19 +366,22 @@ def main(cat = 0):
               }
 
     ptbins = getPtBins()
-    njetbins = getJetBins()
+    if jetbins:
+        njetbins = getJetBins()
+    else:
+        njetbins = getInclusiveJetBins()
             
     print(ptbins)
     print(njetbins)
-
-    #ptbins = np.array([0,0.5,1.0])
-    #njetbins = np.array([-0.5,0.5])
 
     # read u1 (uparal) and u2 (uperp) distributions 
     # in differen Z pt and jet multiplicity bins
     def readU1U2(sampname, wname):
         postfix="{}_{}".format(sampname, wname)
-        filename = "results/U1U2/histos_u1u2_{}_njets_pt_{}.root".format(sampname, wname)
+        if jetbins:
+            filename = "results/U1U2/histos_u1u2_{}_njets_pt_{}.root".format(sampname, wname)
+        else:
+            filename = "results/U1U2/histos_u1u2_{}_njetsInclusive_pt_{}.root".format(sampname, wname)
 
         print("read u1, u2 histograms from file ", filename)
 
@@ -429,14 +424,17 @@ def main(cat = 0):
                     hBkg_u1 = histosBkg_u1[ijetbin][iptbin]
                     hBkg_u2 = histosBkg_u2[ijetbin][iptbin]
 
-                    # subtract ttbar bkg contribution from data
+                    # subtract ttbar and diboson bkg contribution from data
                     scale = 1.0
+                    if sampBkgname == "ttbar":
+                        # tune the ttbar cross section
+                        scale = 1.4
                     if scaleBkg:
-                        scale = 1.1
+                        scale = scale * 1.1
                     h_u1.Add(hBkg_u1, -scale)
                     h_u2.Add(hBkg_u2, -scale)
         
-        print("finished subtracting ttbar background")
+        print("finished subtracting backgrounds")
 
     ws = ROOT.RooWorkspace('fit')
 
@@ -465,7 +463,10 @@ def main(cat = 0):
         outdir = "results/Fit/"
         if os.path.exists(outdir)==False:
             os.makedirs(outdir)
-        ofilename = "results/Fit/results_{}_njets_pt_{}.pickle".format(sampname, postfix)
+        if jetbins:
+            ofilename = "results/Fit/results_{}_njets_pt_{}.pickle".format(sampname, postfix)
+        else:
+            ofilename = "results/Fit/results_{}_njetsInclusive_pt_{}.pickle".format(sampname, postfix)
 
         print("write to pickle")
         ofile = open( ofilename, 'wb' )
@@ -481,5 +482,6 @@ def main(cat = 0):
 
 if __name__ == "__main__":
     print("\n\n\n") 
-    for cat in [1, 2, 3]:
-        main(cat=cat)
+    for jetbins in [True, False]:
+        for proc in [1, 2, 3]:
+            main(proc=proc, jetbins=jetbins)

@@ -10,7 +10,7 @@ import numpy as np
 import os
 from collections import OrderedDict
 from SampleManager import Sample
-from Utils.utils import getPtBins, getJetBins
+from Utils.utils import getPtBins, getJetBins, getInclusiveJetBins
 
 reweightzpt = True
 ROOT.gROOT.SetBatch(True)
@@ -36,8 +36,8 @@ def makeU1U2(cat = 0):
     elif cat == 4:
         isDiboson = True
     
-    input_data    = "inputs/inputs_Z_UL_Post/input_data.txt"
-    input_dy      = "inputs/inputs_Z_UL_Post/input_zjets.txt"
+    input_data   = "/afs/cern.ch/work/y/yofeng/public/outputroot_withXYCorr/Data.root"
+    input_dy     = "/afs/cern.ch/work/y/yofeng/public/outputroot_withXYCorr/DY.root"
     input_ttbar   = "inputs/inputs_Z_UL_Post/input_ttbar.txt"
     input_WW2L    = "inputs/inputs_Z_UL_Post/input_WWTo2L2Nu.txt"
     input_WZ2L    = "inputs/inputs_Z_UL_Post/input_WZTo2Q2L.txt"
@@ -109,13 +109,14 @@ def makeU1U2(cat = 0):
 
     ptbins = getPtBins()
     njetbins = getJetBins()
+    njetbinsInclusive = getInclusiveJetBins()
 
     print(ptbins)
     print(njetbins)
 
     # prepare u1 (uparal) and u2 (uperp) distributions 
     # in differen Z pt and jet multiplicity bins
-    def prepareU1U2(rdf, postfix="", extra_weight = "1.0"):
+    def prepareU1U2(rdf, postfix="", extra_weight = "1.0", njetbins=njetbins, ptbins=ptbins):
         histos_u1 = OrderedDict() 
         histos_u2 = OrderedDict()
         for ijet in range(njetbins.size-1):
@@ -131,7 +132,7 @@ def makeU1U2(cat = 0):
                 rdf = rdf.Define(wstring, "(jet_n>={} && jet_n<={}) * (Z_pt>={} && Z_pt<{} ) * {} * norm * {}".format(njetmin, njetmax, ptmin, ptmax, weightstr, extra_weight))
                 hname_u1 = "hist_uparal_{}".format(wstring)
                 #histos_u1[(njetmin,njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 240+int(ptmax)-int(ptmin), -120.0+int(ptmin), 120.0+int(ptmax)), "u1",  wstring )
-                histos_u1[(njetmin, njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 240, -120.0-0.5*(ptmax-ptmin), 120.0+0.5*(ptmax-ptmin)),  "u1diff",  wstring )
+                histos_u1[(njetmin, njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 360, -180.0-0.5*(ptmax-ptmin), 180.0+0.5*(ptmax-ptmin)),  "u1diff",  wstring )
                 hname_u2 = "hist_uperp_{}".format(wstring)
                 histos_u2[(njetmin, njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u2, hname_u2, 240, -120.0,       120.0),       "u2",  wstring )
 
@@ -158,6 +159,8 @@ def makeU1U2(cat = 0):
 
         histos_u1 = OrderedDict()
         histos_u2 = OrderedDict()
+        histos_u1_njetInclusive = OrderedDict()
+        histos_u2_njetInclusive = OrderedDict()
         print("\n\nMaking histograms...")
         for wname, wstring in weights.items():
             # making all histograms first, such that rdataframe could handle
@@ -165,7 +168,9 @@ def makeU1U2(cat = 0):
             print(wname, wstring)
             samp.rdf = samp.rdf.Define(wname, wstring)
             samp.rdf = samp.rdf.Define("u1diff", "u1 - Z_pt")
-            histos_u1[wname], histos_u2[wname] = prepareU1U2(samp.rdf, postfix="{}_{}".format(samp.name, wname), extra_weight=wname)
+            histos_u1[wname], histos_u2[wname] = prepareU1U2(samp.rdf, postfix="{}_{}".format(samp.name, wname), extra_weight=wname, njetbins=njetbins, ptbins=ptbins)
+            
+            histos_u1_njetInclusive[wname], histos_u2_njetInclusive[wname] = prepareU1U2(samp.rdf, postfix="{}_{}".format(samp.name, wname), extra_weight=wname, njetbins=njetbinsInclusive, ptbins=ptbins)
 
         #if samp.donormalization:
         #    print("\n\nScale the {} MC to the xsec with normalization factor {}".format(samp.name, samp.normfactor))
@@ -191,13 +196,24 @@ def makeU1U2(cat = 0):
                     histos_u1[wname][ijetbin][iptbin].GetValue().Write()
                     histos_u2[wname][ijetbin][iptbin].GetValue().SetDirectory(ofile)
                     histos_u2[wname][ijetbin][iptbin].GetValue().Write()
-
-        ofile.Close()
+            ofile.Close()
+                    
+            ofilename = "results/U1U2/histos_u1u2_{}_njetsInclusive_pt_{}.root".format(samp.name, wname)
+            print("Write to output file ", ofilename)
+            ofile = ROOT.TFile(ofilename, "recreate")
+            for ijetbin in list(histos_u1_njetInclusive[wname].keys()):
+                for iptbin in list(histos_u1_njetInclusive[wname][ijetbin].keys()):
+                    histos_u1_njetInclusive[wname][ijetbin][iptbin].GetValue().SetDirectory(ofile)
+                    histos_u1_njetInclusive[wname][ijetbin][iptbin].GetValue().Write()
+                    histos_u2_njetInclusive[wname][ijetbin][iptbin].GetValue().SetDirectory(ofile)
+                    histos_u2_njetInclusive[wname][ijetbin][iptbin].GetValue().Write()
+            ofile.Close()
             
     print("Finished..")
 
     return 
 
 if __name__ == "__main__":
+    # loop over different processes
     for cat in [0, 1, 3, 4]:
         makeU1U2(cat = cat)
