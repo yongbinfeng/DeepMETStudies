@@ -189,9 +189,5 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
 
       DrawHistos(hresolsSc_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), 0, 50., "# Vertices", 0, 50.0, "Response-corrected #sigma (u_{#perp } ) [GeV]", "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_perp_VS_nVtx))
 
-
-   #f1 = ROOT.TFile("root_h/output.root", "RECREATE")
-   #for h2 in h2ds_perp_VS_qT.values():
-   #    h2.SetDirectory(f1)
-   #    h2.Write()
-   #f1.Close()
+   recoilanalyzer.saveHistos(f"root/output_{suffix}.root")
+   recoilanalyzerSc.saveHistos(f"root/outputSc_{suffix}.root")

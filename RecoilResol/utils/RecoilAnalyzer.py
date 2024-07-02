@@ -1,7 +1,8 @@
 from collections import OrderedDict
-import sys
+import sys, os
 from CMSPLOTS.myFunction import getResolution
 from utils.utils import prepVars
+import ROOT
 
 class RecoilAnalyzer(object):
     """
@@ -132,3 +133,25 @@ class RecoilAnalyzer(object):
             vresols_perp[itype] = (quants[0], (quants[2]-quants[1])/2.0, quants[0]-quants[1], quants[2]-quants[0])
     
         return vresols_paral, vresols_perp
+    
+    def saveHistos(self, outname):
+        if "/" in outname:
+            dirname = outname[:outname.rfind("/")]
+            if not os.path.exists(dirname):
+                print("Creating directory: ", dirname)
+                os.makedirs(dirname)
+        fout = ROOT.TFile(outname, "RECREATE")
+        for xvar in self.profs:
+            for itype in self.profs[xvar]:
+                self.profs[xvar][itype].Write()
+        for xvar in self.histo2ds_paral_diff:
+            for itype in self.histo2ds_paral_diff[xvar]:
+                self.histo2ds_paral_diff[xvar][itype].Write()
+        for xvar in self.histo2ds_perp:
+            for itype in self.histo2ds_perp[xvar]:
+                self.histo2ds_perp[xvar][itype].Write()
+        for itype in self.histos1d_paral_diff:
+            self.histos1d_paral_diff[itype].Write()
+        for itype in self.histos1d_perp:
+            self.histos1d_perp[itype].Write()
+        fout.Close()
