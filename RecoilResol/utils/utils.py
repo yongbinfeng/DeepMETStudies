@@ -3,6 +3,10 @@ some useful functions to sync the pt and nvtx bins,
 and prepare some variables (uparal, uperp, responses, and paral_diff) 
 for the RDataFrame
 '''
+
+def nPVString():
+    return "PV_npvs"
+
 def getpTBins():
     import numpy as np
     xbins_qT = np.zeros(18)

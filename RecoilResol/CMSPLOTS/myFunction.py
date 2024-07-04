@@ -464,12 +464,11 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     CMS_lumi.lumi_sqrtS = "(13 TeV)"
     CMS_lumi.relPosX = 0.12
     # CMS_lumi.extraText = "Internal"
+    CMS_lumi.extraText = ""
     if MCOnly:
         CMS_lumi.extraText = "Simulation"
-    elif isinstance(extraText, str):
+    if isinstance(extraText, str):
         CMS_lumi.extraText = extraText
-    elif extraText == None:
-        CMS_lumi.extraText = ""
 
     if nMaxDigits:
         #print(f"set the maximum number of digits {nMaxDigits}")
