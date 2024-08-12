@@ -4,20 +4,39 @@ and prepare some variables (uparal, uperp, responses, and paral_diff)
 for the RDataFrame
 '''
 
-def nPVString():
+def getqTMax():
+    return 350.0
+
+def getNPVString():
     return "PV_npvs"
+
+def getqTLabel():
+    return "q_{T} [GeV]"
+
+def getnVtxLabel():
+    return "N_{vtx}"
+
+def getUparalLabel():
+    return "#sigma (u_{#parallel}) [GeV]"
+
+def getUperpLabel():
+    return "#sigma (u_{#perp } ) [GeV]"
+
+def getResponseLabel():
+    return "-<u_{#parallel}>/<q_{T}>"
 
 def getpTBins():
     import numpy as np
-    xbins_qT = np.zeros(18)
+    xbins_qT = np.zeros(24)
     for ibin in range(0,4):
         xbins_qT[ibin] = 5*ibin
     for ibin in range(4,8):
         xbins_qT[ibin] = 10*ibin-20
     for ibin in range(8,13):
         xbins_qT[ibin] = 20*ibin-100
-    for ibin in range(13,18):
-        xbins_qT[ibin] = 30*ibin-230
+    for ibin in range(13,20):
+        xbins_qT[ibin] = 25*ibin-165
+    xbins_qT[20:] = (350, 400, 450, 500)
     return xbins_qT
 
 def getnVtxBins():

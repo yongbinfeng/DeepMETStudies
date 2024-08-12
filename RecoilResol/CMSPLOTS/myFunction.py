@@ -622,15 +622,13 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         legend = ROOT.TLegend(x0_l, y0_l, x1_l, y1_l)
     else:
         legend = ROOT.TLegend(x0_l-0.40, y0_l, x1_l-0.40, y1_l)
-    if lheader and lheader != "":
-        legend.SetHeader(lheader)
-    legend.SetNColumns(legendNCols)
     legend.SetBorderSize(0)
     legend.SetTextSize(0.04)
     legend.SetTextFont(42)
     legend.SetFillColor(0)
-
-    myf = []
+    legend.SetNColumns(legendNCols)
+    if lheader and lheader != "":
+        legend.SetHeader(lheader, "C")
 
     myhistos_clone = []
     for ihisto in myhistos:
