@@ -173,9 +173,15 @@ def getRMSResolution(th2d):
     hprof = th2d.ProfileX(th2d.GetName()+"_profX", 1, -1, "s")
     hresol = th2d.ProjectionX(th2d.GetName()+"_resolRMS", 0, -1, "e")
     for ibin in range(1, hresol.GetNbinsX()+1):
+        count = hresol.GetBinContent(ibin)
+        rms = hprof.GetBinError(ibin)
+        rms_err = 0
+        if count > 0:
+            rms_err = rms / ROOT.TMath.Sqrt(2*count)
+        print("counts, ", hresol.GetBinContent(ibin), hprof.GetBinContent(ibin))
         print("ibin ", ibin, hresol.GetBinContent(ibin), hprof.GetBinContent(ibin), hprof.GetBinError(ibin))
-        hresol.SetBinContent(ibin, hprof.GetBinError(ibin))
-        hresol.SetBinError(ibin, 0)
+        hresol.SetBinContent(ibin, rms)
+        hresol.SetBinError(ibin, rms_err)
     return hresol
 
 
@@ -660,12 +666,12 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         if addUnderflow:
             # include underflow bin
             AddOverflows(myhistos_clone[idx], dolastbin=False)
-        if len(mycolors) == len(myhistos_clone):
+        if idx < len(mycolors):
             myhistos_clone[idx].SetLineColor(mycolors[idx])
             myhistos_clone[idx].SetMarkerColor(mycolors[idx])
-        if len(linestyles) == len(myhistos_clone):
+        if idx < len(linestyles):
             myhistos_clone[idx].SetLineStyle(linestyles[idx])
-        if len(markerstyles) == len(myhistos_clone):
+        if idx < len(markerstyles):
             myhistos_clone[idx].SetMarkerStyle(markerstyles[idx])
         if isinstance(myhistos_clone[idx], ROOT.TH1):
             myhistos_clone[idx].SetLineWidth(3)

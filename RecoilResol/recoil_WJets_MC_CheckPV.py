@@ -26,7 +26,7 @@ includeZ = args.includeZ
 applySc = args.applySc
 outdir = f"plots/MC/WJets"
 
-ifiles = "/eos/cms/store/group/cmst3/group/wmass/w-mass-13TeV/NanoAOD/WplusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_TrackFitV722_NanoProdv6/240509_052242/0000/NanoV9MCPostVFP_2*.root"
+ifiles = "/eos/cms/store/group/cmst3/group/wmass/w-mass-13TeV/NanoAOD/WplusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_TrackFitV722_NanoProdv6/240509_052242/0000/NanoV9MCPostVFP_22.root"
 rdf_org = ROOT.ROOT.RDataFrame("Events", ifiles)
 rdf_org1 = rdf_org.Filter("nMuon >= 1")
 rdf_org1 = rdf_org1.Define("Muon_pass0", "Muon_pt[0] > 25.0 && abs(Muon_eta[0]) < 2.4 && Muon_pfRelIso04_all[0] < 0.15 && Muon_looseId[0]")
@@ -113,7 +113,7 @@ rdf = rdf.Define("GoodPVEvent", "PVRobustIndex == 0").Define("BadPVEvent", "PVRo
 rdf_goodpv = rdf.Filter("GoodPVEvent")
 rdf_badpv = rdf.Filter("BadPVEvent")
 
-recoilanalyzer_goodpv = RecoilAnalyzer(rdf_goodpv, recoils)
+recoilanalyzer_goodpv = RecoilAnalyzer(rdf_goodpv, recoils, useRMS=True)
 recoilanalyzer_goodpv.prepareVars()
 recoilanalyzer_goodpv.prepareResponses(   'u_GEN_pt', xbins_qT)
 recoilanalyzer_goodpv.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -125,7 +125,7 @@ hresols_paral_diff_goodpv, hresols_perp_goodpv = recoilanalyzer_goodpv.getResolu
 hresponses_nVtx_goodpv = recoilanalyzer_goodpv.getResponses('PV_npvsGood')
 hresols_paral_diff_VS_nVtx_goodpv, hresols_perp_VS_nVtx_goodpv = recoilanalyzer_goodpv.getResolutions('PV_npvsGood')
 
-recoilanalyzer_badpv = RecoilAnalyzer(rdf_badpv, recoils)
+recoilanalyzer_badpv = RecoilAnalyzer(rdf_badpv, recoils, useRMS=True)
 recoilanalyzer_badpv.prepareVars()
 recoilanalyzer_badpv.prepareResponses(   'u_GEN_pt', xbins_qT)
 recoilanalyzer_badpv.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -158,7 +158,7 @@ if applySc:
 
    recoilsSc = [itype + "Sc" for itype in recoils]
    
-   recoilanalyzer_goodpv_Sc = RecoilAnalyzer(rdf_goodpv, recoilsSc, name = "recoilanalyzer_Scaled_goodpv")
+   recoilanalyzer_goodpv_Sc = RecoilAnalyzer(rdf_goodpv, recoilsSc, name = "recoilanalyzer_Scaled_goodpv", useRMS=True)
    recoilanalyzer_goodpv_Sc.prepareVars()
    recoilanalyzer_goodpv_Sc.prepareResponses(   'u_GEN_pt', xbins_qT)
    recoilanalyzer_goodpv_Sc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -170,7 +170,7 @@ if applySc:
    hresponses_goodpv_Sc_nVtx = recoilanalyzer_goodpv_Sc.getResponses('PV_npvsGood')
    hresols_goodpv_Sc_paral_diff_VS_nVtx, hresols_goodpv_Sc_perp_VS_nVtx = recoilanalyzer_goodpv_Sc.getResolutions('PV_npvsGood')
    
-   recoilanalyzer_badpv_Sc = RecoilAnalyzer(rdf_badpv, recoilsSc, name = "recoilanalyzer_Scaled_badpv")
+   recoilanalyzer_badpv_Sc = RecoilAnalyzer(rdf_badpv, recoilsSc, name = "recoilanalyzer_Scaled_badpv", useRMS=True)
    recoilanalyzer_badpv_Sc.prepareVars()
    recoilanalyzer_badpv_Sc.prepareResponses(   'u_GEN_pt', xbins_qT)
    recoilanalyzer_badpv_Sc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)

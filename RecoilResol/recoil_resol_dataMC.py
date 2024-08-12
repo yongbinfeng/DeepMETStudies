@@ -3,7 +3,7 @@ import sys
 sys.path.append("../RecoilResol/CMSPLOTS")
 from CMSPLOTS.myFunction import DrawHistos
 from collections import OrderedDict
-from utils.utils import getpTBins, getnVtxBins, get_response_code, getqTLabel, getnVtxLabel, getNPVString, getqTMax
+from utils.utils import getpTBins, getnVtxBins, get_response_code, getqTLabel, getnVtxLabel, getNPVString, getqTMax, getResponseLabel, getUparalLabel, getUperpLabel
 from utils.RecoilAnalyzer import RecoilAnalyzer
 import argparse
 
@@ -17,6 +17,7 @@ ROOT.gSystem.Load("Functions_cc.so")
 parser = argparse.ArgumentParser()
 parser.add_argument("--applySc", action="store_true", help="Apply response corrections and include the plots in the output")
 parser.add_argument("--no-applySc", action="store_false", dest="applySc", help="Do not apply response corrections and do not include the plots in the output")
+parser.add_argument("--test", action="store_true", help="Run the script in test mode")
 parser.set_defaults(applySc=True)
 
 args = parser.parse_args()
@@ -28,11 +29,18 @@ print("apply Response corrections: ", applySc)
 
 chain = ROOT.TChain("Events")
 chain.Add("/afs/cern.ch/work/y/yofeng/public/outputroot_withcorrection/Data.root")
-rdf_data = ROOT.ROOT.RDataFrame(chain)
+rdf_data_tmp = ROOT.ROOT.RDataFrame(chain)
 
 chainMC = ROOT.TChain("Events")
 chainMC.Add("/afs/cern.ch/work/y/yofeng/public/outputroot_withcorrection/DY.root")
-rdf_MC = ROOT.ROOT.RDataFrame(chainMC)
+rdf_MC_tmp = ROOT.ROOT.RDataFrame(chainMC)
+
+if args.test:
+   rdf_data = rdf_data_tmp.Filter("rdfentry_ < 10000")
+   rdf_MC = rdf_MC_tmp.Filter("rdfentry_ < 10000")
+else:
+   rdf_data = rdf_data_tmp
+   rdf_MC = rdf_MC_tmp
 
 def prepareVars(rdf):
    rdf = rdf.Define("pT_muons", "Z_pt").Define("phi_muons", "Z_phi")
@@ -64,6 +72,11 @@ rdf_MC_qTHigh = rdf_MC.Filter("Z_pt >= 50")
 
 rdfs = [[rdf_data, rdf_MC], [rdf_data_qTLow, rdf_MC_qTLow], [rdf_data_qTHigh, rdf_MC_qTHigh]]
 suffixes = ["", "_qTLow", "_qTHigh"]
+extraHeaders = {
+   "": None,
+   "_qTLow": "q_{T} < 50 GeV",
+   "_qTHigh": "q_{T} > 50 GeV",
+}
 
 recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
 
@@ -85,13 +98,13 @@ labels = {
             "DeepMETCorr": "DeepMET",
          }
 
-linestyles = {}
-
-for itype in recoils:
-   colors[itype + "_MC"] = colors[itype]
-   
-   linestyles[itype] = 1
-   linestyles[itype + "_MC"] = 2
+markers = {
+            "PF": 20,
+            "PUPPI": 21,
+            "GEN": 22,
+            "DeepMET": 22,
+            "DeepMETCorr": 23,
+}
 
 xbins_qT = getpTBins()
 xbins_nVtx = getnVtxBins() 
@@ -100,10 +113,11 @@ xbins_nVtx = getnVtxBins()
 for rdf_data_tmp, rdf_MC_tmp in rdfs:
    idx = rdfs.index([rdf_data_tmp, rdf_MC_tmp])
    suffix = suffixes[idx]
+   extraHeader = extraHeaders[suffix]
    if len(suffix) > 0:
       suffix = "_" + suffix
    
-   recoilanalyzer = RecoilAnalyzer(rdf_data_tmp, recoils, rdfMC = rdf_MC_tmp, name = "recoilanalyzer_" + suffix)
+   recoilanalyzer = RecoilAnalyzer(rdf_data_tmp, recoils, rdfMC = rdf_MC_tmp, name = "recoilanalyzer_" + suffix, useRMS=True)
    recoilanalyzer.prepareVars()
    recoilanalyzer.prepareResponses(   'u_GEN_pt', xbins_qT)
    recoilanalyzer.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -133,7 +147,7 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
 
 
       recoilsSc = [itype + "Sc" for itype in recoils]
-      recoilanalyzerSc = RecoilAnalyzer(rdf_data_tmp, recoilsSc, rdfMC = rdf_MC_tmp, name = "recoilanalyzer_Scaled" + suffix)
+      recoilanalyzerSc = RecoilAnalyzer(rdf_data_tmp, recoilsSc, rdfMC = rdf_MC_tmp, name = "recoilanalyzer_Scaled" + suffix, useRMS=True)
       recoilanalyzerSc.prepareVars()
       recoilanalyzerSc.prepareResponses(   'u_GEN_pt', xbins_qT)
       recoilanalyzerSc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -148,40 +162,80 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
    qtmax = getqTMax()
    qtlabel = getqTLabel()
    nvtxlabel = getnVtxLabel()
+   uparallabel = getUparalLabel()
+   uperplabel = getUperpLabel()
+   responselabel = getResponseLabel()
+   
+   def GetColors(hdict):
+      hcolors = []
+      for itype in hdict.keys():
+         itype = itype.replace("_MC", "")
+         hcolors.append(colors[itype])
+      return hcolors
 
    def GetLegends(hdict):
        return [labels[itype] for itype in hdict.keys() if "_MC" not in itype]
    
    def GetLineStyles(hdict):
        return [1 if "_MC" not in itype else 2 for itype in hdict.keys()]
+    
+   def GetMarkers(hdict):
+      return [markers[itype] if "_MC" not in itype else 1 for itype in hdict.keys()]
+   
+   def GetDrawOptions(hdict):
+      return ["EP" if "_MC" not in itype else "HIST" for itype in hdict.keys()]
+   
+   hcolors = GetColors(hresponses)
+   hmarkers = GetMarkers(hresponses)
+   linestyles = GetLineStyles(hresponses)
+   drawoptions = GetDrawOptions(hresponses)
+   
+   args = {
+      "mycolors": hcolors,
+      "markerstyles": hmarkers,
+      "linestyles": linestyles,
+      "drawoptions": drawoptions,
+      "outdir": outdir,
+      "noLumi": noLumi,
+      "dology": False,
+      "drawashist": False
+   }
+   
+   lheader = extraHeader if extraHeader else ""
+   args["lheader"] = lheader
 
-   DrawHistos(hresponses.values(), GetLegends(hresponses), 0, qtmax, qtlabel, 0., 1.15, "Response -<u_{#parallel}>/<q_{T}>", "reco_recoil_response" + suffix, drawashist=True, dology=False, legendPos=[0.50, 0.20, 0.80, 0.40], mycolors=[colors[itype] for itype in hresponses.keys()], linestyles = GetLineStyles(hresponses), noLumi=noLumi, outdir=outdir)
+   DrawHistos(hresponses.values(), GetLegends(hresponses), 0, qtmax, qtlabel, 0., 1.15, responselabel, "reco_recoil_response" + suffix, legendPos=[0.50, 0.20, 0.80, 0.40], **args)
 
-   DrawHistos(hresols_paral_diff.values(), GetLegends(hresols_paral_diff), 0, qtmax, qtlabel, 0, 39.0, "#sigma (u_{#parallel}) [GeV]", "reco_recoil_resol_paral" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_paral_diff.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_paral_diff))
+   DrawHistos(hresols_paral_diff.values(), GetLegends(hresols_paral_diff), 0, qtmax, qtlabel, 0, 39.0, uparallabel, "reco_recoil_resol_paral" + suffix, legendPos=[0.20, 0.65, 0.38, 0.90], **args)
 
-   DrawHistos(hresols_perp.values(), GetLegends(hresols_perp), 0, qtmax, qtlabel, 0, 32.0, "#sigma (u_{#perp } ) [GeV]", "reco_recoil_resol_perp" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_perp))
+   DrawHistos(hresols_perp.values(), GetLegends(hresols_perp), 0, qtmax, qtlabel, 0, 32.0, uperplabel, "reco_recoil_resol_perp" + suffix, legendPos=[0.20, 0.69, 0.40, 0.92], **args)
 
-   DrawHistos(hresponses_nVtx.values(), GetLegends(hresponses_nVtx), 0, 50., nvtxlabel, 0., 1.15, "Response -<u_{#parallel}>/<q_{T}>", "reco_recoil_response_VS_nVtx" + suffix, drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresponses_nVtx))
+   DrawHistos(hresponses_nVtx.values(), GetLegends(hresponses_nVtx), 0, 50., nvtxlabel, 0., 1.15, responselabel, "reco_recoil_response_VS_nVtx" + suffix, legendPos=[0.70, 0.17, 0.88, 0.40], **args)
 
-   DrawHistos(hresols_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), 0, 50., nvtxlabel, 0, 50.0, "#sigma (u_{#parallel}) [GeV]", "reco_recoil_resol_paral_VS_nVtx" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_paral_diff_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_paral_diff_VS_nVtx))
+   DrawHistos(hresols_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), 0, 50., nvtxlabel, 0, 50.0, uparallabel, "reco_recoil_resol_paral_VS_nVtx" + suffix, legendPos=[0.23, 0.65, 0.45, 0.90], **args)
 
-   DrawHistos(hresols_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), 0, 50., nvtxlabel, 0, 50.0, "#sigma (u_{#perp } ) [GeV]", "reco_recoil_resol_perp_VS_nVtx" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_perp_VS_nVtx))
+   DrawHistos(hresols_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), 0, 50., nvtxlabel, 0, 50.0, uperplabel, "reco_recoil_resol_perp_VS_nVtx" + suffix, legendPos=[0.23, 0.65, 0.45, 0.90], **args)
 
    if applySc:
+      if extraHeader:
+         lheader = "#splitline{Response corrected}{" + extraHeader + "}"
+      else:
+         lheader = "Response corrected"
+      args["lheader"] = lheader
       #
       # Scaled 
       #
-      DrawHistos(hresponsesSc.values(), GetLegends(hresponses), 0, qtmax, qtlabel, 0., 1.15, "Scaled Response -<u_{#parallel}>/<q_{T}>", "reco_recoil_response_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresponses))
+      DrawHistos(hresponsesSc.values(), GetLegends(hresponses), 0, qtmax, qtlabel, 0., 1.15, responselabel, "reco_recoil_response_Scaled" + suffix, legendPos=[0.65, 0.17, 0.88, 0.45], **args)
 
-      DrawHistos(hresolsSc_paral_diff.values(), GetLegends(hresols_paral_diff), 0, qtmax, qtlabel, 0, 60.0, "Response-corrected #sigma (u_{#parallel}) [GeV]", "reco_recoil_resol_paral_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_paral_diff.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_paral_diff))
+      DrawHistos(hresolsSc_paral_diff.values(), GetLegends(hresols_paral_diff), 0, qtmax, qtlabel, 0, 60.0, uparallabel, "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.25, 0.60, 0.38, 0.90], **args)
 
-      DrawHistos(hresolsSc_perp.values(), GetLegends(hresols_perp), 0, qtmax, qtlabel, 0, 50.0, "Response-corrected #sigma (u_{#perp } ) [GeV]", "reco_recoil_resol_perp_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_perp))
+      DrawHistos(hresolsSc_perp.values(), GetLegends(hresols_perp), 0, qtmax, qtlabel, 0, 50.0, uperplabel, "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.25, 0.60, 0.45, 0.90], **args)
 
-      DrawHistos(hresponsesSc_nVtx.values(), GetLegends(hresponses_nVtx), 0, 50., nvtxlabel, 0., 1.15, "Response -<u_{#parallel}>/<q_{T}>", "reco_recoil_response_VS_nVtx_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresponses_nVtx))
+      DrawHistos(hresponsesSc_nVtx.values(), GetLegends(hresponses_nVtx), 0, 50., nvtxlabel, 0., 1.15, responselabel, "reco_recoil_response_VS_nVtx_Scaled" + suffix, legendPos=[0.70, 0.17, 0.88, 0.40], **args)
 
-      DrawHistos(hresolsSc_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), 0, 50., nvtxlabel, 0, 50.0, "Response-corrected #sigma (u_{#parallel}) [GeV]", "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_paral_diff_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_paral_diff_VS_nVtx))
+      DrawHistos(hresolsSc_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), 0, 50., nvtxlabel, 0, 50.0, uparallabel, "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, legendPos=[0.25, 0.65, 0.50, 0.90], **args)
 
-      DrawHistos(hresolsSc_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), 0, 50., nvtxlabel, 0, 50.0, "Response-corrected #sigma (u_{#perp } ) [GeV]", "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_perp_VS_nVtx))
+      DrawHistos(hresolsSc_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), 0, 50., nvtxlabel, 0, 50.0, uperplabel, "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, legendPos=[0.25, 0.65, 0.50, 0.90], **args)
 
    recoilanalyzer.saveHistos(f"root/output_{suffix}.root")
    recoilanalyzerSc.saveHistos(f"root/outputSc_{suffix}.root")
