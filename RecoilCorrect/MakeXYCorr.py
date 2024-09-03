@@ -153,7 +153,7 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
          
       hphi_name = f"hphi_{itype}_{suffix}"
       
-      DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -3.2, 3.2, "#phi", 0, 0.027, "A.U.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
+      DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -3.2, 3.2, "#phi", 0, 0.027, "a.u.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
    
    
    
@@ -184,9 +184,9 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
       "lheader": "Before XY correction",
    }
    
-   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.0299, "A.U.", f"hphi_{suffix}", **args)
+   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.0299, "a.u.", f"hphi_{suffix}", **args)
             
-   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.027, "A.U.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
+   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.027, "a.u.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
 
    # save the output fits
    if writeOutput:
@@ -255,7 +255,7 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
          DrawHistos([hprofs_data[ax][itype], hprofs_MC[ax][itype]], [labels[itype] + " Data", labels[itype] + " MC"], 0, 70, "nPV", -10.0, 10.0, f"<MET_{ax}> [GeV]", hname, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype]]*2, linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir)
 
       hphi_name = f"hphi_{itype}_{suffix}"
-      DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -3.2, 3.2, "#phi", 0, 0.019, "A.U.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
+      DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -3.2, 3.2, "#phi", 0, 0.019, "a.u.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
       
    h_toDraws = OrderedDict()
    for itype in recoils:
@@ -283,9 +283,9 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
       "lheader": "After XY correction",
    }
    
-   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.019, "A.U.", f"hphi_{suffix}", **args)
+   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.019, "a.u.", f"hphi_{suffix}", **args)
       
-   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.019, "A.U.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
+   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.019, "a.u.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
       
    if writeOutput:
       def regularizeNames(rdf):
