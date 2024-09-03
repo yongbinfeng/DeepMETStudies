@@ -70,6 +70,14 @@ labels = {
             "DeepMETCorr": "DeepMET",
          }
 
+markers = {
+            "PF": 20,
+            "PUPPI": 21,
+            "GEN": 22,
+            "DeepMET": 22,
+            "DeepMETCorr": 23,
+}
+
 linestyles = {}
 
 for itype in recoils:
@@ -78,8 +86,18 @@ for itype in recoils:
    linestyles[itype] = 1
    linestyles[itype + "_MC"] = 2
    
+
+def GetLineStyles(hdict):
+    return [1 if "_MC" not in itype else 2 for itype in hdict.keys()]
+
+def GetMarkers(hdict):
+   return [markers[itype] if "_MC" not in itype else 1 for itype in hdict.keys()]
+
+def GetDrawOptions(hdict):
+   return ["EP" if "_MC" not in itype else "HIST" for itype in hdict.keys()]
    
-def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr"):
+   
+def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput = False):
    """
    derive the XY corrections for the MET
    and save the output in a root file
@@ -137,14 +155,46 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr"):
       
       DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -3.2, 3.2, "#phi", 0, 0.027, "A.U.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
    
+   
+   
+   
+   h_toDraws = OrderedDict()
+   for itype in recoils:
+      h_toDraws[itype] = hphis_data[itype]
+   for itype in recoils:
+      h_toDraws[itype + "_MC"] = hphis_MC[itype]
+   
+   hcolors = [colors[itype] for itype in recoils]*2
+   hmarkers = GetMarkers(h_toDraws)
+   hlinestyles = GetLineStyles(h_toDraws)
+   hdrawoptions = GetDrawOptions(h_toDraws)
+   
+   
+   args = {
+      "mycolors": hcolors,
+      "markerstyles": hmarkers,
+      "linestyles": hlinestyles,
+      "drawoptions": hdrawoptions,
+      "outdir": outdir,
+      "noLumi": noLumi,
+      "dology": False,
+      "drawashist": False,
+      "donormalize": True,
+      "legendPos": [0.20, 0.70, 0.50, 0.90],
+      "lheader": "Before XY correction",
+   }
+   
+   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.0299, "A.U.", f"hphi_{suffix}", **args)
             
-   DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.027, "A.U.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
+   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.027, "A.U.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
 
    # save the output fits
-   ofile = ROOT.TFile(oname, "recreate")
-   for itf in tfs_to_save:
-      itf.Write()
-   ofile.Close()
+   if writeOutput:
+      print(f"Saving the output in {oname}")
+      ofile = ROOT.TFile(oname, "recreate")
+      for itf in tfs_to_save:
+         itf.Write()
+      ofile.Close()
    
    return
    
@@ -207,7 +257,35 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
       hphi_name = f"hphi_{itype}_{suffix}"
       DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -3.2, 3.2, "#phi", 0, 0.019, "A.U.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
       
-   DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.019, "A.U.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
+   h_toDraws = OrderedDict()
+   for itype in recoils:
+      h_toDraws[itype] = hphis_data[itype]
+   for itype in recoils:
+      h_toDraws[itype + "_MC"] = hphis_MC[itype]
+   
+   hcolors = [colors[itype] for itype in recoils]*2
+   hmarkers = GetMarkers(h_toDraws)
+   hlinestyles = GetLineStyles(h_toDraws)
+   hdrawoptions = GetDrawOptions(h_toDraws)
+   
+   
+   args = {
+      "mycolors": hcolors,
+      "markerstyles": hmarkers,
+      "linestyles": hlinestyles,
+      "drawoptions": hdrawoptions,
+      "outdir": outdir,
+      "noLumi": noLumi,
+      "dology": False,
+      "drawashist": False,
+      "donormalize": True,
+      "legendPos": [0.20, 0.70, 0.50, 0.90],
+      "lheader": "After XY correction",
+   }
+   
+   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.019, "A.U.", f"hphi_{suffix}", **args)
+      
+   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.019, "A.U.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
       
    if writeOutput:
       def regularizeNames(rdf):
@@ -240,14 +318,17 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
    
    
 if __name__ == "__main__":
+   print("Running the XY corrections")
    corrname = "results/MET_xy_dataMC.root"
    
    if 1:
       print(f"Deriving XY corrections for MET and saving them in {corrname}")
-      deriveXYCorr(corrname)
+      deriveXYCorr(corrname, writeOutput=writeOutput)
       print("\n\n\n")
       
    if 1:
       print(f"Applying XY corrections to MET and saving the corrected output in {corrname}")
       applyXYCorr(corrname, writeOutput=writeOutput)
       print("\n\n\n")
+      
+   print("Done")
