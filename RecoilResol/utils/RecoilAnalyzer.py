@@ -33,25 +33,30 @@ class RecoilAnalyzer(object):
             for itype in self.recoils:
                 self.rdfMC = prepVars(self.rdfMC, "u_{RECOIL}".format(RECOIL=itype), "u_GEN")
 
-    def prepareResponses(self, xvar, xbins, option="s"):
+    def prepareResponses(self, xvar, xbins, option="i"):
         self.profs[xvar] = OrderedDict()
         # xbins should be numpy arrays
         nbins_x = xbins.size-1 
         for itype in self.recoils:
             hparal = "h_{RECOIL}_paral_VS_{XVAR}_{NAME}".format(RECOIL=itype, XVAR=xvar, NAME=self.name)
             print(hparal, hparal, nbins_x, xbins, option, xvar, "u_{RECOIL}_paral".format(RECOIL=itype))
-            self.profs[xvar][itype] = self.rdf.Profile1D((hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype))
+            # profile divide uncertainties seem to be different from the TH1 divide uncertainties
+            # https://root.cern.ch/doc/master/classTProfile.html#a8ce37db032734f54751347ddbbbebc09
+            # use the TH1 divide uncertainties for now
+            # projectionX() is needed to get the TH1
+            # so save the TH1 instead
+            self.profs[xvar][itype] = self.rdf.Profile1D((hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype)).ProjectionX()
         # add GEN
         hparal_Gen = "h_GEN_VS_{XVAR}_{NAME}".format(XVAR=xvar, NAME=self.name)
-        self.profs[xvar]['GEN'] = self.rdf.Profile1D((hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt")
+        self.profs[xvar]['GEN'] = self.rdf.Profile1D((hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt").ProjectionX()
         
         if self.rdfMC:
             for itype in self.recoils:
                 hparal = "h_{RECOIL}_paral_VS_{XVAR}_MC_{NAME}".format(RECOIL=itype, XVAR=xvar, NAME=self.name)
-                self.profs[xvar][itype + "_MC"] = self.rdfMC.Profile1D((hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype))
+                self.profs[xvar][itype + "_MC"] = self.rdfMC.Profile1D((hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype)).ProjectionX()
             # add GEN
             hparal_Gen = "h_GEN_VS_{XVAR}_MC_{NAME}".format(XVAR=xvar, NAME=self.name)
-            self.profs[xvar]['GEN_MC'] = self.rdfMC.Profile1D((hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt")
+            self.profs[xvar]['GEN_MC'] = self.rdfMC.Profile1D((hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt").ProjectionX()
 
     def prepareResolutions(self, xvar, xbins, nbins_y, ymin, ymax, weight="1.0"):
         # for the resolutions
@@ -79,12 +84,12 @@ class RecoilAnalyzer(object):
         for itype in self.recoils:
             print(xvar, itype)
             hresponses[itype] = self.profs[xvar][itype].Clone( self.profs[xvar][itype].GetName()+ "_response" )
-            hresponses[itype].Divide( self.profs[xvar]['GEN'].GetValue() )
+            hresponses[itype].Divide( self.profs[xvar]['GEN'] )
         
         if self.rdfMC:
             for itype in self.recoils:
                 hresponses[itype + "_MC"] = self.profs[xvar][itype + "_MC"].Clone( self.profs[xvar][itype + "_MC"].GetName()+ "_response" )
-                hresponses[itype + "_MC"].Divide( self.profs[xvar]['GEN_MC'].GetValue() )
+                hresponses[itype + "_MC"].Divide( self.profs[xvar]['GEN_MC'] )
         return hresponses
             
 

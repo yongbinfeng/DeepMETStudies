@@ -634,7 +634,8 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     legend.SetFillColor(0)
     legend.SetNColumns(legendNCols)
     if lheader and lheader != "":
-        legend.SetHeader(lheader, "C")
+        #legend.SetHeader(lheader, "C")
+        legend.SetHeader(lheader)
 
     myhistos_clone = []
     for ihisto in myhistos:
