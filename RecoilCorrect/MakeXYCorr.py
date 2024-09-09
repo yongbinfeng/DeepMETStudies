@@ -12,6 +12,8 @@ writeOutput = False
 #nPV = "PV_npvsGood"
 nPV = "PV_npvs"
 
+pi = ROOT.TMath.Pi()
+
 ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT(10)
 ROOT.gSystem.Load("Functions_cc.so")
@@ -128,8 +130,8 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
       hphi_name = f"hphi_{itype}_{suffix}"
       hphi_name_data = f"{hphi_name}_data"
       hphi_name_MC = f"{hphi_name}_MC"
-      hphis_data[itype] = rdf_data.Histo1D((hphi_name_data, f"{itype}_phi", 100, -3.2, 3.2), itype + "_phi")
-      hphis_MC[itype] = rdf_MC.Histo1D((hphi_name_MC, f"{itype}_phi", 100, -3.2, 3.2), itype + "_phi")
+      hphis_data[itype] = rdf_data.Histo1D((hphi_name_data, f"{itype}_phi", 50, -pi, pi), itype + "_phi")
+      hphis_MC[itype] = rdf_MC.Histo1D((hphi_name_MC, f"{itype}_phi", 50, -pi, pi), itype + "_phi")
 
    # fit the profiles with a pol1
    tfs_to_save = []
@@ -153,7 +155,7 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
          
       hphi_name = f"hphi_{itype}_{suffix}"
       
-      DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -3.2, 3.2, "#phi", 0, 0.027, "a.u.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
+      DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -pi, pi, "#phi", 0, 0.027, "a.u.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
    
    
    
@@ -170,6 +172,13 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
    hdrawoptions = GetDrawOptions(h_toDraws)
    
    
+   extraToDraw = ROOT.TPaveText(0.60, 0.82, 0.90, 0.87, "NDC")
+   extraToDraw.SetFillColor(0)
+   extraToDraw.SetBorderSize(0)
+   extraToDraw.SetTextFont(42)
+   extraToDraw.SetTextSize(0.04)
+   extraToDraw.AddText("Before XY correction")
+   
    args = {
       "mycolors": hcolors,
       "markerstyles": hmarkers,
@@ -180,13 +189,17 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
       "dology": False,
       "drawashist": False,
       "donormalize": True,
-      "legendPos": [0.20, 0.70, 0.50, 0.90],
-      "lheader": "Before XY correction",
+      "legendPos": [0.28, 0.62, 0.55, 0.87],
+      "extraToDraw": extraToDraw,
+      "legendoptions": ["EP"] * len(recoils) + ["L"] * len(recoils),
    }
    
-   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.0299, "a.u.", f"hphi_{suffix}", **args)
+   print("legend options", args["legendoptions"], len(args["legendoptions"]))
+   print("hists to draw, ", len(h_toDraws.values()))
+   
+   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -pi, pi, "#phi", 0, 0.0599, "a.u.", f"hphi_{suffix}", **args, lheader = "MC", extralheader = "Data", extralabels = [""] * len(recoils))
             
-   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.027, "a.u.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
+   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -pi, pi, "#phi", 0, 0.027, "a.u.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
 
    # save the output fits
    if writeOutput:
@@ -245,8 +258,8 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
       hphi_name = f"hphi_{itype}_{suffix}"
       hphi_name_data = f"{hphi_name}_data"
       hphi_name_MC = f"{hphi_name}_MC"
-      hphis_data[itype] = rdf_data.Histo1D((hphi_name_data, f"{itype}_phi", 100, -3.2, 3.2), itype + "_phi_XYCorr")
-      hphis_MC[itype] = rdf_MC.Histo1D((hphi_name_MC, f"{itype}_phi", 100, -3.2, 3.2), itype + "_phi_XYCorr")
+      hphis_data[itype] = rdf_data.Histo1D((hphi_name_data, f"{itype}_phi", 50, -pi, pi), itype + "_phi_XYCorr")
+      hphis_MC[itype] = rdf_MC.Histo1D((hphi_name_MC, f"{itype}_phi", 50, -pi, pi), itype + "_phi_XYCorr")
 
    # fit the profiles with a pol1
    for itype in recoils:
@@ -255,7 +268,7 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
          DrawHistos([hprofs_data[ax][itype], hprofs_MC[ax][itype]], [labels[itype] + " Data", labels[itype] + " MC"], 0, 70, "nPV", -10.0, 10.0, f"<MET_{ax}> [GeV]", hname, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype]]*2, linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir)
 
       hphi_name = f"hphi_{itype}_{suffix}"
-      DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -3.2, 3.2, "#phi", 0, 0.019, "a.u.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
+      DrawHistos([hphis_data[itype], hphis_MC[itype]], [labels[itype] + " Data", labels[itype] + " MC"], -pi, pi, "#phi", 0, 0.019, "a.u.", hphi_name, drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype], colors[itype + "_MC"]], linestyles = [linestyles[itype], linestyles[itype + "_MC"]], noLumi=noLumi, outdir=outdir, donormalize=True)
       
    h_toDraws = OrderedDict()
    for itype in recoils:
@@ -269,6 +282,13 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
    hdrawoptions = GetDrawOptions(h_toDraws)
    
    
+   extraToDraw = ROOT.TPaveText(0.60, 0.82, 0.90, 0.87, "NDC")
+   extraToDraw.SetFillColor(0)
+   extraToDraw.SetBorderSize(0)
+   extraToDraw.SetTextFont(42)
+   extraToDraw.SetTextSize(0.04)
+   extraToDraw.AddText("After XY correction")
+   
    args = {
       "mycolors": hcolors,
       "markerstyles": hmarkers,
@@ -279,13 +299,14 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
       "dology": False,
       "drawashist": False,
       "donormalize": True,
-      "legendPos": [0.20, 0.70, 0.50, 0.90],
-      "lheader": "After XY correction",
+      "legendPos": [0.28, 0.62, 0.55, 0.87],
+      "extraToDraw": extraToDraw,
+      "legendoptions": ["EP"] * len(recoils) + ["L"] * len(recoils),
    }
    
-   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.019, "a.u.", f"hphi_{suffix}", **args)
-      
-   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -3.2, 3.2, "#phi", 0, 0.019, "a.u.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
+   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -pi, pi, "#phi", 0.0151, 0.0279, "a.u.", f"hphi_{suffix}", **args, lheader = "MC", extralheader = "Data", extralabels = [""] * len(recoils))
+   
+   #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -pi, pi, "#phi", 0, 0.019, "a.u.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
       
    if writeOutput:
       def regularizeNames(rdf):

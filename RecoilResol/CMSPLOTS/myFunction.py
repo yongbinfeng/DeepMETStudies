@@ -435,7 +435,7 @@ def TH2ToTH1s(h2, projY = False, label = "X"):
             labels.append(f"{xmin: .2f}<{label}<{xmax: .2f}")
     return hs, labels
 
-def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outputname, dology=True, showratio=False, dologx=False, lheader=None, donormalize=False, binomialratio=False, yrmax=2.0, yrmin=0.0, yrlabel=None, MCOnly=False, leftlegend=False, mycolors=None, legendPos=None, legendNCols=1, linestyles=None, markerstyles=None, showpull=False, doNewman=False, doPearson=False, ignoreHistError=False, ypullmin=-3.99, ypullmax=3.99, drawashist=False, padsize=(2, 0.9, 1.1), setGridx=False, setGridy=False, drawoptions=None, legendoptions=None, ratiooptions=None, dologz=False, doth2=False, ratiobase=0, redrawihist=-1, extraText=None, noCMS=False, noLumi=False, nMaxDigits=None, addOverflow=False, addUnderflow=False, plotdiff=False, hratiopanel=None, doratios=None, hpulls=None, W_ref=600, is5TeV=False, outdir="plots", savepdf=True,zmin=0,zmax=2):
+def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outputname, dology=True, showratio=False, dologx=False, lheader=None, donormalize=False, binomialratio=False, yrmax=2.0, yrmin=0.0, yrlabel=None, MCOnly=False, leftlegend=False, mycolors=None, legendPos=None, legendNCols=1, linestyles=None, markerstyles=None, showpull=False, doNewman=False, doPearson=False, ignoreHistError=False, ypullmin=-3.99, ypullmax=3.99, drawashist=False, padsize=(2, 0.9, 1.1), setGridx=False, setGridy=False, drawoptions=None, legendoptions=None, ratiooptions=None, dologz=False, doth2=False, ratiobase=0, redrawihist=-1, extraText=None, noCMS=False, noLumi=False, nMaxDigits=None, addOverflow=False, addUnderflow=False, plotdiff=False, hratiopanel=None, doratios=None, hpulls=None, W_ref=600, is5TeV=False, outdir="plots", savepdf=True,zmin=0,zmax=2, extralabels=None, extralheader=None,extraToDraw=None):
     """
     draw histograms with the CMS tdr style
     """
@@ -624,10 +624,11 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         y1_l -= 0.03
         y0_l -= 0.03
 
-    if not leftlegend:
-        legend = ROOT.TLegend(x0_l, y0_l, x1_l, y1_l)
-    else:
-        legend = ROOT.TLegend(x0_l-0.40, y0_l, x1_l-0.40, y1_l)
+    if leftlegend:
+        x0_l -= 0.40
+        x1_l -= 0.40
+
+    legend = ROOT.TLegend(x0_l, y0_l, x1_l, y1_l)
     legend.SetBorderSize(0)
     legend.SetTextSize(0.04)
     legend.SetTextFont(42)
@@ -636,6 +637,15 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     if lheader and lheader != "":
         #legend.SetHeader(lheader, "C")
         legend.SetHeader(lheader)
+        
+    if extralabels:
+        exlegend = ROOT.TLegend(x0_l-0.08, y0_l, x0_l, y1_l)
+        exlegend.SetBorderSize(0)
+        exlegend.SetTextSize(0.04)
+        exlegend.SetTextFont(42)
+        exlegend.SetFillColor(0)
+        if extralheader and extralheader != "":
+            exlegend.SetHeader(extralheader)
 
     myhistos_clone = []
     for ihisto in myhistos:
@@ -691,21 +701,29 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
             legendoptions[idx] = "F"
         myhistos_clone[idx].Draw(
             " ".join(filter(None, [drawoptions[idx], "same"])))
+        
+        exlen = 0
+        if extralabels:
+            exlen = len(extralabels)
+            
+        if ileg < exlen:
+            exlegend.AddEntry(myhistos_clone[idx], " ", legendoptions[idx])
+            ileg += 1
 
-        if ileg < len(mylabels):
+        elif ileg < len(mylabels) + exlen:
             # number of labels might be different from number of histograms.
             # do the match logically
             if isinstance(myhistos_clone[idx], ROOT.THStack):
                 hlist = list(myhistos_clone[idx].GetHists())
                 for hist in reversed(hlist):
                     legend.AddEntry(
-                        hist, str(mylabels[ileg]), legendoptions[idx])
+                        hist, str(mylabels[ileg-exlen]), legendoptions[idx])
                     ileg += 1
             else:
                 legend.AddEntry(myhistos_clone[idx], str(
-                    mylabels[ileg]), legendoptions[idx])
+                    mylabels[ileg-exlen]), legendoptions[idx])
                 ileg += 1
-
+                
     # print("draw options ", drawoptions)
     # print("legend options ", legendoptions)
     
@@ -739,6 +757,10 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         # frame.Draw()
         if len(mylabels):
             legend.Draw()
+        if extralabels:
+            exlegend.Draw()
+        if extraToDraw:
+            extraToDraw.Draw()
         pad1.Update()
 
     else:
@@ -753,6 +775,10 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         if len(mylabels):
             # print("draw legend", len(mylabels))
             legend.Draw()
+        if extralabels:
+            exlegend.Draw()
+        if extraToDraw:
+            extraToDraw.Draw()
         canvas.Update()
 
     ##
