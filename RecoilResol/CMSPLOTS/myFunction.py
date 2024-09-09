@@ -760,7 +760,10 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         if extralabels:
             exlegend.Draw()
         if extraToDraw:
-            extraToDraw.Draw()
+            if not isinstance(extraToDraw, list):
+                extraToDraw = [extraToDraw]
+            for todraw in extraToDraw:
+                todraw.Draw()
         pad1.Update()
 
     else:
@@ -778,7 +781,10 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         if extralabels:
             exlegend.Draw()
         if extraToDraw:
-            extraToDraw.Draw()
+            if not isinstance(extraToDraw, list):
+                extraToDraw = [extraToDraw]
+            for todraw in extraToDraw:
+                todraw.Draw()
         canvas.Update()
 
     ##

@@ -78,7 +78,8 @@ extraHeaders = {
    "_qTHigh": "q_{T} > 50 GeV",
 }
 
-recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
+#recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
+recoils = ["PF", "PUPPI", "DeepMET"]
 
 colors = {
             "PF": 1,
@@ -94,7 +95,7 @@ labels = {
             "PUPPI": "PUPPI",
             "GEN": "GEN",
             "TKPHO": "TK+Photon",
-            "DeepMET": "DeepMET (Raw)",
+            "DeepMET": "DeepMET",
             "DeepMETCorr": "DeepMET",
          }
 
@@ -192,6 +193,13 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
    linestyles = GetLineStyles(hresponses)
    drawoptions = GetDrawOptions(hresponses)
    
+   extraToDraw = ROOT.TPaveText(0.60, 0.77, 0.90, 0.87, "NDC")
+   #extraToDraw.SetFillColor(0)
+   extraToDraw.SetFillColorAlpha(0, 0)
+   extraToDraw.SetBorderSize(0)
+   extraToDraw.SetTextFont(42)
+   extraToDraw.SetTextSize(0.04)
+   
    args = {
       "mycolors": hcolors,
       "markerstyles": hmarkers,
@@ -200,45 +208,48 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
       "outdir": outdir,
       "noLumi": noLumi,
       "dology": False,
-      "drawashist": False
+      "drawashist": False,
+      "extraToDraw": extraToDraw,
+      "legendoptions": ["LEP"] * len(recoils) + ["L"] * len(recoils),
+      "lheader": "MC",
+      "extralheader": "Data",
+      "extralabels": [""]*len(recoils)
    }
    
-   lheader = extraHeader if extraHeader else ""
-   args["lheader"] = lheader
+   if extraHeader:
+      extraToDraw.AddText(extraHeader)
 
-   DrawHistos(hresponses.values(), GetLegends(hresponses), qtmin, qtmax, qtlabel, 0., 1.19, responselabel, "reco_recoil_response" + suffix, legendPos=[0.50, 0.20, 0.80, 0.40], **args)
+   DrawHistos(hresponses.values(), GetLegends(hresponses), qtmin, qtmax, qtlabel, 0., 1.19, responselabel, "reco_recoil_response" + suffix, legendPos=[0.58, 0.15, 0.88, 0.40], **args)
 
-   DrawHistos(hresols_paral_diff.values(), GetLegends(hresols_paral_diff), qtmin, qtmax, qtlabel, 0, 39.0, uparallabel, "reco_recoil_resol_paral" + suffix, legendPos=[0.20, 0.65, 0.38, 0.90], **args)
+   DrawHistos(hresols_paral_diff.values(), GetLegends(hresols_paral_diff), qtmin, qtmax, qtlabel, 0, 39.0, uparallabel, "reco_recoil_resol_paral" + suffix, legendPos=[0.28, 0.70, 0.46, 0.90], **args)
 
-   DrawHistos(hresols_perp.values(), GetLegends(hresols_perp), qtmin, qtmax, qtlabel, 0, 32.0, uperplabel, "reco_recoil_resol_perp" + suffix, legendPos=[0.20, 0.69, 0.40, 0.92], **args)
+   DrawHistos(hresols_perp.values(), GetLegends(hresols_perp), qtmin, qtmax, qtlabel, 0, 32.0, uperplabel, "reco_recoil_resol_perp" + suffix, legendPos=[0.28, 0.70, 0.48, 0.90], **args)
 
-   DrawHistos(hresponses_nVtx.values(), GetLegends(hresponses_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel, "reco_recoil_response_VS_nVtx" + suffix, legendPos=[0.70, 0.17, 0.88, 0.40], **args)
+   DrawHistos(hresponses_nVtx.values(), GetLegends(hresponses_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel, "reco_recoil_response_VS_nVtx" + suffix, legendPos=[0.78, 0.20, 0.96, 0.40], **args)
 
-   DrawHistos(hresols_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel, "reco_recoil_resol_paral_VS_nVtx" + suffix, legendPos=[0.23, 0.65, 0.45, 0.90], **args)
+   DrawHistos(hresols_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel, "reco_recoil_resol_paral_VS_nVtx" + suffix, legendPos=[0.30, 0.70, 0.53, 0.90], **args)
 
-   DrawHistos(hresols_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel, "reco_recoil_resol_perp_VS_nVtx" + suffix, legendPos=[0.23, 0.65, 0.45, 0.90], **args)
+   DrawHistos(hresols_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel, "reco_recoil_resol_perp_VS_nVtx" + suffix, legendPos=[0.30, 0.70, 0.53, 0.90], **args)
 
    if applySc:
+      extraToDraw.Clear()
+      extraToDraw.AddText("Response corrected")
       if extraHeader:
-         #lheader = "#splitline{%s}{Response corrected}" % extraHeader
-         lheader = "Response corrected, " + extraHeader
-      else:
-         lheader = "Response corrected"
-      args["lheader"] = lheader
+         extraToDraw.AddText(extraHeader)
       #
       # Scaled 
       #
-      DrawHistos(hresponsesSc.values(), GetLegends(hresponses), qtmin, qtmax, qtlabel, 0., 1.15, responselabel, "reco_recoil_response_Scaled" + suffix, legendPos=[0.65, 0.17, 0.88, 0.45], **args)
+      DrawHistos(hresponsesSc.values(), GetLegends(hresponses), qtmin, qtmax, qtlabel, 0., 1.15, responselabel, "reco_recoil_response_Scaled" + suffix, legendPos=[0.70, 0.25, 0.90, 0.45], **args)
 
-      DrawHistos(hresolsSc_paral_diff.values(), GetLegends(hresols_paral_diff), qtmin, qtmax, qtlabel, 0, 60.0, uparallabel, "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.25, 0.65, 0.45, 0.90], **args)
+      DrawHistos(hresolsSc_paral_diff.values(), GetLegends(hresols_paral_diff), qtmin, qtmax, qtlabel, 0, 60.0, uparallabel, "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90], **args)
 
-      DrawHistos(hresolsSc_perp.values(), GetLegends(hresols_perp), qtmin, qtmax, qtlabel, 0, 55.0, uperplabel, "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.25, 0.65, 0.45, 0.90], **args)
+      DrawHistos(hresolsSc_perp.values(), GetLegends(hresols_perp), qtmin, qtmax, qtlabel, 0, 55.0, uperplabel, "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90], **args)
 
       DrawHistos(hresponsesSc_nVtx.values(), GetLegends(hresponses_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel, "reco_recoil_response_VS_nVtx_Scaled" + suffix, legendPos=[0.70, 0.17, 0.88, 0.40], **args)
 
-      DrawHistos(hresolsSc_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0, 55.0, uparallabel, "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, legendPos=[0.25, 0.65, 0.50, 0.90], **args)
+      DrawHistos(hresolsSc_paral_diff_VS_nVtx.values(), GetLegends(hresols_paral_diff_VS_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0, 55.0, uparallabel, "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.70, 0.58, 0.90], **args)
 
-      DrawHistos(hresolsSc_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0, 55.0, uperplabel, "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, legendPos=[0.25, 0.65, 0.50, 0.90], **args)
+      DrawHistos(hresolsSc_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), nvtxmin, nvtxmax, nvtxlabel, 0, 55.0, uperplabel, "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.70, 0.58, 0.90], **args)
 
    recoilanalyzer.saveHistos(f"root/output_{suffix}.root")
    recoilanalyzerSc.saveHistos(f"root/outputSc_{suffix}.root")
