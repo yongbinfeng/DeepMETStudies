@@ -10,6 +10,8 @@ import argparse
 noLumi = False
 MCOnly = True
 
+useRMS=False
+
 ROOT.gROOT.SetBatch(True)
 
 ROOT.ROOT.EnableImplicitMT(10)
@@ -113,7 +115,7 @@ rdf = rdf.Define("GoodPVEvent", "PVRobustIndex == 0").Define("BadPVEvent", "PVRo
 rdf_goodpv = rdf.Filter("GoodPVEvent")
 rdf_badpv = rdf.Filter("BadPVEvent")
 
-recoilanalyzer_goodpv = RecoilAnalyzer(rdf_goodpv, recoils, useRMS=True)
+recoilanalyzer_goodpv = RecoilAnalyzer(rdf_goodpv, recoils, useRMS=useRMS)
 recoilanalyzer_goodpv.prepareVars()
 recoilanalyzer_goodpv.prepareResponses(   'u_GEN_pt', xbins_qT)
 recoilanalyzer_goodpv.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -125,7 +127,7 @@ hresols_paral_diff_goodpv, hresols_perp_goodpv = recoilanalyzer_goodpv.getResolu
 hresponses_nVtx_goodpv = recoilanalyzer_goodpv.getResponses('PV_npvsGood')
 hresols_paral_diff_VS_nVtx_goodpv, hresols_perp_VS_nVtx_goodpv = recoilanalyzer_goodpv.getResolutions('PV_npvsGood')
 
-recoilanalyzer_badpv = RecoilAnalyzer(rdf_badpv, recoils, useRMS=True)
+recoilanalyzer_badpv = RecoilAnalyzer(rdf_badpv, recoils, useRMS=useRMS)
 recoilanalyzer_badpv.prepareVars()
 recoilanalyzer_badpv.prepareResponses(   'u_GEN_pt', xbins_qT)
 recoilanalyzer_badpv.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -158,7 +160,7 @@ if applySc:
 
    recoilsSc = [itype + "Sc" for itype in recoils]
    
-   recoilanalyzer_goodpv_Sc = RecoilAnalyzer(rdf_goodpv, recoilsSc, name = "recoilanalyzer_Scaled_goodpv", useRMS=True)
+   recoilanalyzer_goodpv_Sc = RecoilAnalyzer(rdf_goodpv, recoilsSc, name = "recoilanalyzer_Scaled_goodpv", useRMS=useRMS)
    recoilanalyzer_goodpv_Sc.prepareVars()
    recoilanalyzer_goodpv_Sc.prepareResponses(   'u_GEN_pt', xbins_qT)
    recoilanalyzer_goodpv_Sc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -170,7 +172,7 @@ if applySc:
    hresponses_goodpv_Sc_nVtx = recoilanalyzer_goodpv_Sc.getResponses('PV_npvsGood')
    hresols_goodpv_Sc_paral_diff_VS_nVtx, hresols_goodpv_Sc_perp_VS_nVtx = recoilanalyzer_goodpv_Sc.getResolutions('PV_npvsGood')
    
-   recoilanalyzer_badpv_Sc = RecoilAnalyzer(rdf_badpv, recoilsSc, name = "recoilanalyzer_Scaled_badpv", useRMS=True)
+   recoilanalyzer_badpv_Sc = RecoilAnalyzer(rdf_badpv, recoilsSc, name = "recoilanalyzer_Scaled_badpv", useRMS=useRMS)
    recoilanalyzer_badpv_Sc.prepareVars()
    recoilanalyzer_badpv_Sc.prepareResponses(   'u_GEN_pt', xbins_qT)
    recoilanalyzer_badpv_Sc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
