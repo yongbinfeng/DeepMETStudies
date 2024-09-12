@@ -16,7 +16,7 @@ ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT(15)
 
 doDefaultCorrection = True
-doGaussianSmooth = True
+doGaussianSmooth = False
 doBkgScaled = True
 doJetsInclusive = True
 
