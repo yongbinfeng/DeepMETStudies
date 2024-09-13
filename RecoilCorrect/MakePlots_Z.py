@@ -16,7 +16,7 @@ ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT(15)
 
 doDefaultCorrection = True
-doGaussianSmooth = False
+doGaussianSmooth = True
 doBkgScaled = True
 doJetsInclusive = True
 
@@ -157,17 +157,22 @@ def main():
         sampMan.DefineAll("deepmet_phi_corr_central_bkgScale", "TVector2::Phi_mpi_pi(deepmet_corr_central_bkgScale.Phi())")
         
 
-    met_pt_bins = np.array([0., 2.0, 4., 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 33, 36, 39, 42, 45, 48, 51, 55, 60, 65, 70, 75, 80, 90, 100, 110, 125, 150])
-    u1_bins = np.array([-40.,-36.,-32., -28., -25., -22.0, -20.0, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 53, 56, 59, 64, 68, 72, 76, 80, 85, 90, 100])
-    u2_bins = np.array([-80., -70., -65., -60., -56., -52, -48, -44, -40, -37, -34, -31, -28, -25., -22., -20, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 16, 18, 20, 22, 25, 28, 31, 34, 37, 40, 44, 48, 52, 56, 60, 65, 70, 80])
-    u_bins = np.array([0., 2., 4., 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 43, 46, 49, 52, 56, 60, 64, 68, 72, 76, 80, 85, 90, 95, 100, 105, 110, 125, 140, 150])
+    met_pt_bins = np.array([0., 2.0, 4., 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 65, 70, 75, 80, 90, 100, 110, 125, 150])
+    u1_bins = np.array([-40.,-36.,-32., -28., -25., -22.0, -20.0, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 53, 56, 59, 64, 68, 72, 76, 80, 85, 90, 100, 120, 140, 160, 200, 250, 300])
+    u2_bins = np.array([-100, -90, -80., -70., -65., -60., -56., -52, -48, -44, -40, -37, -34, -31, -28, -25., -22., -20, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 16, 18, 20, 22, 25, 28, 31, 34, 37, 40, 44, 48, 52, 56, 60, 65, 70, 80, 90, 100])
+    u_bins = np.array([0., 2., 4., 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 43, 46, 49, 52, 56, 60, 64, 68, 72, 76, 80, 85, 90, 95, 100, 105, 110, 125, 140, 160, 180, 200, 220, 250, 300])
     phimin = -ROOT.TMath.Pi()
     phimax = ROOT.TMath.Pi()
+    
+    ptmissmax = 150.0
+    u1max = 300.0
+    u2max = 100.0
+    utmax = 300.0
 
     # z kinematics
-    zptbins = np.array([0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0, 32.0, 34.0, 36.0, 38.0, 40.0, 42.0, 44.0, 46.0, 48.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0, 180.0])
+    zptbins = np.array([0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0, 32.0, 34.0, 36.0, 38.0, 40.0, 42.0, 44.0, 46.0, 48.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0, 180.0, 200, 220, 240, 260, 280, 300])
     #sampMan.cacheDraw("Z_pt", "histo_zjets_zpt_WoZptWeight", zptbins, DrawConfig(xmin=0, xmax=180, xlabel='p^{ll}_{T} [GeV]'), weightname="weight_WoVpt")
-    sampMan.cacheDraw("Z_pt", "histo_zjets_zpt", zptbins, DrawConfig(xmin=0, xmax=180, xlabel='p^{ll}_{T} [GeV]'))
+    sampMan.cacheDraw("Z_pt", "histo_zjets_zpt", zptbins, DrawConfig(xmin=0, xmax=300, xlabel='p^{ll}_{T} [GeV]', addOverflow=True))
     sampMan.cacheDraw("Z_eta", "histo_zjets_zeta", 30, -3, 3, DrawConfig(xmin=-3, xmax=3, xlabel='#eta^{ll}'))
     sampMan.cacheDraw("Z_phi", "histo_zjets_zphi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='#phi^{ll}'))
     sampMan.cacheDraw("m_ll", "histo_zjets_mll", 30, 80, 100, DrawConfig(xmin=80, xmax=100, xlabel='m^{ll} [GeV]'))
@@ -181,25 +186,25 @@ def main():
     sampMan.cacheDraw("subleadMuon_phi", "histo_zjets_subleadmuonphi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='#phi^{l}'))
     
     # met
-    sampMan.cacheDraw("MET_pt", "histo_zjets_pfmet_pt", met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='PF MET [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
+    sampMan.cacheDraw("MET_pt", "histo_zjets_pfmet_pt", met_pt_bins, DrawConfig(xmin=0, xmax=ptmissmax, xlabel='PF MET [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
     sampMan.cacheDraw("MET_phi", "histo_zjets_pfmet_phi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='PF #phi', ymax=1e10))
-    sampMan.cacheDraw("PuppiMET_pt", "histo_zjets_puppimet_pt", met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='PUPPI MET [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
+    sampMan.cacheDraw("PuppiMET_pt", "histo_zjets_puppimet_pt", met_pt_bins, DrawConfig(xmin=0, xmax=ptmissmax, xlabel='PUPPI MET [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
     sampMan.cacheDraw("PuppiMET_phi", "histo_zjets_puppimet_phi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='PUPPI #phi', ymax=1e10))
-    sampMan.cacheDraw("DeepMETResolutionTune_pt", "histo_zjets_deepmet_pt", met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='p^{miss}_{T} [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
+    sampMan.cacheDraw("DeepMETResolutionTune_pt", "histo_zjets_deepmet_pt", met_pt_bins, DrawConfig(xmin=0, xmax=ptmissmax, xlabel='p^{miss}_{T} [GeV]', yrmin=0.4, yrmax=1.6, addOverflow=True, addUnderflow=True))
     sampMan.cacheDraw("DeepMETResolutionTune_phi", "histo_zjets_deepmet_phi", 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='p^{miss}_{T} #phi', ymax=1e10, yrmin=0.4, yrmax=1.6))
     
     # recoil
-    sampMan.cacheDraw("u1", "histo_zjets_u1", u1_bins, DrawConfig(xmin=-40.0, xmax=100, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True))
-    sampMan.cacheDraw("u2", "histo_zjets_u2", u2_bins, DrawConfig(xmin=-80., xmax=80., xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True))
-    sampMan.cacheDraw("u_pt",    "histo_zjets_u_pt", u_bins,  DrawConfig(xmin=0, xmax=150, xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True))
+    sampMan.cacheDraw("u1", "histo_zjets_u1", u1_bins, DrawConfig(xmin=-40.0, xmax=u1max, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True))
+    sampMan.cacheDraw("u2", "histo_zjets_u2", u2_bins, DrawConfig(xmin=-u2max, xmax=u2max, xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True))
+    sampMan.cacheDraw("u_pt",    "histo_zjets_u_pt", u_bins,  DrawConfig(xmin=0, xmax=utmax, xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True))
     
     # corrected deepmet
     def DrawCorrection(postfix, h_met_unc = None, h_u1_unc = None, h_u2_unc = None, h_u_unc = None):
-        sampMan.cacheDraw("deepmet_pt_corr_"+postfix, "histo_zjets_deepmet_pt_corr_"+postfix, met_pt_bins, DrawConfig(xmin=0, xmax=150, xlabel='p^{miss}_{T} [GeV]', yrmin=0.79, yrmax=1.21, addOverflow=True, addUnderflow=True, hratiopanel = h_met_unc))
+        sampMan.cacheDraw("deepmet_pt_corr_"+postfix, "histo_zjets_deepmet_pt_corr_"+postfix, met_pt_bins, DrawConfig(xmin=0, xmax=ptmissmax, xlabel='p^{miss}_{T} [GeV]', yrmin=0.79, yrmax=1.21, addOverflow=True, addUnderflow=True, hratiopanel = h_met_unc))
         sampMan.cacheDraw("deepmet_phi_corr_"+postfix, "histo_zjets_deepmet_phi_corr_"+postfix, 30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='p^{miss}_{T} #phi'))
-        sampMan.cacheDraw("u1_corr_"+postfix, "histo_zjets_u1_corr_"+postfix, u1_bins, DrawConfig(xmin=-40.0, xmax=100, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u1_unc))
-        sampMan.cacheDraw("u2_corr_"+postfix, "histo_zjets_u2_corr_"+postfix, u2_bins, DrawConfig(xmin=-80., xmax=80., xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u2_unc))
-        sampMan.cacheDraw("u_pt_corr_"+postfix,    "histo_zjets_u_pt_corr_"+postfix, u_bins,  DrawConfig(xmin=0, xmax=150, xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u_unc, yrmin=0.79, yrmax=1.21))
+        sampMan.cacheDraw("u1_corr_"+postfix, "histo_zjets_u1_corr_"+postfix, u1_bins, DrawConfig(xmin=-40.0, xmax=u1max, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u1_unc))
+        sampMan.cacheDraw("u2_corr_"+postfix, "histo_zjets_u2_corr_"+postfix, u2_bins, DrawConfig(xmin=-u2max, xmax=u2max, xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u2_unc))
+        sampMan.cacheDraw("u_pt_corr_"+postfix,    "histo_zjets_u_pt_corr_"+postfix, u_bins,  DrawConfig(xmin=0, xmax=utmax, xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel = h_u_unc, yrmin=0.79, yrmax=1.21))
 
     if doDefaultCorrection:
         DrawCorrection("central")
@@ -229,10 +234,10 @@ def main():
             legendNCols = 1
             legendPos=[0.20, 0.88, 0.35, 0.74]
             
-        DrawHistos(histos_met, legends, 0., 150., "p^{miss}_{T} [GeV]", rmin, rmax, "Data / MC", "histo_zjets_ratio_deepmet_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
-        DrawHistos(histos_u_pt, legends, 0., 150., "u_{T} [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
-        DrawHistos(histos_u1, legends, -40.0, 100., "u_{#parallel} Corrected [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u1_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
-        DrawHistos(histos_u2, legends, -80.0, 80., "u_{#perp } Corrected [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u2_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols) 
+        DrawHistos(histos_met, legends, 0., ptmissmax, "p^{miss}_{T} [GeV]", rmin, rmax, "Data / MC", "histo_zjets_ratio_deepmet_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
+        DrawHistos(histos_u_pt, legends, 0., utmax, "u_{T} [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
+        DrawHistos(histos_u1, legends, -40.0, u1max, "u_{#parallel} Corrected [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u1_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols)
+        DrawHistos(histos_u2, legends, -u2max, u2max, "u_{#perp } Corrected [GeV]", 0.7, 1.3, "Data / MC", "histo_zjets_ratio_u2_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols) 
 
     def compMCRatios(hnames, colors, linestyles, legends, outputtag):
         # compare MC with MC
@@ -272,10 +277,10 @@ def main():
             legendNCols = 1
             legendPos=[0.20, 0.88, 0.35, 0.74]
 
-        DrawHistos(histos_met, legends, 0., 150., "p^{miss}_{T} [GeV]", rmin, rmax, "Variation / Nominal", "histo_zjets_MCratio_deepmet_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
-        DrawHistos(histos_u_pt, legends, 0., 150., "u_{T} [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
-        DrawHistos(histos_u1, legends, -40.0, 100., "u_{#parallel} [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u1_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
-        DrawHistos(histos_u2, legends, -80.0, 80., "u_{#perp } [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u2_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
+        DrawHistos(histos_met, legends, 0., ptmissmax, "p^{miss}_{T} [GeV]", rmin, rmax, "Variation / Nominal", "histo_zjets_MCratio_deepmet_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
+        DrawHistos(histos_u_pt, legends, 0., utmax, "u_{T} [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u_pt_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
+        DrawHistos(histos_u1, legends, -40.0, u1max, "u_{#parallel} [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u1_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
+        DrawHistos(histos_u2, legends, -u2max, u2max, "u_{#perp } [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u2_{}".format(outputtag), dology = False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly = True)
         
         def AddUnc(hmet_unc, hmets):
             for ibin in range(1, hmet_unc.GetNbinsX()+1):

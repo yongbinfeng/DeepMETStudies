@@ -6,7 +6,6 @@ next steps. It can be run on data/Z amc@NLO/Z Madgraph/ttbar bkg
 '''
 
 import ROOT
-import numpy as np
 import os
 from collections import OrderedDict
 from SampleManager import Sample
@@ -132,9 +131,9 @@ def makeU1U2(cat = 0):
                 rdf = rdf.Define(wstring, "(jet_n>={} && jet_n<={}) * (Z_pt>={} && Z_pt<{} ) * {} * norm * {}".format(njetmin, njetmax, ptmin, ptmax, weightstr, extra_weight))
                 hname_u1 = "hist_uparal_{}".format(wstring)
                 #histos_u1[(njetmin,njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 240+int(ptmax)-int(ptmin), -120.0+int(ptmin), 120.0+int(ptmax)), "u1",  wstring )
-                histos_u1[(njetmin, njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 360, -180.0-0.5*(ptmax-ptmin), 180.0+0.5*(ptmax-ptmin)),  "u1diff",  wstring )
+                histos_u1[(njetmin, njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u1, hname_u1, 350, -350.0-0.5*(ptmax-ptmin), 350.0+0.5*(ptmax-ptmin)),  "u1diff",  wstring )
                 hname_u2 = "hist_uperp_{}".format(wstring)
-                histos_u2[(njetmin, njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u2, hname_u2, 240, -120.0,       120.0),       "u2",  wstring )
+                histos_u2[(njetmin, njetmax)][(ptmin, ptmax)] = rdf.Histo1D( (hname_u2, hname_u2, 300, -150.0,       150.0),       "u2",  wstring )
 
         return histos_u1, histos_u2
 

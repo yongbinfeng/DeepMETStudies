@@ -183,7 +183,7 @@ Float_t ZptReWeight(float zpt, TH1D *h_zpt_ratio_data_vs_MC, bool isData = false
         return 1.0;
     float zptmax = h_zpt_ratio_data_vs_MC->GetXaxis()->GetXmax();
     if (zpt > zptmax)
-        return 1.0;
+        zpt = zptmax - 0.1;
     return h_zpt_ratio_data_vs_MC->GetBinContent(h_zpt_ratio_data_vs_MC->FindBin(zpt));
 }
 
