@@ -446,7 +446,7 @@ class SampleManager(object):
         if not os.path.exists(outdir):
             os.makedirs(outdir)
             
-        branches_mc = branches
+        branches_mc = branches.copy()
         if addNorm:
             branches_mc += ["norm"]
             
