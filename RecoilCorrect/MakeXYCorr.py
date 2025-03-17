@@ -342,7 +342,7 @@ if __name__ == "__main__":
    print("Running the XY corrections")
    corrname = "results/MET_xy_dataMC.root"
    
-   if 1:
+   if 0:
       print(f"Deriving XY corrections for MET and saving them in {corrname}")
       deriveXYCorr(corrname, writeOutput=writeOutput)
       print("\n\n\n")
