@@ -2,7 +2,7 @@ import sys
 sys.path.append("../RecoilResol/CMSPLOTS")  # noqa
 import argparse
 from utils.RecoilAnalyzer import RecoilAnalyzer
-from utils.utils import getpTBins, getnVtxBins, get_response_code, getqTLabel, getnVtxLabel, getNPVString, getqTRange, getResponseLabel, getUparalLabel, getUperpLabel, getVtxRange
+from utils.utils import getpTBins, getpTResponseBins, getnVtxBins, get_response_code, getqTLabel, getnVtxLabel, getNPVString, getqTRange, getResponseLabel, getUparalLabel, getUperpLabel, getVtxRange
 from collections import OrderedDict
 from CMSPLOTS.myFunction import DrawHistos
 import ROOT
@@ -13,6 +13,8 @@ nPV = getNPVString()
 ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT(10)
 ROOT.gSystem.Load("Functions_cc.so")
+
+print("start processing")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--applySc", action="store_true",
@@ -31,11 +33,13 @@ applySc = args.applySc
 print("apply Response corrections: ", applySc)
 
 chain = ROOT.TChain("Events")
-chain.Add("/afs/cern.ch/work/y/yofeng/public/outputroot_withcorrection/Data.root")
+chain.Add(
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withcorrections/Data.root")
 rdf_data_tmp = ROOT.ROOT.RDataFrame(chain)
 
 chainMC = ROOT.TChain("Events")
-chainMC.Add("/afs/cern.ch/work/y/yofeng/public/outputroot_withcorrection/DY.root")
+chainMC.Add(
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withcorrections/DY.root")
 rdf_MC_tmp = ROOT.ROOT.RDataFrame(chainMC)
 
 if args.test:
@@ -78,8 +82,9 @@ rdf_data_qTHigh = rdf_data.Filter("Z_pt >= 50")
 rdf_MC_qTLow = rdf_MC.Filter("Z_pt < 50")
 rdf_MC_qTHigh = rdf_MC.Filter("Z_pt >= 50")
 
-rdfs = [[rdf_data, rdf_MC], [rdf_data_qTLow, rdf_MC_qTLow],
-        [rdf_data_qTHigh, rdf_MC_qTHigh]]
+# rdfs = [[rdf_data, rdf_MC], [rdf_data_qTLow, rdf_MC_qTLow],
+#        [rdf_data_qTHigh, rdf_MC_qTHigh]]
+rdfs = [[rdf_data, rdf_MC]]
 suffixes = ["", "_qTLow", "_qTHigh"]
 extraHeaders = {
     "": None,
@@ -88,7 +93,7 @@ extraHeaders = {
 }
 
 # recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
-recoils = ["PF", "PUPPI", "PUPPIJER", "DeepMET"]
+recoils = ["PF", "PUPPI", "DeepMET"]
 
 colors = {
     "PF": 1,
@@ -120,6 +125,7 @@ markers = {
 }
 
 xbins_qT = getpTBins()
+xbins_qT_resp = getpTResponseBins()
 xbins_nVtx = getnVtxBins()
 
 # loop over the different qT bins
@@ -138,6 +144,8 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
     recoilanalyzer.prepareResponses(nPV, xbins_nVtx)
     recoilanalyzer.prepareResolutions(nPV, xbins_nVtx, 400, -200, 200)
 
+    recoilanalyzer.prepareResponses('pT_muons', xbins_qT_resp)
+
     hresponses = recoilanalyzer.getResponses('u_GEN_pt')
     hresols_paral_diff, hresols_perp = recoilanalyzer.getResolutions(
         'u_GEN_pt')
@@ -145,21 +153,42 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
     hresols_paral_diff_VS_nVtx, hresols_perp_VS_nVtx = recoilanalyzer.getResolutions(
         nPV)
 
+    hresponses_inclusive = recoilanalyzer.getResponses('pT_muons')
+
+    values_responses = OrderedDict()
+    values_responses_MC = OrderedDict()
+    for itype in recoils:
+        print("hresponses_inclusive in data: ",
+              hresponses_inclusive[itype].GetBinContent(1))
+        print("hresponses_inclusive in MC: ",
+              hresponses_inclusive[itype + "_MC"].GetBinContent(1))
+        values_responses[itype] = hresponses_inclusive[itype].GetBinContent(1)
+        values_responses_MC[itype] = hresponses_inclusive[itype +
+                                                          "_MC"].GetBinContent(1)
+
     if applySc:
         if idx == 0:
             ROOT.gInterpreter.Declare(get_response_code)
         # create branch with the scale factors
         for itype in recoils:
             # "dynamic scopes" to create a variable holding histograms
-            ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}{suffix}= {HNAME} ".format(
-                RECOIL=itype, suffix=suffix, HNAME=hresponses[itype].GetName()))
-            ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}_MC{suffix}= {HNAME} ".format(
-                RECOIL=itype, suffix=suffix, HNAME=hresponses[itype+"_MC"].GetName()))
-            rdf_data_tmp = rdf_data_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}{suffix})'.format(RECOIL=itype, suffix=suffix)) \
+            # ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}{suffix}= {HNAME} ".format(
+            #    RECOIL=itype, suffix=suffix, HNAME=hresponses[itype].GetName()))
+            # ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}_MC{suffix}= {HNAME} ".format(
+            #    RECOIL=itype, suffix=suffix, HNAME=hresponses[itype+"_MC"].GetName()))
+            # rdf_data_tmp = rdf_data_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}{suffix})'.format(RECOIL=itype, suffix=suffix)) \
+            #    .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+            #    .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
+
+            # rdf_MC_tmp = rdf_MC_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}_MC{suffix})'.format(RECOIL=itype, suffix=suffix)) \
+            #    .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+            #    .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
+
+            rdf_data_tmp = rdf_data_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), f"{values_responses[itype]}") \
                 .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
                 .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
 
-            rdf_MC_tmp = rdf_MC_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}_MC{suffix})'.format(RECOIL=itype, suffix=suffix)) \
+            rdf_MC_tmp = rdf_MC_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), f"{values_responses_MC[itype]}") \
                 .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
                 .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
 
