@@ -435,7 +435,7 @@ def TH2ToTH1s(h2, projY = False, label = "X"):
             labels.append(f"{xmin: .2f}<{label}<{xmax: .2f}")
     return hs, labels
 
-def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outputname, dology=True, showratio=False, dologx=False, lheader=None, donormalize=False, binomialratio=False, yrmax=2.0, yrmin=0.0, yrlabel=None, MCOnly=False, leftlegend=False, mycolors=None, legendPos=None, legendNCols=1, linestyles=None, markerstyles=None, showpull=False, doNewman=False, doPearson=False, ignoreHistError=False, ypullmin=-3.99, ypullmax=3.99, drawashist=False, padsize=(2, 0.9, 1.1), setGridx=False, setGridy=False, drawoptions=None, legendoptions=None, ratiooptions=None, dologz=False, doth2=False, ratiobase=0, redrawihist=-1, extraText=None, noCMS=False, noLumi=False, nMaxDigits=None, addOverflow=False, addUnderflow=False, plotdiff=False, hratiopanel=None, doratios=None, hpulls=None, W_ref=600, is5TeV=False, outdir="plots", savepdf=True,zmin=0,zmax=2, extralabels=None, extralheader=None,extraToDraw=None,exlegoffset=0.08):
+def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outputname, dology=True, showratio=False, dologx=False, lheader=None, donormalize=False, binomialratio=False, yrmax=2.0, yrmin=0.0, yrlabel=None, MCOnly=False, leftlegend=False, mycolors=None, legendPos=None, legendNCols=1, linestyles=None, markerstyles=None, showpull=False, doNewman=False, doPearson=False, ignoreHistError=False, ypullmin=-3.99, ypullmax=3.99, drawashist=False, padsize=(2, 0.9, 1.1), setGridx=False, setGridy=False, drawoptions=None, legendoptions=None, ratiooptions=None, dologz=False, doth2=False, ratiobase=0, redrawihist=-1, extraText=None, noCMS=False, noLumi=False, nMaxDigits=None, addOverflow=False, addUnderflow=False, plotdiff=False, hratiopanel=None, doratios=None, hpulls=None, W_ref=600, is5TeV=False, outdir="plots", savepdf=True,zmin=0,zmax=2, extralabels=None, extralheader=None,extraToDraw=None,exlegoffset=0.08, hratios=None):
     """
     draw histograms with the CMS tdr style
     """
@@ -591,10 +591,10 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     h1.GetXaxis().SetNdivisions(6, 5, 0)
     h1.GetYaxis().SetNdivisions(6, 5, 0)
     h1.GetYaxis().SetTitle("%s" % ylabel)
-    h1.GetYaxis().SetTitleSize(0.050/(padsize1+padsize3))
-    h1.GetYaxis().SetLabelSize(0.045/(padsize1+padsize3))
-    h1.GetXaxis().SetTitleSize(0.050/(padsize1+padsize3))
-    h1.GetXaxis().SetLabelSize(0.045/(padsize1+padsize3))
+    h1.GetYaxis().SetTitleSize(0.045/(padsize1+padsize3))
+    h1.GetYaxis().SetLabelSize(0.040/(padsize1+padsize3))
+    h1.GetXaxis().SetTitleSize(0.045/(padsize1+padsize3))
+    h1.GetXaxis().SetLabelSize(0.040/(padsize1+padsize3))
     h1.GetYaxis().SetTitleOffset(1.35*(padsize1+padsize3)*(600.0/W))
     h1.GetXaxis().SetTitleOffset(1.1*(padsize1+padsize3))
 
@@ -630,7 +630,7 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
 
     legend = ROOT.TLegend(x0_l, y0_l, x1_l, y1_l)
     legend.SetBorderSize(0)
-    legend.SetTextSize(0.04)
+    legend.SetTextSize(0.05)
     legend.SetTextFont(42)
     legend.SetFillColor(0)
     legend.SetNColumns(legendNCols)
@@ -641,7 +641,7 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     if extralabels:
         exlegend = ROOT.TLegend(x0_l-exlegoffset, y0_l, x0_l, y1_l)
         exlegend.SetBorderSize(0)
-        exlegend.SetTextSize(0.04)
+        exlegend.SetTextSize(0.05)
         exlegend.SetTextFont(42)
         exlegend.SetFillColor(0)
         exlegend.SetMargin(0.99)
@@ -798,22 +798,23 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
             hden = myhistos_clone[ratiobase].Clone("hden_%s" % idx)
 
     if showratio:
-        hratios = {}
-        for idx in range(0, len(myhistos_clone)):
-            if doratios != None and doratios[idx] == False:
-                continue
-            if idx == ratiobase:
-                continue
-            if isinstance(myhistos_clone[idx], ROOT.THStack):
-                hratios[idx] = THStack2TH1(myhistos_clone[idx])
-            else:
-                hratios[idx] = myhistos_clone[idx].Clone("hratios_%s" % idx)
-            if binomialratio:
-                hratios[idx].Divide(hratios[idx], hden, 1.0, 1.0, "b")
-            else:
-                hratios[idx].Divide(hden)
-            if plotdiff:
-                Ratio2Diff(hratios[idx])
+        if hratios == None:
+            hratios = {}
+            for idx in range(0, len(myhistos_clone)):
+                if doratios != None and doratios[idx] == False:
+                    continue
+                if idx == ratiobase:
+                    continue
+                if isinstance(myhistos_clone[idx], ROOT.THStack):
+                    hratios[idx] = THStack2TH1(myhistos_clone[idx])
+                else:
+                    hratios[idx] = myhistos_clone[idx].Clone("hratios_%s" % idx)
+                if binomialratio:
+                    hratios[idx].Divide(hratios[idx], hden, 1.0, 1.0, "b")
+                else:
+                    hratios[idx].Divide(hden)
+                if plotdiff:
+                    Ratio2Diff(hratios[idx])
 
     if showpull:
         if hpulls == None:
@@ -832,10 +833,10 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
             pad2.SetLogx()
 
         h2 = ROOT.TH1F("h2", "h2", 80, xmin, xmax)
-        h2.GetXaxis().SetTitleSize(0.050/(padsize2+0.3*padsize3))
-        h2.GetXaxis().SetLabelSize(0.045/(padsize2+0.3*padsize3))
-        h2.GetYaxis().SetTitleSize(0.050/(padsize2+0.3*padsize3))
-        h2.GetYaxis().SetLabelSize(0.045/(padsize2+0.3*padsize3))
+        h2.GetXaxis().SetTitleSize(0.045/(padsize2+0.3*padsize3))
+        h2.GetXaxis().SetLabelSize(0.040/(padsize2+0.3*padsize3))
+        h2.GetYaxis().SetTitleSize(0.045/(padsize2+0.3*padsize3))
+        h2.GetYaxis().SetLabelSize(0.040/(padsize2+0.3*padsize3))
         h2.GetYaxis().SetTitleOffset(1.35*(padsize2+0.35*padsize3)*(600.0/W))
 
         h2.GetYaxis().SetNdivisions(8)
