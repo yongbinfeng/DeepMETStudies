@@ -178,8 +178,8 @@ def getRMSResolution(th2d):
         rms_err = 0
         if count > 0:
             rms_err = rms / ROOT.TMath.Sqrt(2*count)
-        print("counts, ", hresol.GetBinContent(ibin), hprof.GetBinContent(ibin))
-        print("ibin ", ibin, hresol.GetBinContent(ibin), hprof.GetBinContent(ibin), hprof.GetBinError(ibin))
+        #print("counts, ", hresol.GetBinContent(ibin), hprof.GetBinContent(ibin))
+        #print("ibin ", ibin, hresol.GetBinContent(ibin), hprof.GetBinContent(ibin), hprof.GetBinError(ibin))
         hresol.SetBinContent(ibin, rms)
         hresol.SetBinError(ibin, rms_err)
     return hresol

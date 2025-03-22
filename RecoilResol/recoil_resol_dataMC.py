@@ -58,8 +58,10 @@ def prepareVars(rdf):
              .Define("u_PUPPI_x",  "-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt*TMath::Cos(PuppiMET_phi))") \
              .Define("u_PUPPI_y",  "-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt*TMath::Sin(PuppiMET_phi))") \
              .Define("u_PUPPI_pt", "TMath::Sqrt(u_PUPPI_x * u_PUPPI_x + u_PUPPI_y * u_PUPPI_y)") \
-             .Define("u_PUPPIJER_x", "-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_ptJERUp*TMath::Cos(PuppiMET_phiJERUp))") \
-             .Define("u_PUPPIJER_y", "-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_ptJERUp*TMath::Sin(PuppiMET_phiJERUp))") \
+             .Define("PuppiMET_ptJERUpFix", "TMath::IsNaN(PuppiMET_ptUnclusteredUp) ? 0 : PuppiMET_ptUnclusteredUp") \
+             .Define("PuppiMET_phiJERUpFix", "TMath::IsNaN(PuppiMET_phiUnclusteredUp) ? 0 : PuppiMET_phiUnclusteredUp") \
+             .Define("u_PUPPIJER_x", "-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_ptJERUpFix*TMath::Cos(PuppiMET_phiJERUpFix))") \
+             .Define("u_PUPPIJER_y", "-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_ptJERUpFix*TMath::Sin(PuppiMET_phiJERUpFix))") \
              .Define("u_PUPPIJER_pt", "TMath::Sqrt(u_PUPPIJER_x * u_PUPPIJER_x + u_PUPPIJER_y * u_PUPPIJER_y)") \
              .Define("u_PF_x",     "-(pT_muons*TMath::Cos(phi_muons) + MET_pt*TMath::Cos(MET_phi))") \
              .Define("u_PF_y",     "-(pT_muons*TMath::Sin(phi_muons) + MET_pt*TMath::Sin(MET_phi))") \
@@ -93,7 +95,7 @@ extraHeaders = {
 }
 
 # recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
-recoils = ["PF", "PUPPI", "DeepMET"]
+recoils = ["PF", "PUPPI", "PUPPIJER", "DeepMET"]
 
 colors = {
     "PF": 1,
