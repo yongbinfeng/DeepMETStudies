@@ -261,6 +261,7 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
     hmarkers = GetMarkers(hresponses_todraw)
     linestyles = GetLineStyles(hresponses_todraw)
     drawoptions = GetDrawOptions(hresponses_todraw)
+    legends = GetLegends(hresponses_todraw)
     
     def GetRatios(hdict):
         hratios = {}
@@ -284,7 +285,7 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
     extraToDraw.SetTextFont(42)
     extraToDraw.SetTextSize(0.05)
     
-    n_todraw = len(hresponses_todraw) / 2
+    n_todraw = int(len(hresponses_todraw) / 2)
 
     args = {
         "mycolors": hcolors,
@@ -317,8 +318,6 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
         for k, v in hdict.items():
             if "PUPPIUnc" in k:
                 continue
-            if k.endswith("Sc"):
-                k = k.replace("Sc", "")
             hdict_todraw[k] = v
         
         if 'showratio' in args_temp.keys() and args_temp['showratio']:
@@ -343,7 +342,7 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
             args_temp['hratiopanel'] = hratiopanel
             args_temp['hratios'] = hratios
         
-        DrawHistos(hdict_todraw.values(), GetLegends(hdict_todraw), xmin, xmax, xlabel, ymin, ymax, ylabel, name, **args_temp)
+        DrawHistos(hdict_todraw.values(), legends, xmin, xmax, xlabel, ymin, ymax, ylabel, name, **args_temp)
 
     DrawHistosWithUncband(hresponses, qtmin, qtmax, qtlabel, 0., 1.19, responselabel, "reco_recoil_response" + suffix, legendPos=[0.58, 0.15, 0.88, 0.40])
     

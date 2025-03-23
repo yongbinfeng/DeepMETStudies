@@ -591,9 +591,9 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     h1.GetXaxis().SetNdivisions(6, 5, 0)
     h1.GetYaxis().SetNdivisions(6, 5, 0)
     h1.GetYaxis().SetTitle("%s" % ylabel)
-    h1.GetYaxis().SetTitleSize(0.045/(padsize1+padsize3))
+    h1.GetYaxis().SetTitleSize(0.041/(padsize1+padsize3))
     h1.GetYaxis().SetLabelSize(0.040/(padsize1+padsize3))
-    h1.GetXaxis().SetTitleSize(0.045/(padsize1+padsize3))
+    h1.GetXaxis().SetTitleSize(0.041/(padsize1+padsize3))
     h1.GetXaxis().SetLabelSize(0.040/(padsize1+padsize3))
     h1.GetYaxis().SetTitleOffset(1.35*(padsize1+padsize3)*(600.0/W))
     h1.GetXaxis().SetTitleOffset(1.1*(padsize1+padsize3))
@@ -833,9 +833,9 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
             pad2.SetLogx()
 
         h2 = ROOT.TH1F("h2", "h2", 80, xmin, xmax)
-        h2.GetXaxis().SetTitleSize(0.045/(padsize2+0.3*padsize3))
+        h2.GetXaxis().SetTitleSize(0.041/(padsize2+0.3*padsize3))
         h2.GetXaxis().SetLabelSize(0.040/(padsize2+0.3*padsize3))
-        h2.GetYaxis().SetTitleSize(0.045/(padsize2+0.3*padsize3))
+        h2.GetYaxis().SetTitleSize(0.041/(padsize2+0.3*padsize3))
         h2.GetYaxis().SetLabelSize(0.040/(padsize2+0.3*padsize3))
         h2.GetYaxis().SetTitleOffset(1.35*(padsize2+0.35*padsize3)*(600.0/W))
 
