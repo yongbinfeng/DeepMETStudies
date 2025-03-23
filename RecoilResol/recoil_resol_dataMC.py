@@ -58,11 +58,6 @@ def prepareVars(rdf):
              .Define("u_PUPPI_x",  "-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt*TMath::Cos(PuppiMET_phi))") \
              .Define("u_PUPPI_y",  "-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt*TMath::Sin(PuppiMET_phi))") \
              .Define("u_PUPPI_pt", "TMath::Sqrt(u_PUPPI_x * u_PUPPI_x + u_PUPPI_y * u_PUPPI_y)") \
-             .Define("PuppiMET_ptJERUpFix", "TMath::IsNaN(PuppiMET_ptUnclusteredUp) ? 0 : PuppiMET_ptUnclusteredUp") \
-             .Define("PuppiMET_phiJERUpFix", "TMath::IsNaN(PuppiMET_phiUnclusteredUp) ? 0 : PuppiMET_phiUnclusteredUp") \
-             .Define("u_PUPPIJER_x", "-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_ptJERUpFix*TMath::Cos(PuppiMET_phiJERUpFix))") \
-             .Define("u_PUPPIJER_y", "-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_ptJERUpFix*TMath::Sin(PuppiMET_phiJERUpFix))") \
-             .Define("u_PUPPIJER_pt", "TMath::Sqrt(u_PUPPIJER_x * u_PUPPIJER_x + u_PUPPIJER_y * u_PUPPIJER_y)") \
              .Define("u_PF_x",     "-(pT_muons*TMath::Cos(phi_muons) + MET_pt*TMath::Cos(MET_phi))") \
              .Define("u_PF_y",     "-(pT_muons*TMath::Sin(phi_muons) + MET_pt*TMath::Sin(MET_phi))") \
              .Define("u_PF_pt",    "TMath::Sqrt(u_PF_x * u_PF_x + u_PF_y * u_PF_y)") \
@@ -72,6 +67,24 @@ def prepareVars(rdf):
              .Define("u_DeepMETCorr_x", "-(pT_muons*TMath::Cos(phi_muons) + deepmet_pt_corr_central*TMath::Cos(deepmet_phi_corr_central) )") \
              .Define("u_DeepMETCorr_y", "-(pT_muons*TMath::Sin(phi_muons) + deepmet_pt_corr_central*TMath::Sin(deepmet_phi_corr_central) )") \
              .Define("u_DeepMETCorr_pt", "TMath::Sqrt(u_DeepMETCorr_x * u_DeepMETCorr_x + u_DeepMETCorr_y * u_DeepMETCorr_y)")
+             
+             
+    # for uncertainties
+    unc_string = "0."
+    for unc in ["JES", "JER", "Unclustered"]:
+        rdf = rdf.Define(f"PuppiMET_pt{unc}UpFix", f"TMath::IsNaN(PuppiMET_pt{unc}Up) ? 0 : PuppiMET_pt{unc}Up") \
+                    .Define(f"PuppiMET_phi{unc}UpFix", f"TMath::IsNaN(PuppiMET_phi{unc}Up) ? 0 : PuppiMET_phi{unc}Up") \
+                    .Define(f"u_PUPPI{unc}_x", f"-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Cos(PuppiMET_phi{unc}UpFix))") \
+                    .Define(f"u_PUPPI{unc}_y", f"-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Sin(PuppiMET_phi{unc}UpFix))") \
+                    .Define(f"u_PUPPI{unc}_pt", f"TMath::Sqrt(u_PUPPI{unc}_x * u_PUPPI{unc}_x + u_PUPPI{unc}_y * u_PUPPI{unc}_y)")  \
+                        
+        unc_string += f"+  TMath::Power(u_PUPPI_AXIS - u_PUPPI{unc}_AXIS, 2)"
+                    
+    # quad sum of the uncertainties
+    print ("unc_string: ", unc_string)
+    rdf = rdf.Define("u_PUPPIUnc_x", f"u_PUPPI_x + TMath::Sqrt({unc_string.replace('AXIS', 'x')})") \
+             .Define("u_PUPPIUnc_y", f"u_PUPPI_y + TMath::Sqrt({unc_string.replace('AXIS', 'y')})") \
+             .Define("u_PUPPIUnc_pt", "TMath::Sqrt(u_PUPPIUnc_x * u_PUPPIUnc_x + u_PUPPIUnc_y * u_PUPPIUnc_y)")
     return rdf
 
 
@@ -95,7 +108,7 @@ extraHeaders = {
 }
 
 # recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
-recoils = ["PF", "PUPPI", "PUPPIJER", "DeepMET"]
+recoils = ["PF", "PUPPI", "PUPPIUnc", "DeepMET"]
 
 colors = {
     "PF": 1,
@@ -103,7 +116,7 @@ colors = {
     "GEN": 6,
     "DeepMET": 4,
     "DeepMETCorr": 8,
-    "PUPPIJER": 6,
+    "PUPPIUnc": 6,
 }
 
 labels = {
@@ -114,7 +127,7 @@ labels = {
     "TKPHO": "TK+Photon",
     "DeepMET": "DeepMET",
     "DeepMETCorr": "DeepMET",
-    "PUPPIJER": "PUPPIJER",
+    "PUPPIUnc": "PUPPIUnc",
 }
 
 markers = {
@@ -123,7 +136,7 @@ markers = {
     "GEN": 22,
     "DeepMET": 22,
     "DeepMETCorr": 23,
-    "PUPPIJER": 24,
+    "PUPPIUnc": 24,
 }
 
 xbins_qT = getpTBins()
