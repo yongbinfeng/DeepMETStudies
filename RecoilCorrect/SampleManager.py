@@ -4,13 +4,13 @@ variables and plotting.
 Currently customized to work best for the W/Z case. can be easily
 extened to general usage.
 '''
-
 import ROOT
 import numpy as np
-import sys, os
+import sys
+import os
 from collections import OrderedDict
 sys.path.append("../RecoilResol/CMSPLOTS/")
-from myFunction import DrawHistos
+from myFunction import DrawHistos  # noqa
 
 MINMASS = 80
 MAXMASS = 100
@@ -27,6 +27,7 @@ class DrawConfig(object):
     try to sync with the arguments in DrawHistos
     in /afs/cern.ch/work/y/yofeng/public/CMSPLOTS
     """
+
     def __init__(self, **kwargs):
         self.xmin = kwargs.get('xmin', 0.0)
         self.xmax = kwargs.get('xmax', 0.0)
@@ -53,7 +54,7 @@ class DrawConfig(object):
         self.colors = kwargs.get('colors', [])
 
         self.redrawihist = kwargs.get('redrawihist', 0)
-        
+
         self.addOverflow = kwargs.get('addOverflow', False)
         self.addUnderflow = kwargs.get('addUnderflow', False)
 
@@ -61,11 +62,11 @@ class DrawConfig(object):
 
 
 class Sample(object):
-    def __init__(self, inputfiles, isMC=True, xsec=1.0, color=1, reweightzpt = False, legend="", name="", 
+    def __init__(self, inputfiles, isMC=True, xsec=1.0, color=1, reweightzpt=False, legend="", name="",
                  isZSR=True, isWSR=False, applySF=False, bjetVeto=False, prepareVars=True, select=True):
         if isMC:
             self.mcxsec = xsec
-            if xsec !=0:
+            if xsec != 0:
                 self.nmcevt = self.getNMCEvt(inputfiles)
                 self.normfactor = LUMI * self.mcxsec / self.nmcevt
             else:
@@ -73,7 +74,7 @@ class Sample(object):
                 self.nmcevt = 0
                 self.normfactor = 1.0
             self.color = color
-            self.reweightzpt = reweightzpt 
+            self.reweightzpt = reweightzpt
         else:
             self.nmcevt = 0
             self.mcxsec = 0
@@ -85,9 +86,10 @@ class Sample(object):
         self.name = name
         self.isZSR = isZSR
         self.isWSR = isWSR
-        assert not (self.isZSR and self.isWSR), "can not be ZSR and WSR at the same time !!"
+        assert not (
+            self.isZSR and self.isWSR), "can not be ZSR and WSR at the same time !!"
         self.applySF = applySF
-        # this variable is used in cases where the xsec is allowed to 
+        # this variable is used in cases where the xsec is allowed to
         # free-float, or normalized to the rest of (data-MC_sum)
         self.renormalize = False
         self.renormalizefactor = 1.0
@@ -104,22 +106,22 @@ class Sample(object):
 
     def initRDF(self, inputfiles):
         # this seems to be a bug in ROOT.
-        # the tree must be held by some vars, or else it would be 
+        # the tree must be held by some vars, or else it would be
         # closed after this function and the rdf would crash
         self.tree = ROOT.TChain("Events")
         if inputfiles.endswith(".root"):
-            self.tree.Add( inputfiles )
+            self.tree.Add(inputfiles)
         else:
             print("Adding RDF from the list of files in ", inputfiles)
-            for line in open( inputfiles, "r"):
+            for line in open(inputfiles, "r"):
                 fname = line.rstrip()
                 print(fname)
-                self.tree.Add( fname )
+                self.tree.Add(fname)
 
-        self.rdf_org = ROOT.ROOT.RDataFrame( self.tree )
-        #print self.rdf_org.Count().GetValue()
-        
-    def getNMCEvtFromOneFile(self, inputfile, suffix = ""):
+        self.rdf_org = ROOT.ROOT.RDataFrame(self.tree)
+        # print self.rdf_org.Count().GetValue()
+
+    def getNMCEvtFromOneFile(self, inputfile, suffix=""):
         ifile = ROOT.TFile(inputfile)
         ttree = ifile.Get("Events")
         hist = ROOT.TH1F(f"h1_{suffix}", f"h1_{suffix}", 2, -2, 2)
@@ -137,14 +139,16 @@ class Sample(object):
         if inputfiles.endswith(".root"):
             Npos, Nneg = self.getNMCEvtFromOneFile(inputfiles)
         else:
-            for line in open( inputfiles, "r"):
+            for line in open(inputfiles, "r"):
                 fname = line.rstrip()
                 print(fname)
-                Npos_temp, Nneg_temp = self.getNMCEvtFromOneFile(fname, suffix = nfiles)
+                Npos_temp, Nneg_temp = self.getNMCEvtFromOneFile(
+                    fname, suffix=nfiles)
                 Npos += Npos_temp
                 Nneg += Nneg_temp
                 nfiles += 1
-        print("total number of events: {}, in which {} are positive, {} are negative".format(Npos+Nneg, Npos, Nneg))
+        print("total number of events: {}, in which {} are positive, {} are negative".format(
+            Npos+Nneg, Npos, Nneg))
         return Npos-Nneg
 
     def select(self):
@@ -162,8 +166,8 @@ class Sample(object):
                                 .Filter("Muon_pfRelIso04_all[0] < 0.15 && Muon_pfRelIso04_all[1] < 0.15") \
                                 .Filter("Muon_charge[0] * Muon_charge[1] < 0") \
                                 .Filter("m_ll > {MINMASS} && m_ll < {MAXMASS}".format(MINMASS=MINMASS, MAXMASS=MAXMASS))
-                                    
-            #self.rdf_temp = self.rdf_org.Filter("m_ll > {MINMASS} && m_ll < {MAXMASS}".format(MINMASS=MINMASS, MAXMASS=MAXMASS)) \
+
+            # self.rdf_temp = self.rdf_org.Filter("m_ll > {MINMASS} && m_ll < {MAXMASS}".format(MINMASS=MINMASS, MAXMASS=MAXMASS)) \
             #                    .Filter("mu_pt[0] > {} && mu_pt[1] > {}".format(LEPPTMIN, LEPPTMIN))  \
             #                    .Filter("abs(mu_eta[0]) < {} && abs(mu_eta[1]) < {}".format(LEPETA, LEPETA))  \
             #                    .Define("lep_n", "mu_n+el_n").Filter("lep_n==2")
@@ -173,14 +177,15 @@ class Sample(object):
             else:
                 self.rdf = self.rdf_temp
         elif self.isWSR:
-            self.rdf = self.rdf_org.Define("lep_n", "mu_n+el_n").Filter("lep_n==1")
+            self.rdf = self.rdf_org.Define(
+                "lep_n", "mu_n+el_n").Filter("lep_n==1")
         else:
             self.rdf = self.rdf_org
-        #print self.rdf.Count().GetValue()
+        # print self.rdf.Count().GetValue()
 
     def ApplyCut(self, cutstring):
-        rdf_postcut = self.rdf.Filter( cutstring )
-        self._garbagerdfs.append( self.rdf )
+        rdf_postcut = self.rdf.Filter(cutstring)
+        self._garbagerdfs.append(self.rdf)
         print("applied cut {} to Sample {}".format(cutstring, self.name))
         self.rdf = rdf_postcut
 
@@ -191,40 +196,45 @@ class Sample(object):
         self.rdf_org = self.rdf_org.Define("isData", "0" if self.isMC else "1")
         # define weight
         if self.isMC and self.applySF:
-            self.rdf_org = self.rdf_org.Define("weight_WoVpt", "( PUWeight * NLOWeight * mu_trigSF * mu_isoSF * mu_trkSF * mu_idSF )")
+            self.rdf_org = self.rdf_org.Define(
+                "weight_WoVpt", "( PUWeight * NLOWeight * mu_trigSF * mu_isoSF * mu_trkSF * mu_idSF )")
         elif self.isMC:
-            self.rdf_org = self.rdf_org.Define("weight_WoVpt", "( genWeight > 0 ? 1. : -1. )")
+            self.rdf_org = self.rdf_org.Define(
+                "weight_WoVpt", "( genWeight > 0 ? 1. : -1. )")
         else:
             self.rdf_org = self.rdf_org.Define("weight_WoVpt", "isData")
-            
-        self.rdf_org = self.rdf_org.Define("jet_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<3.0)")
+
+        self.rdf_org = self.rdf_org.Define(
+            "jet_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<3.0)")
 
         if self.isZSR:
             # make Z boson
             self.rdf_org = self.rdf_org.Define("VecZ", "VVecM(Muon_pt[0], Muon_eta[0], Muon_phi[0], Muon_mass[0], Muon_pt[1], Muon_eta[1], Muon_phi[1], Muon_mass[1])") \
-                                .Define("m_ll", "VecZ.M()") \
-                                .Define("Z_pt", "VecZ.Pt()") \
-                                .Define("Z_eta", "VecZ.Eta()") \
-                                .Define("Z_phi", "VecZ.Phi()")
+                .Define("m_ll", "VecZ.M()") \
+                .Define("Z_pt", "VecZ.Pt()") \
+                .Define("Z_eta", "VecZ.Eta()") \
+                .Define("Z_phi", "VecZ.Phi()")
             # make recoil vec
             self.rdf_org = self.rdf_org.Define("Uvec",  "UVec(Z_pt, Z_phi, DeepMETResolutionTune_pt, DeepMETResolutionTune_phi)") \
                                .Define("u_pt",  "Uvec.Mod()")        \
                                .Define("u_phi", "Uvec.Phi()")        \
                                .Define("u1",    "u_pt * TMath::Cos(u_phi + TMath::Pi() - Z_phi)") \
                                .Define("u2",    "u_pt * TMath::Sin(u_phi + TMath::Pi() - Z_phi)") \
-            # z pt reweight
-            self.rdf_org = self.rdf_org.Define("ZptWeight", "ZptReWeight(Z_pt, h_zpt_ratio, isData)" if self.reweightzpt else "1.")
+                # z pt reweight
+            self.rdf_org = self.rdf_org.Define(
+                "ZptWeight", "ZptReWeight(Z_pt, h_zpt_ratio, isData)" if self.reweightzpt else "1.")
 
-            self.rdf_org = self.rdf_org.Define("weight", "ZptWeight * weight_WoVpt")
+            self.rdf_org = self.rdf_org.Define(
+                "weight", "ZptWeight * weight_WoVpt")
         elif self.isWSR and self.isMC:
-            ## make W boson in the transverse plane
-            #self.rdf_org = self.rdf_org.Define("Wvec", "VVec(mu_pt[0], mu_eta[0], mu_phi[0], mu_e[0], gen_met_pt, 0., gen_met_phi, gen_met_pt)") \
+            # make W boson in the transverse plane
+            # self.rdf_org = self.rdf_org.Define("Wvec", "VVec(mu_pt[0], mu_eta[0], mu_phi[0], mu_e[0], gen_met_pt, 0., gen_met_phi, gen_met_pt)") \
             #                           .Define("W_pt",  "Wvec.Pt()") \
             #                           .Define("W_phi", "Wvec.Phi()")
-            #self.rdf_org = self.rdf_org.Define("W_pt", "trueW_pt[0]") \
+            # self.rdf_org = self.rdf_org.Define("W_pt", "trueW_pt[0]") \
             #                           .Define("W_phi", "trueW_phi[0]")
             # make recoil vec
-            #self.rdf_org = self.rdf_org.Define("Uvec", "UVec(W_pt, W_phi, deepmet_pt, deepmet_phi)") \
+            # self.rdf_org = self.rdf_org.Define("Uvec", "UVec(W_pt, W_phi, deepmet_pt, deepmet_phi)") \
             #                           .Define("u_pt",  "Uvec.Mod()")   \
             #                           .Define("u_phi", "Uvec.Phi()")   \
             # weights
@@ -242,16 +252,16 @@ class SampleManager(object):
         self.getNormFactors()
         self.initGroups()
 
-        self.hdatas  = {}
-        self.hsmcs   = {}
+        self.hdatas = {}
+        self.hsmcs = {}
         self.hratios = {}
-        
+
         self.weightname_default = "weight"
         self.outdir = "plots"
-        
+
     def SetDefaultWeightName(self, weightname):
         self.weightname_default = weightname
-        
+
     def SetOutDir(self, outdir):
         self.outdir = outdir
 
@@ -266,30 +276,35 @@ class SampleManager(object):
                 print("Apply Cut {} for sample {}".format(cutstring, mc.name))
                 mc.ApplyCut(cutstring)
             elif mc.groupname in sampgroupnames:
-                print("Apply Cut {} for sample {} in grouped sample {}".format(cutstring, mc.name, mc.groupname))
+                print("Apply Cut {} for sample {} in grouped sample {}".format(
+                    cutstring, mc.name, mc.groupname))
                 mc.ApplyCut(cutstring)
 
     def DefineAll(self, varname, formula, excludes=[], excludeGroups=[]):
         self.DefineData(varname, formula)
-        self.DefineMC(  varname, formula, excludes, excludeGroups)
+        self.DefineMC(varname, formula, excludes, excludeGroups)
 
     def DefineMC(self, varname, formula, excludes=[], excludeGroups=[]):
         for mc in self.mcs:
             if mc.name in excludes:
-                print("Define {} with {}. Skip sample {}".format(varname, formula, mc.name))
+                print("Define {} with {}. Skip sample {}".format(
+                    varname, formula, mc.name))
                 continue
             if mc.groupname in excludeGroups:
-                print("Define {} with {}. Skip sample {} in grouped sample {}".format(varname, formula, mc.name, mc.groupname))
+                print("Define {} with {}. Skip sample {} in grouped sample {}".format(
+                    varname, formula, mc.name, mc.groupname))
                 continue
             mc.rdf = mc.rdf.Define(varname, formula)
 
     def DefineSpecificMCs(self, varname, formula, sampnames=[], sampgroupnames=[]):
         for mc in self.mcs:
             if mc.name in sampnames:
-                print("Define {} with {} for sample {}".format(varname, formula, mc.name))
+                print("Define {} with {} for sample {}".format(
+                    varname, formula, mc.name))
                 mc.rdf = mc.rdf.Define(varname, formula)
             elif mc.groupname in sampgroupnames:
-                print("Define {} with {} for sample {} in grouped sample {}".format(varname, formula, mc.name, mc.groupname))
+                print("Define {} with {} for sample {} in grouped sample {}".format(
+                    varname, formula, mc.name, mc.groupname))
                 mc.rdf = mc.rdf.Define(varname, formula)
 
     def DefineData(self, varname, formula):
@@ -298,7 +313,7 @@ class SampleManager(object):
     def getNormFactors(self):
         self.normfactors = []
         for mc in self.mcs:
-            self.normfactors.append( mc.normfactor )
+            self.normfactors.append(mc.normfactor)
         print("normalization factors ", self.normfactors)
 
     def initGroups(self):
@@ -322,15 +337,17 @@ class SampleManager(object):
 
         if mcnames_to_be_grouped:
             from termcolor import colored
-            print(colored('some somples are not grouped yet, please check the names...: {}'.format(mcnames_to_be_grouped), 'red'))
+            print(colored('some somples are not grouped yet, please check the names...: {}'.format(
+                mcnames_to_be_grouped), 'red'))
 
     def cacheDraw(self, *args, **kwds):
         if len(args) == 6:
             self.cacheDraw_fb(*args, **kwds)
-        elif len(args) == 4:   
+        elif len(args) == 4:
             self.cacheDraw_vb(*args, **kwds)
         else:
-            raise ValueError('The argument is problematic. It has to be either 4 or 6')
+            raise ValueError(
+                'The argument is problematic. It has to be either 4 or 6')
 
     def cacheDraw_fb(self, varname, hname, nbins, xmin, xmax, drawconfigs, weightname=None):
         """ 
@@ -339,11 +356,13 @@ class SampleManager(object):
         """
         if weightname is None:
             weightname = self.weightname_default
-        h_data = self.data.rdf.Histo1D( (hname+"_data", hname, nbins, xmin, xmax), varname, weightname )
+        h_data = self.data.rdf.Histo1D(
+            (hname+"_data", hname, nbins, xmin, xmax), varname, weightname)
         h_mcs = []
         for imc in range(len(self.mcs)):
             mc = self.mcs[imc]
-            h_mcs.append( mc.rdf.Histo1D( (hname+"_mc_"+str(imc), hname, nbins, xmin, xmax), varname, weightname) )
+            h_mcs.append(mc.rdf.Histo1D(
+                (hname+"_mc_"+str(imc), hname, nbins, xmin, xmax), varname, weightname))
 
         self.to_draw[hname] = (h_data, h_mcs, drawconfigs)
 
@@ -356,11 +375,13 @@ class SampleManager(object):
             weightname = self.weightname_default
         assert isinstance(xbins, np.ndarray), "input must be np array"
         nbins = xbins.size - 1
-        h_data = self.data.rdf.Histo1D( (hname+"_data", hname, nbins, xbins), varname, weightname )
+        h_data = self.data.rdf.Histo1D(
+            (hname+"_data", hname, nbins, xbins), varname, weightname)
         h_mcs = []
         for imc in range(len(self.mcs)):
             mc = self.mcs[imc]
-            h_mcs.append( mc.rdf.Histo1D( (hname+"_mc_"+str(imc), hname, nbins, xbins), varname, weightname) )
+            h_mcs.append(mc.rdf.Histo1D(
+                (hname+"_mc_"+str(imc), hname, nbins, xbins), varname, weightname))
 
         self.to_draw[hname] = (h_data, h_mcs, drawconfigs)
 
@@ -377,42 +398,46 @@ class SampleManager(object):
         group_to_renormalize = ""
         for imc in range(len(h_mcs)):
             # scale the MC to the xsec
-            h_mcs[imc].Scale( self.normfactors[imc] )
-            if self.mcs[imc].renormalizefactor!=1.0:
-                print("renormalize MC {} with a factor or {}".format(self.mcs[imc].name, self.mcs[imc].renormalizefactor))
-                h_mcs[imc].Scale( self.mcs[imc].renormalizefactor )
-    
+            h_mcs[imc].Scale(self.normfactors[imc])
+            if self.mcs[imc].renormalizefactor != 1.0:
+                print("renormalize MC {} with a factor or {}".format(
+                    self.mcs[imc].name, self.mcs[imc].renormalizefactor))
+                h_mcs[imc].Scale(self.mcs[imc].renormalizefactor)
+
             groupname = self.mcs[imc].groupname
             if groupname not in hgroupedmcs:
-                hgroupedmcs[groupname] = h_mcs[imc].Clone(h_mcs[imc].GetName().replace("_mc_","_grouped_"+groupname))
-                hgroupedmcs[groupname].SetLineColor( self.mcs[imc].groupcolor )
-                hgroupedmcs[groupname].SetFillColor( self.mcs[imc].groupcolor )
+                hgroupedmcs[groupname] = h_mcs[imc].Clone(
+                    h_mcs[imc].GetName().replace("_mc_", "_grouped_"+groupname))
+                hgroupedmcs[groupname].SetLineColor(self.mcs[imc].groupcolor)
+                hgroupedmcs[groupname].SetFillColor(self.mcs[imc].groupcolor)
 
-                legends.append( self.mcs[imc].grouplegend )
+                legends.append(self.mcs[imc].grouplegend)
 
                 if self.mcs[imc].renormalize:
                     group_to_renormalize = groupname
             else:
                 # group mc already exist. Add to the histogram
-                hgroupedmcs[groupname].Add( h_mcs[imc].GetValue() )
+                hgroupedmcs[groupname].Add(h_mcs[imc].GetValue())
 
         if group_to_renormalize:
             ndata = h_data.Integral(0, h_data.GetNbinsX()+1)
-            nmc=0
+            nmc = 0
             for gname, ghisto in hgroupedmcs.items():
-                if gname!=group_to_renormalize:
+                if gname != group_to_renormalize:
                     nmc += ghisto.Integral(0, ghisto.GetNbinsX()+1)
-            weight = float(ndata-nmc) / hgroupedmcs[group_to_renormalize].Integral(0, hgroupedmcs[group_to_renormalize].GetNbinsX()+1)
-            print("Renormalize group for {}, with {} data, {} MC and weight {}".format(group_to_renormalize, ndata, nmc, weight))
+            weight = float(ndata-nmc) / hgroupedmcs[group_to_renormalize].Integral(
+                0, hgroupedmcs[group_to_renormalize].GetNbinsX()+1)
+            print("Renormalize group for {}, with {} data, {} MC and weight {}".format(
+                group_to_renormalize, ndata, nmc, weight))
             hgroupedmcs[group_to_renormalize].Scale(weight)
 
         hsname = "hs_" + drawconfigs.outputname
-        hs_gmc = ROOT.THStack( hsname, hsname)
+        hs_gmc = ROOT.THStack(hsname, hsname)
         for h_gmc in reversed(list(hgroupedmcs.values())):
             if drawconfigs.donormalizebin:
                 # scale to bin width
                 h_gmc.Scale(1.0, "width")
-            hs_gmc.Add( h_gmc )
+            hs_gmc.Add(h_gmc)
 
         if not drawconfigs.legends:
             drawconfigs.legends = legends
@@ -423,41 +448,46 @@ class SampleManager(object):
 
         if drawconfigs.donormalizebin:
             h_data.Scale(1.0, "width")
-        
-        self.hdatas[ drawconfigs.outputname] = h_data
-        self.hsmcs[  drawconfigs.outputname] = hs_gmc
-        self.hratios[drawconfigs.outputname] = DrawHistos( [h_data, hs_gmc], drawconfigs.legends, drawconfigs.xmin, drawconfigs.xmax, drawconfigs.xlabel, drawconfigs.ymin, drawconfigs.ymax, drawconfigs.ylabel, drawconfigs.outputname, dology=drawconfigs.dology, dologx=drawconfigs.dologx, showratio=drawconfigs.showratio, yrmax = drawconfigs.yrmax, yrmin = drawconfigs.yrmin, yrlabel = drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos = drawconfigs.legendPos, redrawihist = drawconfigs.redrawihist, outdir = self.outdir, addOverflow = drawconfigs.addOverflow, addUnderflow = drawconfigs.addUnderflow, hratiopanel = drawconfigs.hratiopanel)
-        
+
+        self.hdatas[drawconfigs.outputname] = h_data
+        self.hsmcs[drawconfigs.outputname] = hs_gmc
+        self.hratios[drawconfigs.outputname] = DrawHistos([h_data, hs_gmc], drawconfigs.legends, drawconfigs.xmin, drawconfigs.xmax, drawconfigs.xlabel, drawconfigs.ymin, drawconfigs.ymax, drawconfigs.ylabel, drawconfigs.outputname, dology=drawconfigs.dology, dologx=drawconfigs.dologx, showratio=drawconfigs.showratio, yrmax=drawconfigs.yrmax,
+                                                          yrmin=drawconfigs.yrmin, yrlabel=drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos=drawconfigs.legendPos, redrawihist=drawconfigs.redrawihist, outdir=self.outdir, addOverflow=drawconfigs.addOverflow, addUnderflow=drawconfigs.addUnderflow, hratiopanel=drawconfigs.hratiopanel)
 
     def launchDraw(self):
         """
         launch all the draw options in to_draw
         """
         for hname, plotinfo in self.to_draw.items():
-            self._DrawPlot( plotinfo[0], plotinfo[1], plotinfo[2], hname)
+            self._DrawPlot(plotinfo[0], plotinfo[1], plotinfo[2], hname)
         print("finished drawing..")
         # clear the to_draw list
         self.to_draw = OrderedDict()
-        
-    def snapShot(self, outdir, branches, addNorm = True):
+
+    def snapShot(self, outdir, branches, addNorm=True):
         """
         write the ntuples to a root file
         """
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-            
+
         branches_mc = branches.copy()
+        branches_mc += ["Pileup_nTrueInt",
+                        "Pileup_pudensity", "Pileup_gpudensity", "Pileup_nPU", "Pileup_sumEOOT", "Pileup_sumLOOT"]
         if addNorm:
             branches_mc += ["norm"]
-            
+
         for mc in self.mcs:
             if addNorm:
                 # include the normalizing factor
-                mc.rdf = mc.rdf.Define("norm", "1.0 * {}".format(mc.normfactor))
+                mc.rdf = mc.rdf.Define(
+                    "norm", "1.0 * {}".format(mc.normfactor))
             print("snapshot for ", mc.name)
-            mc.rdf.Snapshot("Events", os.path.join(outdir, mc.name+".root"), branches_mc)
-        
+            mc.rdf.Snapshot("Events", os.path.join(
+                outdir, mc.name+".root"), branches_mc)
+
         print("snapshot for ", self.data.name)
-        self.data.rdf.Snapshot("Events", os.path.join(outdir, self.data.name+".root"), branches)
-        
+        self.data.rdf.Snapshot("Events", os.path.join(
+            outdir, self.data.name+".root"), branches)
+
         print("finished snapshot..")
