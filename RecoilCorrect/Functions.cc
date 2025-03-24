@@ -187,6 +187,16 @@ Float_t ZptReWeight(float zpt, TH1D *h_zpt_ratio_data_vs_MC, bool isData = false
     return h_zpt_ratio_data_vs_MC->GetBinContent(h_zpt_ratio_data_vs_MC->FindBin(zpt));
 }
 
+Float_t PileupReWeight(float npv, TH1D *h_pileup_ratio_data_vs_MC, bool isData = false)
+{
+    if (isData)
+        return 1.0;
+    float npvmax = h_pileup_ratio_data_vs_MC->GetXaxis()->GetXmax();
+    if (npv > npvmax)
+        npv = npvmax - 0.1;
+    return h_pileup_ratio_data_vs_MC->GetBinContent(h_pileup_ratio_data_vs_MC->FindBin(npv));
+}
+
 // calculate mT based on lepton px, py and recoil ux, uy
 float calMT_fromUT_XY(float lep_px, float lep_py, float ux, float uy)
 {
