@@ -11,7 +11,7 @@ noLumi = False
 nPV = getNPVString()
 
 ROOT.gROOT.SetBatch(True)
-ROOT.ROOT.EnableImplicitMT(10)
+ROOT.ROOT.EnableImplicitMT()
 ROOT.gSystem.Load("Functions_cc.so")
 
 print("start processing")
@@ -34,13 +34,15 @@ print("apply Response corrections: ", applySc)
 
 chain = ROOT.TChain("Events")
 chain.Add(
-    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withcorrections/Data.root")
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/Data.root")
 rdf_data_tmp = ROOT.ROOT.RDataFrame(chain)
 
 chainMC = ROOT.TChain("Events")
 chainMC.Add(
-    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withcorrections/DY.root")
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/DY.root")
 rdf_MC_tmp = ROOT.ROOT.RDataFrame(chainMC)
+
+weightname = "weight_corr"
 
 if args.test:
     rdf_data = rdf_data_tmp.Filter("rdfentry_ < 10000")
@@ -63,25 +65,24 @@ def prepareVars(rdf):
              .Define("u_PF_pt",    "TMath::Sqrt(u_PF_x * u_PF_x + u_PF_y * u_PF_y)") \
              .Define("u_DeepMET_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETResolutionTune_pt*TMath::Cos(DeepMETResolutionTune_phi))") \
              .Define("u_DeepMET_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETResolutionTune_pt*TMath::Sin(DeepMETResolutionTune_phi))") \
-             .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)") \
-             .Define("u_DeepMETCorr_x", "-(pT_muons*TMath::Cos(phi_muons) + deepmet_pt_corr_central*TMath::Cos(deepmet_phi_corr_central) )") \
-             .Define("u_DeepMETCorr_y", "-(pT_muons*TMath::Sin(phi_muons) + deepmet_pt_corr_central*TMath::Sin(deepmet_phi_corr_central) )") \
-             .Define("u_DeepMETCorr_pt", "TMath::Sqrt(u_DeepMETCorr_x * u_DeepMETCorr_x + u_DeepMETCorr_y * u_DeepMETCorr_y)")
-             
-             
+             .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)")
+    # .Define("u_DeepMETCorr_x", "-(pT_muons*TMath::Cos(phi_muons) + deepmet_pt_corr_central*TMath::Cos(deepmet_phi_corr_central) )") \
+    # .Define("u_DeepMETCorr_y", "-(pT_muons*TMath::Sin(phi_muons) + deepmet_pt_corr_central*TMath::Sin(deepmet_phi_corr_central) )") \
+    # .Define("u_DeepMETCorr_pt", "TMath::Sqrt(u_DeepMETCorr_x * u_DeepMETCorr_x + u_DeepMETCorr_y * u_DeepMETCorr_y)")
+
     # for uncertainties
     unc_string = "0."
     for unc in ["JES", "JER", "Unclustered"]:
         rdf = rdf.Define(f"PuppiMET_pt{unc}UpFix", f"TMath::IsNaN(PuppiMET_pt{unc}Up) ? 0 : PuppiMET_pt{unc}Up") \
-                    .Define(f"PuppiMET_phi{unc}UpFix", f"TMath::IsNaN(PuppiMET_phi{unc}Up) ? 0 : PuppiMET_phi{unc}Up") \
-                    .Define(f"u_PUPPI{unc}_x", f"-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Cos(PuppiMET_phi{unc}UpFix))") \
-                    .Define(f"u_PUPPI{unc}_y", f"-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Sin(PuppiMET_phi{unc}UpFix))") \
-                    .Define(f"u_PUPPI{unc}_pt", f"TMath::Sqrt(u_PUPPI{unc}_x * u_PUPPI{unc}_x + u_PUPPI{unc}_y * u_PUPPI{unc}_y)")  \
-                        
+            .Define(f"PuppiMET_phi{unc}UpFix", f"TMath::IsNaN(PuppiMET_phi{unc}Up) ? 0 : PuppiMET_phi{unc}Up") \
+            .Define(f"u_PUPPI{unc}_x", f"-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Cos(PuppiMET_phi{unc}UpFix))") \
+            .Define(f"u_PUPPI{unc}_y", f"-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Sin(PuppiMET_phi{unc}UpFix))") \
+            .Define(f"u_PUPPI{unc}_pt", f"TMath::Sqrt(u_PUPPI{unc}_x * u_PUPPI{unc}_x + u_PUPPI{unc}_y * u_PUPPI{unc}_y)")  \
+
         unc_string += f"+  TMath::Power(u_PUPPI_AXIS - u_PUPPI{unc}_AXIS, 2)"
-                    
+
     # quad sum of the uncertainties
-    print ("unc_string: ", unc_string)
+    print("unc_string: ", unc_string)
     rdf = rdf.Define("u_PUPPIUnc_x", f"u_PUPPI_x + TMath::Sqrt({unc_string.replace('AXIS', 'x')})") \
              .Define("u_PUPPIUnc_y", f"u_PUPPI_y + TMath::Sqrt({unc_string.replace('AXIS', 'y')})") \
              .Define("u_PUPPIUnc_pt", "TMath::Sqrt(u_PUPPIUnc_x * u_PUPPIUnc_x + u_PUPPIUnc_y * u_PUPPIUnc_y)")
@@ -90,6 +91,10 @@ def prepareVars(rdf):
 
 rdf_data = prepareVars(rdf_data)
 rdf_MC = prepareVars(rdf_MC)
+
+rdf_data = rdf_data.Define("weight_dummy", "1.0")
+rdf_MC = rdf_MC.Define("weight_dummy", "1.0")
+# weightname = "weight_dummy"
 
 # three bins of qT: inclusive, 0-50, 50-inf
 rdf_data_qTLow = rdf_data.Filter("Z_pt < 50")
@@ -152,7 +157,7 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
         suffix = "_" + suffix
 
     recoilanalyzer = RecoilAnalyzer(
-        rdf_data_tmp, recoils, rdfMC=rdf_MC_tmp, name="recoilanalyzer_" + suffix, useRMS=True)
+        rdf_data_tmp, recoils, rdfMC=rdf_MC_tmp, name="recoilanalyzer_" + suffix, useRMS=True, weightname=weightname)
     recoilanalyzer.prepareVars()
     recoilanalyzer.prepareResponses('u_GEN_pt', xbins_qT)
     recoilanalyzer.prepareResolutions('u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -209,7 +214,7 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
 
         recoilsSc = [itype + "Sc" for itype in recoils]
         recoilanalyzerSc = RecoilAnalyzer(
-            rdf_data_tmp, recoilsSc, rdfMC=rdf_MC_tmp, name="recoilanalyzer_Scaled" + suffix, useRMS=True)
+            rdf_data_tmp, recoilsSc, rdfMC=rdf_MC_tmp, name="recoilanalyzer_Scaled" + suffix, useRMS=True, weightname=weightname)
         recoilanalyzerSc.prepareVars()
         recoilanalyzerSc.prepareResponses('u_GEN_pt', xbins_qT)
         recoilanalyzerSc.prepareResolutions(
@@ -251,31 +256,31 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
 
     def GetDrawOptions(hdict):
         return ["EP" if "_MC" not in itype else "HIST" for itype in hdict.keys()]
-    
+
     hresponses_todraw = OrderedDict()
     for k, v in hresponses.items():
         if k != "PUPPIUnc" and k != "PUPPIUnc_MC":
             hresponses_todraw[k] = v
-    
+
     hcolors = GetColors(hresponses_todraw)
     hmarkers = GetMarkers(hresponses_todraw)
     linestyles = GetLineStyles(hresponses_todraw)
     drawoptions = GetDrawOptions(hresponses_todraw)
     legends = GetLegends(hresponses_todraw)
-    
+
     def GetRatios(hdict):
         hratios = {}
         for idx, itype in enumerate(hdict.keys()):
             if "_MC" not in itype and itype + "_MC" in hdict.keys():
                 hratios[itype] = hdict[itype].Clone(itype + "_ratio")
                 hratios[itype].Divide(hdict[itype + "_MC"])
-                
+
                 icolor = hcolors[idx]
                 hratios[itype].SetLineColor(icolor)
                 hratios[itype].SetMarkerColor(icolor)
                 imarker = hmarkers[idx]
                 hratios[itype].SetMarkerStyle(imarker)
-                
+
         return hratios
 
     extraToDraw = ROOT.TPaveText(0.60, 0.70, 0.90, 0.87, "NDC")
@@ -284,7 +289,7 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
     extraToDraw.SetBorderSize(0)
     extraToDraw.SetTextFont(42)
     extraToDraw.SetTextSize(0.05)
-    
+
     n_todraw = int(len(hresponses_todraw) / 2)
 
     args = {
@@ -300,7 +305,7 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
         "legendoptions": ["LEP"] * n_todraw + ["L"] * n_todraw,
         "lheader": "MC",
         "extralheader": "Data",
-        "extralabels": [""]* n_todraw,
+        "extralabels": [""] * n_todraw,
         "yrmin": 0.76,
         "yrmax": 1.24,
         "yrlabel": "Data  / MC",
@@ -308,50 +313,61 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
 
     if extraHeader:
         extraToDraw.AddText(extraHeader)
-        
+
     def DrawHistosWithUncband(hdict, xmin, xmax, xlabel, ymin, ymax, ylabel, name, legendPos=[0.58, 0.15, 0.88, 0.40], **kwargs):
         args_temp = args.copy()
         args_temp.update(kwargs)
         args_temp['legendPos'] = legendPos
-        
+
         hdict_todraw = OrderedDict()
         for k, v in hdict.items():
             if "PUPPIUnc" in k:
                 continue
             hdict_todraw[k] = v
-        
+
         if 'showratio' in args_temp.keys() and args_temp['showratio']:
             # make unc for the ratio panel
             hratiopanel = None
             if "PUPPIUnc" in hdict.keys() or "PUPPIUncSc" in hdict.keys():
                 val_center = "PUPPI" if "PUPPI" in hdict.keys() else "PUPPISc"
                 val_unc = "PUPPIUnc" if "PUPPIUnc" in hdict.keys() else "PUPPIUncSc"
-                
-                h_center_ratio = hdict[val_center].Clone(f"{hdict[val_center].GetName()}_ratio")
+
+                h_center_ratio = hdict[val_center].Clone(
+                    f"{hdict[val_center].GetName()}_ratio")
                 h_center_ratio.Divide(hdict[f"{val_center}_MC"])
-                #h_unc_ratio = hdict["PUPPIUnc"].Clone(f"{hdict['PUPPIUnc'].GetName()}_ratio")
-                h_unc_ratio = hdict[val_center].Clone(f"{hdict[val_center].GetName()}_ratio_unc")
+                # h_unc_ratio = hdict["PUPPIUnc"].Clone(f"{hdict['PUPPIUnc'].GetName()}_ratio")
+                h_unc_ratio = hdict[val_center].Clone(
+                    f"{hdict[val_center].GetName()}_ratio_unc")
                 h_unc_ratio.Divide(hdict[f"{val_unc}_MC"])
-                hratiopanel = h_center_ratio.Clone(f"{h_center_ratio.GetName()}_ratioForUnc")
+                hratiopanel = h_center_ratio.Clone(
+                    f"{h_center_ratio.GetName()}_ratioForUnc")
                 for ibin in range(1, h_center_ratio.GetNbinsX() + 1):
-                    hratiopanel.SetBinError(ibin, abs(h_unc_ratio.GetBinContent(ibin) - h_center_ratio.GetBinContent(ibin)))
+                    hratiopanel.SetBinError(ibin, abs(h_unc_ratio.GetBinContent(
+                        ibin) - h_center_ratio.GetBinContent(ibin)))
                     hratiopanel.SetBinContent(ibin, 1.0)
 
             hratios = GetRatios(hdict_todraw)
 
             args_temp['hratiopanel'] = hratiopanel
             args_temp['hratios'] = hratios
-        
-        DrawHistos(hdict_todraw.values(), legends, xmin, xmax, xlabel, ymin, ymax, ylabel, name, **args_temp)
 
-    DrawHistosWithUncband(hresponses, qtmin, qtmax, qtlabel, 0., 1.19, responselabel, "reco_recoil_response" + suffix, legendPos=[0.58, 0.15, 0.88, 0.40])
-    
-    args['showratio'] = True  
-    DrawHistosWithUncband(hresols_paral_diff, qtmin, qtmax, qtlabel, 0, 39.0, uparallabel, "reco_recoil_resol_paral" + suffix, legendPos=[0.28, 0.70, 0.46, 0.90])
-    DrawHistosWithUncband(hresols_perp, qtmin, qtmax, qtlabel, 0, 32.0, uperplabel, "reco_recoil_resol_perp" + suffix, legendPos=[0.28, 0.70, 0.48, 0.90])
-    DrawHistosWithUncband(hresponses_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel, "reco_recoil_response_VS_nVtx" + suffix, legendPos=[0.78, 0.20, 0.96, 0.40])
-    DrawHistosWithUncband(hresols_paral_diff_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel, "reco_recoil_resol_paral_VS_nVtx" + suffix, legendPos=[0.30, 0.70, 0.53, 0.90])
-    DrawHistosWithUncband(hresols_perp_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel, "reco_recoil_resol_perp_VS_nVtx" + suffix, legendPos=[0.30, 0.70, 0.53, 0.90])
+        DrawHistos(hdict_todraw.values(), legends, xmin, xmax,
+                   xlabel, ymin, ymax, ylabel, name, **args_temp)
+
+    DrawHistosWithUncband(hresponses, qtmin, qtmax, qtlabel, 0., 1.19, responselabel,
+                          "reco_recoil_response" + suffix, legendPos=[0.58, 0.15, 0.88, 0.40])
+
+    args['showratio'] = True
+    DrawHistosWithUncband(hresols_paral_diff, qtmin, qtmax, qtlabel, 0, 39.0, uparallabel,
+                          "reco_recoil_resol_paral" + suffix, legendPos=[0.28, 0.70, 0.46, 0.90])
+    DrawHistosWithUncband(hresols_perp, qtmin, qtmax, qtlabel, 0, 32.0, uperplabel,
+                          "reco_recoil_resol_perp" + suffix, legendPos=[0.28, 0.70, 0.48, 0.90])
+    DrawHistosWithUncband(hresponses_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel,
+                          "reco_recoil_response_VS_nVtx" + suffix, legendPos=[0.78, 0.20, 0.96, 0.40])
+    DrawHistosWithUncband(hresols_paral_diff_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0,
+                          uparallabel, "reco_recoil_resol_paral_VS_nVtx" + suffix, legendPos=[0.30, 0.70, 0.53, 0.90])
+    DrawHistosWithUncband(hresols_perp_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel,
+                          "reco_recoil_resol_perp_VS_nVtx" + suffix, legendPos=[0.30, 0.70, 0.53, 0.90])
 
     if applySc:
         extraToDraw.Clear()
@@ -361,13 +377,19 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
         #
         # Scaled
         #
-        DrawHistosWithUncband(hresponsesSc, qtmin, qtmax, qtlabel, 0., 1.19, responselabel, "reco_recoil_response_Scaled" + suffix, legendPos=[0.70, 0.25, 0.90, 0.45])
-        DrawHistosWithUncband(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 39.0, uparallabel, "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90])
-        DrawHistosWithUncband(hresolsSc_perp, qtmin, qtmax, qtlabel, 0, 32.0, uperplabel, "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90])
-        DrawHistosWithUncband(hresponsesSc_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel, "reco_recoil_response_VS_nVtx_Scaled" + suffix, legendPos=[0.78, 0.17, 0.88, 0.40])
-        DrawHistosWithUncband(hresolsSc_paral_diff_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel, "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
-        DrawHistosWithUncband(hresolsSc_perp_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel, "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
-        
+        DrawHistosWithUncband(hresponsesSc, qtmin, qtmax, qtlabel, 0., 1.19, responselabel,
+                              "reco_recoil_response_Scaled" + suffix, legendPos=[0.70, 0.25, 0.90, 0.45])
+        DrawHistosWithUncband(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 39.0, uparallabel,
+                              "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90])
+        DrawHistosWithUncband(hresolsSc_perp, qtmin, qtmax, qtlabel, 0, 32.0, uperplabel,
+                              "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90])
+        DrawHistosWithUncband(hresponsesSc_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel,
+                              "reco_recoil_response_VS_nVtx_Scaled" + suffix, legendPos=[0.78, 0.17, 0.88, 0.40])
+        DrawHistosWithUncband(hresolsSc_paral_diff_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel,
+                              "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
+        DrawHistosWithUncband(hresolsSc_perp_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel,
+                              "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
+
     recoilanalyzer.saveHistos(f"root/output_{suffix}.root")
     if applySc:
         recoilanalyzerSc.saveHistos(f"root/outputSc_{suffix}.root")

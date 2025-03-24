@@ -21,7 +21,7 @@ derivePileupCorr = False
 applyZptCorr = not deriveZptCorr
 applyPileupCorr = not derivePileupCorr
 
-doSnapshot = True
+doSnapshot = False
 
 
 def main():
@@ -147,7 +147,7 @@ def main():
                        48.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0, 180.0, 200, 220, 240, 260, 280, 300])
     # sampMan.cacheDraw("Z_pt", "histo_zjets_zpt_WoZptWeight", zptbins, DrawConfig(xmin=0, xmax=180, xlabel='p^{ll}_{T} [GeV]'), weightname="weight_WoVpt")
     sampMan.cacheDraw("Z_pt", "histo_zjets_zpt" + suffix, zptbins, DrawConfig(
-        xmin=0, xmax=300, xlabel='p^{ll}_{T} [GeV]', addOverflow=True))
+        xmin=0, xmax=300, xlabel='p^{ll}_{T} [GeV]', addOverflow=True, ymin=1.0, ymax=1e8))
     sampMan.cacheDraw("Z_eta", "histo_zjets_zeta" + suffix, 30, -3, 3,
                       DrawConfig(xmin=-3, xmax=3, xlabel='#eta^{ll}'))
     sampMan.cacheDraw("Z_phi", "histo_zjets_zphi" + suffix, 30, phimin, phimax, DrawConfig(
