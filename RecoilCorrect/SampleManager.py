@@ -205,7 +205,10 @@ class Sample(object):
             self.rdf_org = self.rdf_org.Define("weight_WoVpt", "isData")
 
         self.rdf_org = self.rdf_org.Define(
-            "jet_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<3.0)")
+            "jet_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<3.0)") \
+            .Define("jet_CSVLoose_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<2.4 && Jet_btagDeepB > 0.1918)") \
+            .Define("jet_CSVMedium_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<2.4 && Jet_btagDeepB > 0.5847)") \
+            .Define("jet_CSVTight_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<2.4 && Jet_btagDeepB > 0.8767)")
 
         if self.isZSR:
             # make Z boson

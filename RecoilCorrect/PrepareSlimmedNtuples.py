@@ -173,7 +173,8 @@ def main():
                 "MET_pt", "MET_phi", "MET_significance", "MET_sumEt",
                 "PuppiMET_pt", "PuppiMET_phi", "PuppiMET_phiJERDown", "PuppiMET_phiJERUp", "PuppiMET_phiJESDown", "PuppiMET_phiJESUp", "PuppiMET_phiUnclusteredDown", "PuppiMET_phiUnclusteredUp", "PuppiMET_ptJERDown", "PuppiMET_ptJERUp", "PuppiMET_ptJESDown", "PuppiMET_ptJESUp", "PuppiMET_ptUnclusteredDown", "PuppiMET_ptUnclusteredUp", "PuppiMET_sumEt",
                 "u1", "u2", "u_pt", "u_phi",
-                "weight", "weight_WoVpt", "PV_npvs", "PV_npvsGood", "jet_n",
+                "weight", "weight_WoVpt", "PV_npvs", "PV_npvsGood",
+                "jet_n", "jet_CSVLoose_n", "jet_CSVMedium_n", "jet_CSVTight_n",
                 ]
     # more pileup related variables
     branches += [
