@@ -21,7 +21,7 @@ derivePileupCorr = False
 applyZptCorr = not deriveZptCorr
 applyPileupCorr = not derivePileupCorr
 
-doSnapshot = False
+doSnapshot = True
 
 
 def main():

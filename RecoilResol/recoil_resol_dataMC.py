@@ -96,15 +96,21 @@ rdf_data = rdf_data.Define("weight_dummy", "1.0")
 rdf_MC = rdf_MC.Define("weight_dummy", "1.0")
 # weightname = "weight_dummy"
 
+rdf_data = rdf_data.Define(
+    "weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
+rdf_MC = rdf_MC.Define(
+    "weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
+weightname = "weight_withBtag"
+
 # three bins of qT: inclusive, 0-50, 50-inf
 rdf_data_qTLow = rdf_data.Filter("Z_pt < 50")
 rdf_data_qTHigh = rdf_data.Filter("Z_pt >= 50")
 rdf_MC_qTLow = rdf_MC.Filter("Z_pt < 50")
 rdf_MC_qTHigh = rdf_MC.Filter("Z_pt >= 50")
 
-# rdfs = [[rdf_data, rdf_MC], [rdf_data_qTLow, rdf_MC_qTLow],
-#        [rdf_data_qTHigh, rdf_MC_qTHigh]]
-rdfs = [[rdf_data, rdf_MC]]
+rdfs = [[rdf_data, rdf_MC], [rdf_data_qTLow, rdf_MC_qTLow],
+        [rdf_data_qTHigh, rdf_MC_qTHigh]]
+#rdfs = [[rdf_data, rdf_MC]]
 suffixes = ["", "_qTLow", "_qTHigh"]
 extraHeaders = {
     "": None,
