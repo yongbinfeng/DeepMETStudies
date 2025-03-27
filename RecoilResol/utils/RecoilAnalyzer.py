@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import sys
 import os
-from CMSPLOTS.myFunction import getResolution
+from CMSPLOTS.myFunction import getResolution, SubtractProfiles
 from utils.utils import prepVars
 import ROOT
 
@@ -14,13 +14,15 @@ class RecoilAnalyzer(object):
     of them. In this case the event loop only need to be run once!
     """
 
-    def __init__(self, rdf, recoils, rdfMC=None, name="RecoilAnalyzer", useRMS=False, weightname="weight"):
+    def __init__(self, rdf, recoils, rdfMC=None, rdfBkg = None, name="RecoilAnalyzer", useRMS=False, weightname="weight", verbose = False):
         self.rdf = rdf
         self.rdfMC = rdfMC
+        self.rdfBkg = rdfBkg
         self.recoils = recoils
         self.name = name
         self.useRMS = useRMS
         self.weightname = weightname
+        self.verbose = verbose
         self.profs = OrderedDict()
         self.histo2ds_paral_diff = OrderedDict()
         self.histo2ds_perp = OrderedDict()
@@ -38,6 +40,10 @@ class RecoilAnalyzer(object):
             for itype in self.recoils:
                 self.rdfMC = prepVars(
                     self.rdfMC, "u_{RECOIL}".format(RECOIL=itype), "u_GEN")
+        if self.rdfBkg:
+            for itype in self.recoils:
+                self.rdfBkg = prepVars(
+                    self.rdfBkg, "u_{RECOIL}".format(RECOIL=itype), "u_GEN")
 
     def prepareResponses(self, xvar, xbins, option="i"):
         self.profs[xvar] = OrderedDict()
@@ -46,31 +52,39 @@ class RecoilAnalyzer(object):
         for itype in self.recoils:
             hparal = "h_{RECOIL}_paral_VS_{XVAR}_{NAME}".format(
                 RECOIL=itype, XVAR=xvar, NAME=self.name)
-            print(hparal, hparal, nbins_x, xbins, option, xvar,
-                  "u_{RECOIL}_paral".format(RECOIL=itype))
-            # profile divide uncertainties seem to be different from the TH1 divide uncertainties
-            # https://root.cern.ch/doc/master/classTProfile.html#a8ce37db032734f54751347ddbbbebc09
-            # use the TH1 divide uncertainties for now
-            # projectionX() is needed to get the TH1
-            # so save the TH1 instead
+            if self.verbose:
+                print(hparal, hparal, nbins_x, xbins, option, xvar, "u_{RECOIL}_paral".format(RECOIL=itype))
+                
             self.profs[xvar][itype] = self.rdf.Profile1D(
-                (hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype), self.weightname).ProjectionX()
+                (hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype), self.weightname)
         # add GEN
         hparal_Gen = "h_GEN_VS_{XVAR}_{NAME}".format(XVAR=xvar, NAME=self.name)
         self.profs[xvar]['GEN'] = self.rdf.Profile1D(
-            (hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt", self.weightname).ProjectionX()
+            (hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt", self.weightname)
 
         if self.rdfMC:
             for itype in self.recoils:
                 hparal = "h_{RECOIL}_paral_VS_{XVAR}_MC_{NAME}".format(
                     RECOIL=itype, XVAR=xvar, NAME=self.name)
                 self.profs[xvar][itype + "_MC"] = self.rdfMC.Profile1D(
-                    (hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype), self.weightname).ProjectionX()
+                    (hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype), self.weightname)
             # add GEN
             hparal_Gen = "h_GEN_VS_{XVAR}_MC_{NAME}".format(
                 XVAR=xvar, NAME=self.name)
             self.profs[xvar]['GEN_MC'] = self.rdfMC.Profile1D(
-                (hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt", self.weightname).ProjectionX()
+                (hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt", self.weightname)
+            
+        if self.rdfBkg:
+            for itype in self.recoils:
+                hparal = "h_{RECOIL}_paral_VS_{XVAR}_Bkg_{NAME}".format(
+                    RECOIL=itype, XVAR=xvar, NAME=self.name)
+                self.profs[xvar][itype + "_Bkg"] = self.rdfBkg.Profile1D(
+                    (hparal, hparal, nbins_x, xbins, option), xvar, "u_{RECOIL}_paral".format(RECOIL=itype), self.weightname)
+            # add GEN
+            hparal_Gen = "h_GEN_VS_{XVAR}_Bkg_{NAME}".format(
+                XVAR=xvar, NAME=self.name)
+            self.profs[xvar]['GEN_Bkg'] = self.rdfBkg.Profile1D(
+                (hparal_Gen, hparal_Gen, nbins_x, xbins, option), xvar, "u_GEN_pt", self.weightname)
 
     def prepareResolutions(self, xvar, xbins, nbins_y, ymin, ymax):
         # for the resolutions
@@ -100,30 +114,72 @@ class RecoilAnalyzer(object):
                     (h_paral_diff, h_paral_diff, nbins_x, xbins, nbins_y, ymin, ymax), xvar, "u_{RECOIL}_paral_diff".format(RECOIL=itype), self.weightname)
                 self.histo2ds_perp[xvar][itype + "_MC"] = self.rdfMC.Histo2D(
                     (h_perp,       h_perp,       nbins_x, xbins, nbins_y, ymin, ymax), xvar, "u_{RECOIL}_perp".format(RECOIL=itype), self.weightname)
+                
+        if self.rdfBkg:
+            for itype in self.recoils:
+                h_paral_diff = "h_{RECOIL}_paral_diff_VS_{XVAR}_Bkg_{NAME}".format(
+                    RECOIL=itype, XVAR=xvar, NAME=self.name)
+                h_perp = "h_{RECOIL}_perp_VS_{XVAR}_Bkg_{NAME}".format(
+                    RECOIL=itype, XVAR=xvar, NAME=self.name)
+
+                self.histo2ds_paral_diff[xvar][itype + "_Bkg"] = self.rdfBkg.Histo2D(
+                    (h_paral_diff, h_paral_diff, nbins_x, xbins, nbins_y, ymin, ymax), xvar, "u_{RECOIL}_paral_diff".format(RECOIL=itype), self.weightname)
+                self.histo2ds_perp[xvar][itype + "_Bkg"] = self.rdfBkg.Histo2D(
+                    (h_perp,       h_perp,       nbins_x, xbins, nbins_y, ymin, ymax), xvar, "u_{RECOIL}_perp".format(RECOIL=itype), self.weightname)
+                
 
     def getResponses(self, xvar):
         hresponses = OrderedDict()
         for itype in self.recoils:
-            print(xvar, itype)
-            hresponses[itype] = self.profs[xvar][itype].Clone(
-                self.profs[xvar][itype].GetName() + "_response")
-            hresponses[itype].Divide(self.profs[xvar]['GEN'])
+            if self.verbose:
+                print("response for ", xvar, itype)
+            hnum = self.profs[xvar][itype].Clone(
+                self.profs[xvar][itype].GetName() + "_numerator")
+            if self.rdfBkg:
+                hnum = SubtractProfiles(
+                    hnum, self.profs[xvar][itype + "_Bkg"])
+            hden = self.profs[xvar]['GEN'].Clone(
+                self.profs[xvar]['GEN'].GetName() + "_denominator")
+            if self.rdfBkg:
+                hden = SubtractProfiles(
+                    hden, self.profs[xvar]['GEN_Bkg'])
+            
+            # profile divide uncertainties seem to be different from the TH1 divide uncertainties
+            # https://root.cern.ch/doc/master/classTProfile.html#a8ce37db032734f54751347ddbbbebc09
+            # use the TH1 divide uncertainties for now
+            # projectionX() is needed to get the TH1
+            # so save the TH1 instead
+            
+            hnum = hnum.ProjectionX()
+            hden = hden.ProjectionX()
+            hresponses[itype] = hnum.Clone(self.profs[xvar][itype].GetName() + "_response")
+            hresponses[itype].Divide(hden)
 
         if self.rdfMC:
+            # mc: no need to subtract bkg
             for itype in self.recoils:
                 hresponses[itype + "_MC"] = self.profs[xvar][itype + "_MC"].Clone(
-                    self.profs[xvar][itype + "_MC"].GetName() + "_response")
-                hresponses[itype + "_MC"].Divide(self.profs[xvar]['GEN_MC'])
+                    self.profs[xvar][itype + "_MC"].GetName() + "_response").ProjectionX()
+                hresponses[itype + "_MC"].Divide(self.profs[xvar]['GEN_MC'].ProjectionX())
         return hresponses
 
     def getResolutions(self, xvar):
         hresols_paral = OrderedDict()
         hresols_perp = OrderedDict()
         for itype in self.recoils:
+            hparal_diff = self.histo2ds_paral_diff[xvar][itype].Clone(self.histo2ds_paral_diff[xvar][itype].GetName() + "_resol")
+            if self.rdfBkg:
+                print("subtracting bkg for ", xvar, itype)
+                print(self.histo2ds_paral_diff[xvar][itype], self.histo2ds_paral_diff[xvar][itype + "_Bkg"])
+                hparal_diff.Add(self.histo2ds_paral_diff[xvar][itype + "_Bkg"].GetValue(), -1.0)
             hresols_paral[itype] = getResolution(
-                self.histo2ds_paral_diff[xvar][itype], useRMS=self.useRMS)
+                hparal_diff, useRMS=self.useRMS)
+            
+            hperp_diff = self.histo2ds_perp[xvar][itype].Clone(self.histo2ds_perp[xvar][itype].GetName() + "_resol")
+            if self.rdfBkg:
+                hperp_diff.Add(self.histo2ds_perp[xvar][itype + "_Bkg"].GetValue(), -1.0)
             hresols_perp[itype] = getResolution(
-                self.histo2ds_perp[xvar][itype], useRMS=self.useRMS)
+                hperp_diff, useRMS=self.useRMS)
 
         if self.rdfMC:
             for itype in self.recoils:

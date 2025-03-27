@@ -9,6 +9,7 @@ import ROOT
 
 noLumi = False
 nPV = getNPVString()
+useRMS = False
 
 ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT()
@@ -29,28 +30,47 @@ args = parser.parse_args()
 
 outdir = f"plots/Data/2016"
 
+mcfile = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/DY.root"
+datafile = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/Data.root"
+bkgfiles = [
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/ttbar.root",
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/DYTauTau.root",
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/WW2L.root",
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/WZ2L.root",
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/ZZ2L.root",
+    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/ZZ2L2Q.root",
+]
+
 applySc = args.applySc
 print("apply Response corrections: ", applySc)
 
 chain = ROOT.TChain("Events")
-chain.Add(
-    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/Data.root")
-rdf_data_tmp = ROOT.ROOT.RDataFrame(chain)
+chain.Add(datafile)
+rdf_data = ROOT.ROOT.RDataFrame(chain)
 
 chainMC = ROOT.TChain("Events")
-chainMC.Add(
-    "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs/DY.root")
-rdf_MC_tmp = ROOT.ROOT.RDataFrame(chainMC)
+chainMC.Add(mcfile)
+rdf_MC = ROOT.ROOT.RDataFrame(chainMC)
 
+chainBkg = ROOT.TChain("Events")
+for bkgfile in bkgfiles:
+    chainBkg.Add(bkgfile)
+rdf_bkg = ROOT.ROOT.RDataFrame(chainBkg)
+
+
+# weight_corr includes both the pileup and Zpt corrections
 weightname = "weight_corr"
 
 if args.test:
+    # need some temporary variables to hold the original rdf
+    # otherise might crash
+    rdf_data_tmp = rdf_data
+    rdf_MC_tmp = rdf_MC
+    rdf_bkg_tmp = rdf_bkg
+    
     rdf_data = rdf_data_tmp.Filter("rdfentry_ < 10000")
     rdf_MC = rdf_MC_tmp.Filter("rdfentry_ < 10000")
-else:
-    rdf_data = rdf_data_tmp
-    rdf_MC = rdf_MC_tmp
-
+    rdf_bkg = rdf_bkg_tmp.Filter("rdfentry_ < 10000")
 
 def prepareVars(rdf):
     rdf = rdf.Define("pT_muons", "Z_pt").Define("phi_muons", "Z_phi")
@@ -91,26 +111,25 @@ def prepareVars(rdf):
 
 rdf_data = prepareVars(rdf_data)
 rdf_MC = prepareVars(rdf_MC)
+rdf_bkg = prepareVars(rdf_bkg)
 
-rdf_data = rdf_data.Define("weight_dummy", "1.0")
-rdf_MC = rdf_MC.Define("weight_dummy", "1.0")
+rdf_data = rdf_data.Define("weight_dummy", "1.0").Define("weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
+rdf_MC = rdf_MC.Define("weight_dummy", "1.0").Define("weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
+rdf_bkg = rdf_bkg.Define("weight_dummy", "1.0").Define("weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
 # weightname = "weight_dummy"
-
-rdf_data = rdf_data.Define(
-    "weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
-rdf_MC = rdf_MC.Define(
-    "weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
-weightname = "weight_withBtag"
+#weightname = "weight_withBtag"
 
 # three bins of qT: inclusive, 0-50, 50-inf
 rdf_data_qTLow = rdf_data.Filter("Z_pt < 50")
 rdf_data_qTHigh = rdf_data.Filter("Z_pt >= 50")
 rdf_MC_qTLow = rdf_MC.Filter("Z_pt < 50")
 rdf_MC_qTHigh = rdf_MC.Filter("Z_pt >= 50")
+rdf_bkg_qTLow = rdf_bkg.Filter("Z_pt < 50")
+rdf_bkg_qTHigh = rdf_bkg.Filter("Z_pt >= 50")
 
-rdfs = [[rdf_data, rdf_MC], [rdf_data_qTLow, rdf_MC_qTLow],
-        [rdf_data_qTHigh, rdf_MC_qTHigh]]
-#rdfs = [[rdf_data, rdf_MC]]
+#rdfs = [[rdf_data, rdf_MC], [rdf_data_qTLow, rdf_MC_qTLow],
+#        [rdf_data_qTHigh, rdf_MC_qTHigh]]
+rdfs = [[rdf_data, rdf_MC, rdf_bkg]]
 suffixes = ["", "_qTLow", "_qTHigh"]
 extraHeaders = {
     "": None,
@@ -155,21 +174,22 @@ xbins_qT_resp = getpTResponseBins()
 xbins_nVtx = getnVtxBins()
 
 # loop over the different qT bins
-for rdf_data_tmp, rdf_MC_tmp in rdfs:
-    idx = rdfs.index([rdf_data_tmp, rdf_MC_tmp])
+for rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp in rdfs:
+    idx = rdfs.index([rdf_data_tmp, rdf_MC_tmp, rdf_bkg])
     suffix = suffixes[idx]
     extraHeader = extraHeaders[suffix]
     if len(suffix) > 0:
         suffix = "_" + suffix
 
     recoilanalyzer = RecoilAnalyzer(
-        rdf_data_tmp, recoils, rdfMC=rdf_MC_tmp, name="recoilanalyzer_" + suffix, useRMS=True, weightname=weightname)
+        rdf_data_tmp, recoils, rdfMC=rdf_MC_tmp, rdfBkg=rdf_bkg_tmp, name="recoilanalyzer_" + suffix, useRMS=useRMS, weightname=weightname)
     recoilanalyzer.prepareVars()
     recoilanalyzer.prepareResponses('u_GEN_pt', xbins_qT)
     recoilanalyzer.prepareResolutions('u_GEN_pt', xbins_qT, 400, -200, 200)
     recoilanalyzer.prepareResponses(nPV, xbins_nVtx)
     recoilanalyzer.prepareResolutions(nPV, xbins_nVtx, 400, -200, 200)
 
+    # just one bin, to calculate the response correction
     recoilanalyzer.prepareResponses('pT_muons', xbins_qT_resp)
 
     hresponses = recoilanalyzer.getResponses('u_GEN_pt')
@@ -193,48 +213,94 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
                                                           "_MC"].GetBinContent(1)
 
     if applySc:
-        if idx == 0:
-            ROOT.gInterpreter.Declare(get_response_code)
-        # create branch with the scale factors
+        #if idx == 0:
+        #    ROOT.gInterpreter.Declare(get_response_code)
+        ## create branch with the scale factors
+        #for itype in recoils:
+        #    # "dynamic scopes" to create a variable holding histograms
+        #    # ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}{suffix}= {HNAME} ".format(
+        #    #    RECOIL=itype, suffix=suffix, HNAME=hresponses[itype].GetName()))
+        #    # ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}_MC{suffix}= {HNAME} ".format(
+        #    #    RECOIL=itype, suffix=suffix, HNAME=hresponses[itype+"_MC"].GetName()))
+        #    # rdf_data_tmp = rdf_data_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}{suffix})'.format(RECOIL=itype, suffix=suffix)) \
+        #    #    .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+        #    #    .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
+
+        #    # rdf_MC_tmp = rdf_MC_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}_MC{suffix})'.format(RECOIL=itype, suffix=suffix)) \
+        #    #    .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+        #    #    .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
+
+        #    rdf_data_tmp = rdf_data_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), f"1.0 / {values_responses[itype]}") \
+        #        .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+        #        .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
+        #        
+        #    # bkg: increase by the same amount of data, such that resol(data - bkg) is consistent
+
+        #    rdf_MC_tmp = rdf_MC_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), f"1.0 / {values_responses_MC[itype]}") \
+        #        .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+        #        .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
+
+        #recoilsSc = [itype + "Sc" for itype in recoils]
+        #recoilanalyzerSc = RecoilAnalyzer(
+        #    rdf_data_tmp, recoilsSc, rdfMC=rdf_MC_tmp, rdfBkg=rdf_bkg_tmp, name="recoilanalyzer_Scaled" + suffix, useRMS=useRMS, weightname=weightname)
+        #recoilanalyzerSc.prepareVars()
+        #recoilanalyzerSc.prepareResponses('u_GEN_pt', xbins_qT)
+        #recoilanalyzerSc.prepareResolutions(
+        #    'u_GEN_pt', xbins_qT, 400, -200, 200)
+        #recoilanalyzerSc.prepareResponses(nPV, xbins_nVtx)
+        #recoilanalyzerSc.prepareResolutions(nPV, xbins_nVtx, 400, -200, 200)
+
+        #hresponsesSc = recoilanalyzerSc.getResponses('u_GEN_pt')
+        #hresolsSc_paral_diff, hresolsSc_perp = recoilanalyzerSc.getResolutions(
+        #    'u_GEN_pt')
+        #hresponsesSc_nVtx = recoilanalyzerSc.getResponses(nPV)
+        #hresolsSc_paral_diff_VS_nVtx, hresolsSc_perp_VS_nVtx = recoilanalyzerSc.getResolutions(
+        #    nPV)
+        
+        # when using constant correction, it is equivalent to just scale the resolutions by constant
+        hresolsSc_paral_diff = OrderedDict()
+        hresolsSc_perp = OrderedDict()
+        hresolsSc_paral_diff_VS_nVtx = OrderedDict()
+        hresolsSc_perp_VS_nVtx = OrderedDict()
+        
         for itype in recoils:
-            # "dynamic scopes" to create a variable holding histograms
-            # ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}{suffix}= {HNAME} ".format(
-            #    RECOIL=itype, suffix=suffix, HNAME=hresponses[itype].GetName()))
-            # ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}_MC{suffix}= {HNAME} ".format(
-            #    RECOIL=itype, suffix=suffix, HNAME=hresponses[itype+"_MC"].GetName()))
-            # rdf_data_tmp = rdf_data_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}{suffix})'.format(RECOIL=itype, suffix=suffix)) \
-            #    .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
-            #    .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
-
-            # rdf_MC_tmp = rdf_MC_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}_MC{suffix})'.format(RECOIL=itype, suffix=suffix)) \
-            #    .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
-            #    .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
-
-            rdf_data_tmp = rdf_data_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), f"1.0 / {values_responses[itype]}") \
-                .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
-                .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
-
-            rdf_MC_tmp = rdf_MC_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), f"1.0 / {values_responses_MC[itype]}") \
-                .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
-                .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
-
-        recoilsSc = [itype + "Sc" for itype in recoils]
-        recoilanalyzerSc = RecoilAnalyzer(
-            rdf_data_tmp, recoilsSc, rdfMC=rdf_MC_tmp, name="recoilanalyzer_Scaled" + suffix, useRMS=True, weightname=weightname)
-        recoilanalyzerSc.prepareVars()
-        recoilanalyzerSc.prepareResponses('u_GEN_pt', xbins_qT)
-        recoilanalyzerSc.prepareResolutions(
-            'u_GEN_pt', xbins_qT, 400, -200, 200)
-        recoilanalyzerSc.prepareResponses(nPV, xbins_nVtx)
-        recoilanalyzerSc.prepareResolutions(nPV, xbins_nVtx, 400, -200, 200)
-
-        hresponsesSc = recoilanalyzerSc.getResponses('u_GEN_pt')
-        hresolsSc_paral_diff, hresolsSc_perp = recoilanalyzerSc.getResolutions(
-            'u_GEN_pt')
-        hresponsesSc_nVtx = recoilanalyzerSc.getResponses(nPV)
-        hresolsSc_paral_diff_VS_nVtx, hresolsSc_perp_VS_nVtx = recoilanalyzerSc.getResolutions(
-            nPV)
-
+            resp = values_responses[itype]
+            
+            hresolsSc_paral_diff[itype] = hresols_paral_diff[itype].Clone(
+                itype + "Sc_paral_diff")
+            hresolsSc_paral_diff[itype].Scale(1.0 / resp)
+            
+            hresolsSc_perp[itype] = hresols_perp[itype].Clone(
+                itype + "Sc_perp")
+            hresolsSc_perp[itype].Scale(1.0 / resp)
+            
+            hresolsSc_paral_diff_VS_nVtx[itype] = hresols_paral_diff_VS_nVtx[itype].Clone(
+                itype + "Sc_paral_diff_VS_nVtx")
+            hresolsSc_paral_diff_VS_nVtx[itype].Scale(1.0 / resp)
+            
+            hresolsSc_perp_VS_nVtx[itype] = hresols_perp_VS_nVtx[itype].Clone(
+                itype + "Sc_perp_VS_nVtx")
+            hresolsSc_perp_VS_nVtx[itype].Scale(1.0 / resp)
+            
+        for itype in recoils:
+            resp_MC = values_responses_MC[itype]
+            hresolsSc_paral_diff[itype + "_MC"] = hresols_paral_diff[itype + "_MC"].Clone(
+                itype + "Sc_paral_diff_MC")
+            hresolsSc_paral_diff[itype + "_MC"].Scale(1.0 / resp_MC)
+            
+            hresolsSc_perp[itype + "_MC"] = hresols_perp[itype + "_MC"].Clone(
+                itype + "Sc_perp_MC")
+            hresolsSc_perp[itype + "_MC"].Scale(1.0 / resp_MC)
+            
+            hresolsSc_paral_diff_VS_nVtx[itype + "_MC"] = hresols_paral_diff_VS_nVtx[itype + "_MC"].Clone(
+                itype + "Sc_paral_diff_VS_nVtx_MC")
+            hresolsSc_paral_diff_VS_nVtx[itype + "_MC"].Scale(1.0 / resp_MC)
+            
+            hresolsSc_perp_VS_nVtx[itype + "_MC"] = hresols_perp_VS_nVtx[itype + "_MC"].Clone(
+                itype + "Sc_perp_VS_nVtx_MC")
+            hresolsSc_perp_VS_nVtx[itype + "_MC"].Scale(1.0 / resp_MC)
+            
+            
     qtmin, qtmax = getqTRange()
     qtlabel = getqTLabel()
     nvtxlabel = getnVtxLabel()
@@ -383,19 +449,13 @@ for rdf_data_tmp, rdf_MC_tmp in rdfs:
         #
         # Scaled
         #
-        DrawHistosWithUncband(hresponsesSc, qtmin, qtmax, qtlabel, 0., 1.19, responselabel,
-                              "reco_recoil_response_Scaled" + suffix, legendPos=[0.70, 0.25, 0.90, 0.45])
         DrawHistosWithUncband(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 39.0, uparallabel,
                               "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90])
         DrawHistosWithUncband(hresolsSc_perp, qtmin, qtmax, qtlabel, 0, 32.0, uperplabel,
                               "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90])
-        DrawHistosWithUncband(hresponsesSc_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel,
-                              "reco_recoil_response_VS_nVtx_Scaled" + suffix, legendPos=[0.78, 0.17, 0.88, 0.40])
         DrawHistosWithUncband(hresolsSc_paral_diff_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel,
                               "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
         DrawHistosWithUncband(hresolsSc_perp_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel,
                               "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
 
     recoilanalyzer.saveHistos(f"root/output_{suffix}.root")
-    if applySc:
-        recoilanalyzerSc.saveHistos(f"root/outputSc_{suffix}.root")
