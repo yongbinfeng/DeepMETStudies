@@ -175,6 +175,7 @@ def main():
                 "u1", "u2", "u_pt", "u_phi",
                 "weight", "weight_WoVpt", "PV_npvs", "PV_npvsGood",
                 "jet_n", "jet_CSVLoose_n", "jet_CSVMedium_n", "jet_CSVTight_n",
+                "metFilters"
                 ]
     # more pileup related variables
     branches += [

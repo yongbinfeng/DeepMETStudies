@@ -210,6 +210,10 @@ class Sample(object):
             .Define("jet_CSVMedium_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<2.4 && Jet_btagDeepB > 0.5847)") \
             .Define("jet_CSVTight_n", "Sum((Jet_jetId == 6) && Jet_pt > 20.0 && abs(Jet_eta)<2.4 && Jet_btagDeepB > 0.8767)")
 
+        # met filters
+        self.rdf_org = self.rdf_org.Define(
+            "metFilters", "Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_HBHENoiseFilter && Flag_HBHENoiseIsoFilter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_eeBadScFilter")
+
         if self.isZSR:
             # make Z boson
             self.rdf_org = self.rdf_org.Define("VecZ", "VVecM(Muon_pt[0], Muon_eta[0], Muon_phi[0], Muon_mass[0], Muon_pt[1], Muon_eta[1], Muon_phi[1], Muon_mass[1])") \
