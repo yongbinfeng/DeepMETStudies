@@ -139,7 +139,7 @@ class RecoilAnalyzer(object):
                 hnum = SubtractProfiles(
                     hnum, self.profs[xvar][itype + "_Bkg"])
             hden = self.profs[xvar]['GEN'].Clone(
-                self.profs[xvar]['GEN'].GetName() + "_denominator")
+                self.profs[xvar]['GEN'].GetName() + "_denominator_for_" + self.profs[xvar][itype].GetName())
             if self.rdfBkg:
                 hden = SubtractProfiles(
                     hden, self.profs[xvar]['GEN_Bkg'])

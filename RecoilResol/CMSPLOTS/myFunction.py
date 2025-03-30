@@ -304,10 +304,10 @@ def SubtractProfiles(hprof1, hprof2):
     """
     hdiff = hprof1.Clone(hprof1.GetName() + "_diff")
     for ibin in range(1, hdiff.GetNbinsX()+1):
-        print("hdiff name ", hdiff.GetName())
-        print("ibin ", ibin)
-        print("eff entries ", hprof1.GetBinEffectiveEntries(ibin), hprof2.GetBinEffectiveEntries(ibin))
-        print("entries ", hprof1.GetBinEntries(ibin), hprof2.GetBinEntries(ibin))
+        #print("hdiff name ", hdiff.GetName())
+        #print("ibin ", ibin)
+        #print("eff entries ", hprof1.GetBinEffectiveEntries(ibin), hprof2.GetBinEffectiveEntries(ibin))
+        #print("entries ", hprof1.GetBinEntries(ibin), hprof2.GetBinEntries(ibin))
         #val = hprof1.GetBinContent(ibin) * hprof1.GetBinEffectiveEntries(ibin) - hprof2.GetBinContent(ibin) * hprof2.GetBinEffectiveEntries(ibin)
         val = hprof1.GetBinContent(ibin) * hprof1.GetBinEntries(ibin) - hprof2.GetBinContent(ibin) * hprof2.GetBinEntries(ibin)
         err = ROOT.TMath.Sqrt(hprof1.GetBinError(ibin)**2 * hprof1.GetBinEffectiveEntries(ibin) + hprof2.GetBinError(ibin)**2 * hprof2.GetBinEffectiveEntries(ibin))
