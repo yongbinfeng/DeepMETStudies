@@ -297,20 +297,23 @@ def Ratio2Diff(hratio, inpercent=True):
         hratio.SetBinContent(ibin, hratio.GetBinContent(ibin)-1.0)
     if inpercent:
         hratio.Scale(100.0)
-        
+
+
 def SubtractProfiles(hprof1, hprof2):
     """
     subtract hprof2 from hprof1
     """
     hdiff = hprof1.Clone(hprof1.GetName() + "_diff")
     for ibin in range(1, hdiff.GetNbinsX()+1):
-        #print("hdiff name ", hdiff.GetName())
-        #print("ibin ", ibin)
-        #print("eff entries ", hprof1.GetBinEffectiveEntries(ibin), hprof2.GetBinEffectiveEntries(ibin))
-        #print("entries ", hprof1.GetBinEntries(ibin), hprof2.GetBinEntries(ibin))
-        #val = hprof1.GetBinContent(ibin) * hprof1.GetBinEffectiveEntries(ibin) - hprof2.GetBinContent(ibin) * hprof2.GetBinEffectiveEntries(ibin)
-        val = hprof1.GetBinContent(ibin) * hprof1.GetBinEntries(ibin) - hprof2.GetBinContent(ibin) * hprof2.GetBinEntries(ibin)
-        err = ROOT.TMath.Sqrt(hprof1.GetBinError(ibin)**2 * hprof1.GetBinEffectiveEntries(ibin) + hprof2.GetBinError(ibin)**2 * hprof2.GetBinEffectiveEntries(ibin))
+        # print("hdiff name ", hdiff.GetName())
+        # print("ibin ", ibin)
+        # print("eff entries ", hprof1.GetBinEffectiveEntries(ibin), hprof2.GetBinEffectiveEntries(ibin))
+        # print("entries ", hprof1.GetBinEntries(ibin), hprof2.GetBinEntries(ibin))
+        # val = hprof1.GetBinContent(ibin) * hprof1.GetBinEffectiveEntries(ibin) - hprof2.GetBinContent(ibin) * hprof2.GetBinEffectiveEntries(ibin)
+        val = hprof1.GetBinContent(ibin) * hprof1.GetBinEntries(ibin) - \
+            hprof2.GetBinContent(ibin) * hprof2.GetBinEntries(ibin)
+        err = ROOT.TMath.Sqrt(hprof1.GetBinError(ibin)**2 * hprof1.GetBinEffectiveEntries(
+            ibin) + hprof2.GetBinError(ibin)**2 * hprof2.GetBinEffectiveEntries(ibin))
         hdiff.SetBinContent(ibin, val)
         hdiff.SetBinError(ibin, err)
     return hdiff
@@ -567,9 +570,9 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         pad1 = ROOT.TPad("pad1" + outputname, "pad1", 0, padsize2, 1, 1)
         pad2 = ROOT.TPad("pad2" + outputname, "pad1", 0, 0, 1, padsize2)
         pad1.SetTopMargin(0.06/padsize1)
-        pad1.SetBottomMargin(0.012/padsize1)
+        pad1.SetBottomMargin(0.014/padsize1)
         pad1.SetLeftMargin(0.15 * (600.0)/W)
-        pad2.SetTopMargin(0.010/padsize2)
+        pad2.SetTopMargin(0.015/padsize2)
         pad2.SetBottomMargin(0.13/padsize2)
         pad2.SetLeftMargin(0.15 * (600.0)/W)
         pad2.SetGridy(1)
@@ -873,6 +876,7 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         h2.GetYaxis().SetTitleOffset(1.35*(padsize2+0.35*padsize3)*(600.0/W))
 
         h2.GetYaxis().SetNdivisions(8)
+        h2.GetXaxis().SetNdivisions(6, 5, 0)
         h2.GetYaxis().CenterTitle()
         if yrlabel:
             ytitle = yrlabel

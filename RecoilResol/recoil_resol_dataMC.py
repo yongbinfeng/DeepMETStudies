@@ -9,7 +9,7 @@ import ROOT
 
 noLumi = False
 nPV = getNPVString()
-useRMS = False
+useRMS = True
 
 ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT()
@@ -67,10 +67,11 @@ if args.test:
     rdf_data_tmp = rdf_data
     rdf_MC_tmp = rdf_MC
     rdf_bkg_tmp = rdf_bkg
-    
+
     rdf_data = rdf_data_tmp.Filter("rdfentry_ < 10000")
     rdf_MC = rdf_MC_tmp.Filter("rdfentry_ < 10000")
     rdf_bkg = rdf_bkg_tmp.Filter("rdfentry_ < 10000")
+
 
 def prepareVars(rdf):
     rdf = rdf.Define("pT_muons", "Z_pt").Define("phi_muons", "Z_phi")
@@ -112,11 +113,14 @@ rdf_data = prepareVars(rdf_data)
 rdf_MC = prepareVars(rdf_MC)
 rdf_bkg = prepareVars(rdf_bkg)
 
-rdf_data = rdf_data.Define("weight_dummy", "1.0").Define("weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
-rdf_MC = rdf_MC.Define("weight_dummy", "1.0").Define("weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
-rdf_bkg = rdf_bkg.Define("weight_dummy", "1.0").Define("weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1)")
+rdf_data = rdf_data.Define("weight_dummy", "1.0").Define(
+    "weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1) * metFilters")
+rdf_MC = rdf_MC.Define("weight_dummy", "1.0").Define(
+    "weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1) * metFilters")
+rdf_bkg = rdf_bkg.Define("weight_dummy", "1.0").Define(
+    "weight_withBtag", "weight_corr * (jet_CSVLoose_n < 1) * metFilters")
 # weightname = "weight_dummy"
-#weightname = "weight_withBtag"
+weightname = "weight_withBtag"
 
 # three bins of qT: inclusive, 0-50, 50-inf
 rdf_data_qTLow = rdf_data.Filter("Z_pt < 50")
@@ -139,9 +143,10 @@ rdf_bkg_njet1 = rdf_bkg.Filter("jet_n == 1")
 rdf_bkg_njet2 = rdf_bkg.Filter("jet_n >= 2")
 
 
-rdfs = [[rdf_data, rdf_MC, rdf_bkg]]
-#rdfs = [[rdf_data, rdf_MC], [rdf_data_qTLow, rdf_MC_qTLow],
-#        [rdf_data_qTHigh, rdf_MC_qTHigh]]
+# rdfs = [[rdf_data, rdf_MC, rdf_bkg]]
+rdfs = [[rdf_data, rdf_MC, rdf_bkg],
+        [rdf_data_qTLow, rdf_MC_qTLow, rdf_bkg_qTLow],
+        [rdf_data_qTHigh, rdf_MC_qTHigh, rdf_bkg_qTHigh]]
 
 suffixes = ["", "_qTLow", "_qTHigh"]
 extraHeaders = {
@@ -150,15 +155,15 @@ extraHeaders = {
     "_qTHigh": "q_{T} > 50 GeV",
 }
 
-rdfs = [[rdf_data, rdf_MC, rdf_bkg], [rdf_data_njet0, rdf_MC_njet0, rdf_bkg_njet0],
-        [rdf_data_njet1, rdf_MC_njet1, rdf_bkg_njet1], [rdf_data_njet2, rdf_MC_njet2, rdf_bkg_njet2]]
-suffixes = ["", "_njet0", "_njet1", "_njet2"]
-extraHeaders = {
-    "": None,
-    "_njet0": "n_{jet} = 0",
-    "_njet1": "n_{jet} = 1",
-    "_njet2": "n_{jet} >= 2",
-}
+# rdfs = [[rdf_data, rdf_MC, rdf_bkg], [rdf_data_njet0, rdf_MC_njet0, rdf_bkg_njet0],
+#        [rdf_data_njet1, rdf_MC_njet1, rdf_bkg_njet1], [rdf_data_njet2, rdf_MC_njet2, rdf_bkg_njet2]]
+# suffixes = ["", "_njet0", "_njet1", "_njet2"]
+# extraHeaders = {
+#    "": None,
+#    "_njet0": "n_{jet} = 0",
+#    "_njet1": "n_{jet} = 1",
+#    "_njet2": "n_{jet} >= 2",
+# }
 
 
 # recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
@@ -197,6 +202,8 @@ xbins_qT = getpTBins()
 xbins_qT_resp = getpTResponseBins()
 xbins_nVtx = getnVtxBins()
 
+hresponses_inclusive = None
+
 # loop over the different qT bins
 for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
     suffix = suffixes[idx]
@@ -222,12 +229,13 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
     hresols_paral_diff_VS_nVtx, hresols_perp_VS_nVtx = recoilanalyzer.getResolutions(
         nPV)
 
-    hresponses_inclusive = recoilanalyzer.getResponses('pT_muons')
+    if hresponses_inclusive is None:
+        hresponses_inclusive = recoilanalyzer.getResponses('pT_muons')
 
     values_responses = OrderedDict()
     values_responses_MC = OrderedDict()
     for itype in recoils:
-        print("hresponses_inclusive in data for ", itype, " is ", 
+        print("hresponses_inclusive in data for ", itype, " is ",
               hresponses_inclusive[itype].GetBinContent(1))
         print("hresponses_inclusive in MC for ", itype, " is ",
               hresponses_inclusive[itype + "_MC"].GetBinContent(1))
@@ -236,10 +244,10 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
                                                           "_MC"].GetBinContent(1)
 
     if applySc:
-        #if idx == 0:
+        # if idx == 0:
         #    ROOT.gInterpreter.Declare(get_response_code)
-        ## create branch with the scale factors
-        #for itype in recoils:
+        # create branch with the scale factors
+        # for itype in recoils:
         #    # "dynamic scopes" to create a variable holding histograms
         #    # ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}{suffix}= {HNAME} ".format(
         #    #    RECOIL=itype, suffix=suffix, HNAME=hresponses[itype].GetName()))
@@ -256,74 +264,73 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
         #    rdf_data_tmp = rdf_data_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), f"1.0 / {values_responses[itype]}") \
         #        .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
         #        .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
-        #        
+        #
         #    # bkg: increase by the same amount of data, such that resol(data - bkg) is consistent
 
         #    rdf_MC_tmp = rdf_MC_tmp.Define("{RECOIL}_scale".format(RECOIL=itype), f"1.0 / {values_responses_MC[itype]}") \
         #        .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
         #        .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
 
-        #recoilsSc = [itype + "Sc" for itype in recoils]
-        #recoilanalyzerSc = RecoilAnalyzer(
+        # recoilsSc = [itype + "Sc" for itype in recoils]
+        # recoilanalyzerSc = RecoilAnalyzer(
         #    rdf_data_tmp, recoilsSc, rdfMC=rdf_MC_tmp, rdfBkg=rdf_bkg_tmp, name="recoilanalyzer_Scaled" + suffix, useRMS=useRMS, weightname=weightname)
-        #recoilanalyzerSc.prepareVars()
-        #recoilanalyzerSc.prepareResponses('u_GEN_pt', xbins_qT)
-        #recoilanalyzerSc.prepareResolutions(
+        # recoilanalyzerSc.prepareVars()
+        # recoilanalyzerSc.prepareResponses('u_GEN_pt', xbins_qT)
+        # recoilanalyzerSc.prepareResolutions(
         #    'u_GEN_pt', xbins_qT, 400, -200, 200)
-        #recoilanalyzerSc.prepareResponses(nPV, xbins_nVtx)
-        #recoilanalyzerSc.prepareResolutions(nPV, xbins_nVtx, 400, -200, 200)
+        # recoilanalyzerSc.prepareResponses(nPV, xbins_nVtx)
+        # recoilanalyzerSc.prepareResolutions(nPV, xbins_nVtx, 400, -200, 200)
 
-        #hresponsesSc = recoilanalyzerSc.getResponses('u_GEN_pt')
-        #hresolsSc_paral_diff, hresolsSc_perp = recoilanalyzerSc.getResolutions(
+        # hresponsesSc = recoilanalyzerSc.getResponses('u_GEN_pt')
+        # hresolsSc_paral_diff, hresolsSc_perp = recoilanalyzerSc.getResolutions(
         #    'u_GEN_pt')
-        #hresponsesSc_nVtx = recoilanalyzerSc.getResponses(nPV)
-        #hresolsSc_paral_diff_VS_nVtx, hresolsSc_perp_VS_nVtx = recoilanalyzerSc.getResolutions(
+        # hresponsesSc_nVtx = recoilanalyzerSc.getResponses(nPV)
+        # hresolsSc_paral_diff_VS_nVtx, hresolsSc_perp_VS_nVtx = recoilanalyzerSc.getResolutions(
         #    nPV)
-        
+
         # when using constant correction, it is equivalent to just scale the resolutions by constant
         hresolsSc_paral_diff = OrderedDict()
         hresolsSc_perp = OrderedDict()
         hresolsSc_paral_diff_VS_nVtx = OrderedDict()
         hresolsSc_perp_VS_nVtx = OrderedDict()
-        
+
         for itype in recoils:
             resp = values_responses[itype]
-            
+
             hresolsSc_paral_diff[itype] = hresols_paral_diff[itype].Clone(
                 itype + "Sc_paral_diff")
             hresolsSc_paral_diff[itype].Scale(1.0 / resp)
-            
+
             hresolsSc_perp[itype] = hresols_perp[itype].Clone(
                 itype + "Sc_perp")
             hresolsSc_perp[itype].Scale(1.0 / resp)
-            
+
             hresolsSc_paral_diff_VS_nVtx[itype] = hresols_paral_diff_VS_nVtx[itype].Clone(
                 itype + "Sc_paral_diff_VS_nVtx")
             hresolsSc_paral_diff_VS_nVtx[itype].Scale(1.0 / resp)
-            
+
             hresolsSc_perp_VS_nVtx[itype] = hresols_perp_VS_nVtx[itype].Clone(
                 itype + "Sc_perp_VS_nVtx")
             hresolsSc_perp_VS_nVtx[itype].Scale(1.0 / resp)
-            
+
         for itype in recoils:
             resp_MC = values_responses_MC[itype]
             hresolsSc_paral_diff[itype + "_MC"] = hresols_paral_diff[itype + "_MC"].Clone(
                 itype + "Sc_paral_diff_MC")
             hresolsSc_paral_diff[itype + "_MC"].Scale(1.0 / resp_MC)
-            
+
             hresolsSc_perp[itype + "_MC"] = hresols_perp[itype + "_MC"].Clone(
                 itype + "Sc_perp_MC")
             hresolsSc_perp[itype + "_MC"].Scale(1.0 / resp_MC)
-            
+
             hresolsSc_paral_diff_VS_nVtx[itype + "_MC"] = hresols_paral_diff_VS_nVtx[itype + "_MC"].Clone(
                 itype + "Sc_paral_diff_VS_nVtx_MC")
             hresolsSc_paral_diff_VS_nVtx[itype + "_MC"].Scale(1.0 / resp_MC)
-            
+
             hresolsSc_perp_VS_nVtx[itype + "_MC"] = hresols_perp_VS_nVtx[itype + "_MC"].Clone(
                 itype + "Sc_perp_VS_nVtx_MC")
             hresolsSc_perp_VS_nVtx[itype + "_MC"].Scale(1.0 / resp_MC)
-            
-            
+
     qtmin, qtmax = getqTRange()
     qtlabel = getqTLabel()
     nvtxlabel = getnVtxLabel()
@@ -453,16 +460,16 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
                           "reco_recoil_response" + suffix, legendPos=[0.58, 0.20, 0.88, 0.40])
 
     args['showratio'] = True
-    DrawHistosWithUncband(hresols_paral_diff, qtmin, qtmax, qtlabel, 0, 39.0, uparallabel,
-                          "reco_recoil_resol_paral" + suffix, legendPos=[0.28, 0.70, 0.46, 0.90])
-    DrawHistosWithUncband(hresols_perp, qtmin, qtmax, qtlabel, 0, 32.0, uperplabel,
-                          "reco_recoil_resol_perp" + suffix, legendPos=[0.28, 0.70, 0.48, 0.90])
+    DrawHistosWithUncband(hresols_paral_diff, qtmin, qtmax, qtlabel, 0, 50.0, uparallabel,
+                          "reco_recoil_resol_paral" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
+    DrawHistosWithUncband(hresols_perp, qtmin, qtmax, qtlabel, 0, 50.0, uperplabel,
+                          "reco_recoil_resol_perp" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
     DrawHistosWithUncband(hresponses_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel,
                           "reco_recoil_response_VS_nVtx" + suffix, legendPos=[0.78, 0.20, 0.96, 0.40])
     DrawHistosWithUncband(hresols_paral_diff_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0,
-                          uparallabel, "reco_recoil_resol_paral_VS_nVtx" + suffix, legendPos=[0.30, 0.70, 0.53, 0.90])
+                          uparallabel, "reco_recoil_resol_paral_VS_nVtx" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
     DrawHistosWithUncband(hresols_perp_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel,
-                          "reco_recoil_resol_perp_VS_nVtx" + suffix, legendPos=[0.30, 0.70, 0.53, 0.90])
+                          "reco_recoil_resol_perp_VS_nVtx" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
 
     if applySc:
         extraToDraw.Clear()
@@ -472,10 +479,10 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
         #
         # Scaled
         #
-        DrawHistosWithUncband(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 39.0, uparallabel,
-                              "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90])
-        DrawHistosWithUncband(hresolsSc_perp, qtmin, qtmax, qtlabel, 0, 32.0, uperplabel,
-                              "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.70, 0.53, 0.90])
+        DrawHistosWithUncband(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 50.0, uparallabel,
+                              "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
+        DrawHistosWithUncband(hresolsSc_perp, qtmin, qtmax, qtlabel, 0, 50.0, uperplabel,
+                              "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
         DrawHistosWithUncband(hresolsSc_paral_diff_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel,
                               "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
         DrawHistosWithUncband(hresolsSc_perp_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel,
