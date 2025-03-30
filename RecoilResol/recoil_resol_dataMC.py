@@ -102,7 +102,6 @@ def prepareVars(rdf):
         unc_string += f"+  TMath::Power(u_PUPPI_AXIS - u_PUPPI{unc}_AXIS, 2)"
 
     # quad sum of the uncertainties
-    print("unc_string: ", unc_string)
     rdf = rdf.Define("u_PUPPIUnc_x", f"u_PUPPI_x + TMath::Sqrt({unc_string.replace('AXIS', 'x')})") \
              .Define("u_PUPPIUnc_y", f"u_PUPPI_y + TMath::Sqrt({unc_string.replace('AXIS', 'y')})") \
              .Define("u_PUPPIUnc_pt", "TMath::Sqrt(u_PUPPIUnc_x * u_PUPPIUnc_x + u_PUPPIUnc_y * u_PUPPIUnc_y)")
@@ -127,15 +126,40 @@ rdf_MC_qTHigh = rdf_MC.Filter("Z_pt >= 50")
 rdf_bkg_qTLow = rdf_bkg.Filter("Z_pt < 50")
 rdf_bkg_qTHigh = rdf_bkg.Filter("Z_pt >= 50")
 
+
+# jet_n bins
+rdf_data_njet0 = rdf_data.Filter("jet_n == 0")
+rdf_data_njet1 = rdf_data.Filter("jet_n == 1")
+rdf_data_njet2 = rdf_data.Filter("jet_n >= 2")
+rdf_MC_njet0 = rdf_MC.Filter("jet_n == 0")
+rdf_MC_njet1 = rdf_MC.Filter("jet_n == 1")
+rdf_MC_njet2 = rdf_MC.Filter("jet_n >= 2")
+rdf_bkg_njet0 = rdf_bkg.Filter("jet_n == 0")
+rdf_bkg_njet1 = rdf_bkg.Filter("jet_n == 1")
+rdf_bkg_njet2 = rdf_bkg.Filter("jet_n >= 2")
+
+
+rdfs = [[rdf_data, rdf_MC, rdf_bkg]]
 #rdfs = [[rdf_data, rdf_MC], [rdf_data_qTLow, rdf_MC_qTLow],
 #        [rdf_data_qTHigh, rdf_MC_qTHigh]]
-rdfs = [[rdf_data, rdf_MC, rdf_bkg]]
+
 suffixes = ["", "_qTLow", "_qTHigh"]
 extraHeaders = {
     "": None,
     "_qTLow": "q_{T} < 50 GeV",
     "_qTHigh": "q_{T} > 50 GeV",
 }
+
+rdfs = [[rdf_data, rdf_MC, rdf_bkg], [rdf_data_njet0, rdf_MC_njet0, rdf_bkg_njet0],
+        [rdf_data_njet1, rdf_MC_njet1, rdf_bkg_njet1], [rdf_data_njet2, rdf_MC_njet2, rdf_bkg_njet2]]
+suffixes = ["", "_njet0", "_njet1", "_njet2"]
+extraHeaders = {
+    "": None,
+    "_njet0": "n_{jet} = 0",
+    "_njet1": "n_{jet} = 1",
+    "_njet2": "n_{jet} >= 2",
+}
+
 
 # recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
 recoils = ["PF", "PUPPI", "PUPPIUnc", "DeepMET"]
@@ -174,8 +198,7 @@ xbins_qT_resp = getpTResponseBins()
 xbins_nVtx = getnVtxBins()
 
 # loop over the different qT bins
-for rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp in rdfs:
-    idx = rdfs.index([rdf_data_tmp, rdf_MC_tmp, rdf_bkg])
+for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
     suffix = suffixes[idx]
     extraHeader = extraHeaders[suffix]
     if len(suffix) > 0:
@@ -204,9 +227,9 @@ for rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp in rdfs:
     values_responses = OrderedDict()
     values_responses_MC = OrderedDict()
     for itype in recoils:
-        print("hresponses_inclusive in data: ",
+        print("hresponses_inclusive in data for ", itype, " is ", 
               hresponses_inclusive[itype].GetBinContent(1))
-        print("hresponses_inclusive in MC: ",
+        print("hresponses_inclusive in MC for ", itype, " is ",
               hresponses_inclusive[itype + "_MC"].GetBinContent(1))
         values_responses[itype] = hresponses_inclusive[itype].GetBinContent(1)
         values_responses_MC[itype] = hresponses_inclusive[itype +
@@ -427,7 +450,7 @@ for rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp in rdfs:
                    xlabel, ymin, ymax, ylabel, name, **args_temp)
 
     DrawHistosWithUncband(hresponses, qtmin, qtmax, qtlabel, 0., 1.19, responselabel,
-                          "reco_recoil_response" + suffix, legendPos=[0.58, 0.15, 0.88, 0.40])
+                          "reco_recoil_response" + suffix, legendPos=[0.58, 0.20, 0.88, 0.40])
 
     args['showratio'] = True
     DrawHistosWithUncband(hresols_paral_diff, qtmin, qtmax, qtlabel, 0, 39.0, uparallabel,

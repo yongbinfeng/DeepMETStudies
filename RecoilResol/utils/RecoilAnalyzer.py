@@ -158,9 +158,19 @@ class RecoilAnalyzer(object):
         if self.rdfMC:
             # mc: no need to subtract bkg
             for itype in self.recoils:
-                hresponses[itype + "_MC"] = self.profs[xvar][itype + "_MC"].Clone(
-                    self.profs[xvar][itype + "_MC"].GetName() + "_response").ProjectionX()
-                hresponses[itype + "_MC"].Divide(self.profs[xvar]['GEN_MC'].ProjectionX())
+                hnum = self.profs[xvar][itype + "_MC"].Clone(
+                    self.profs[xvar][itype + "_MC"].GetName() + "_numerator_MC")
+                hden = self.profs[xvar]['GEN_MC'].Clone(
+                    self.profs[xvar]['GEN_MC'].GetName() + "_denominator_for_" + self.profs[xvar][itype + "_MC"].GetName())
+                # projectionX() is needed to get the TH1
+                # so save the TH1 instead
+                hnum = hnum.ProjectionX()
+                hden = hden.ProjectionX()
+                hresponses[itype + "_MC"] = hnum.Clone(self.profs[xvar][itype + "_MC"].GetName() + "_response_MC")
+                hresponses[itype + "_MC"].Divide(hden)
+                #hresponses[itype + "_MC"] = self.profs[xvar][itype + "_MC"].Clone(
+                #    self.profs[xvar][itype + "_MC"].GetName() + "_response").ProjectionX()
+                #hresponses[itype + "_MC"].Divide(self.profs[xvar]['GEN_MC'].ProjectionX())
         return hresponses
 
     def getResolutions(self, xvar):
@@ -170,7 +180,6 @@ class RecoilAnalyzer(object):
             hparal_diff = self.histo2ds_paral_diff[xvar][itype].Clone(self.histo2ds_paral_diff[xvar][itype].GetName() + "_resol")
             if self.rdfBkg:
                 print("subtracting bkg for ", xvar, itype)
-                print(self.histo2ds_paral_diff[xvar][itype], self.histo2ds_paral_diff[xvar][itype + "_Bkg"])
                 hparal_diff.Add(self.histo2ds_paral_diff[xvar][itype + "_Bkg"].GetValue(), -1.0)
             hresols_paral[itype] = getResolution(
                 hparal_diff, useRMS=self.useRMS)

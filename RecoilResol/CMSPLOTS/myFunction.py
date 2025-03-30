@@ -662,7 +662,7 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
 
     legend = ROOT.TLegend(x0_l, y0_l, x1_l, y1_l)
     legend.SetBorderSize(0)
-    legend.SetTextSize(0.05)
+    legend.SetTextSize(0.04/padsize1)
     legend.SetTextFont(42)
     legend.SetFillColor(0)
     legend.SetNColumns(legendNCols)
@@ -673,7 +673,7 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     if extralabels:
         exlegend = ROOT.TLegend(x0_l-exlegoffset, y0_l, x0_l, y1_l)
         exlegend.SetBorderSize(0)
-        exlegend.SetTextSize(0.05)
+        exlegend.SetTextSize(0.04/padsize1)
         exlegend.SetTextFont(42)
         exlegend.SetFillColor(0)
         exlegend.SetMargin(0.99)
