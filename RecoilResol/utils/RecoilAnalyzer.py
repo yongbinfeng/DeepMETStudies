@@ -36,12 +36,10 @@ class RecoilAnalyzer(object):
         for itype in self.recoils:
             self.rdf = prepVars(
                 self.rdf, "u_{RECOIL}".format(RECOIL=itype), "u_GEN")
-        if self.rdfMC:
-            for itype in self.recoils:
+            if self.rdfMC:
                 self.rdfMC = prepVars(
                     self.rdfMC, "u_{RECOIL}".format(RECOIL=itype), "u_GEN")
-        if self.rdfBkg:
-            for itype in self.recoils:
+            if self.rdfBkg:
                 self.rdfBkg = prepVars(
                     self.rdfBkg, "u_{RECOIL}".format(RECOIL=itype), "u_GEN")
 

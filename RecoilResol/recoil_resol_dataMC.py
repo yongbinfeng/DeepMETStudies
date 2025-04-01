@@ -6,6 +6,7 @@ from utils.utils import getpTBins, getpTResponseBins, getnVtxBins, get_response_
 from collections import OrderedDict
 from CMSPLOTS.myFunction import DrawHistos
 import ROOT
+import math
 
 noLumi = False
 nPV = getNPVString()
@@ -61,6 +62,8 @@ rdf_bkg = ROOT.ROOT.RDataFrame(chainBkg)
 # weight_corr includes both the pileup and Zpt corrections
 weightname = "weight_corr"
 
+uncs = ["JES", "JER", "Unclustered"]
+
 if args.test:
     # need some temporary variables to hold the original rdf
     # otherise might crash
@@ -87,25 +90,34 @@ def prepareVars(rdf):
              .Define("u_DeepMET_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETResolutionTune_pt*TMath::Cos(DeepMETResolutionTune_phi))") \
              .Define("u_DeepMET_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETResolutionTune_pt*TMath::Sin(DeepMETResolutionTune_phi))") \
              .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)")
+             
     # .Define("u_DeepMETCorr_x", "-(pT_muons*TMath::Cos(phi_muons) + deepmet_pt_corr_central*TMath::Cos(deepmet_phi_corr_central) )") \
     # .Define("u_DeepMETCorr_y", "-(pT_muons*TMath::Sin(phi_muons) + deepmet_pt_corr_central*TMath::Sin(deepmet_phi_corr_central) )") \
     # .Define("u_DeepMETCorr_pt", "TMath::Sqrt(u_DeepMETCorr_x * u_DeepMETCorr_x + u_DeepMETCorr_y * u_DeepMETCorr_y)")
-
-    # for uncertainties
-    unc_string = "0."
-    for unc in ["JES", "JER", "Unclustered"]:
+             
+    # uncertainties
+    for unc in uncs:
         rdf = rdf.Define(f"PuppiMET_pt{unc}UpFix", f"TMath::IsNaN(PuppiMET_pt{unc}Up) ? 0 : PuppiMET_pt{unc}Up") \
             .Define(f"PuppiMET_phi{unc}UpFix", f"TMath::IsNaN(PuppiMET_phi{unc}Up) ? 0 : PuppiMET_phi{unc}Up") \
             .Define(f"u_PUPPI{unc}_x", f"-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Cos(PuppiMET_phi{unc}UpFix))") \
             .Define(f"u_PUPPI{unc}_y", f"-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Sin(PuppiMET_phi{unc}UpFix))") \
-            .Define(f"u_PUPPI{unc}_pt", f"TMath::Sqrt(u_PUPPI{unc}_x * u_PUPPI{unc}_x + u_PUPPI{unc}_y * u_PUPPI{unc}_y)")  \
+            .Define(f"u_PUPPI{unc}_pt", f"TMath::Sqrt(u_PUPPI{unc}_x * u_PUPPI{unc}_x + u_PUPPI{unc}_y * u_PUPPI{unc}_y)")
 
-        unc_string += f"+  TMath::Power(u_PUPPI_AXIS - u_PUPPI{unc}_AXIS, 2)"
+    ## for uncertainties
+    #unc_string = "0."
+    #for unc in ["JES", "JER", "Unclustered"]:
+    #    rdf = rdf.Define(f"PuppiMET_pt{unc}UpFix", f"TMath::IsNaN(PuppiMET_pt{unc}Up) ? 0 : PuppiMET_pt{unc}Up") \
+    #        .Define(f"PuppiMET_phi{unc}UpFix", f"TMath::IsNaN(PuppiMET_phi{unc}Up) ? 0 : PuppiMET_phi{unc}Up") \
+    #        .Define(f"u_PUPPI{unc}_x", f"-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Cos(PuppiMET_phi{unc}UpFix))") \
+    #        .Define(f"u_PUPPI{unc}_y", f"-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt{unc}UpFix*TMath::Sin(PuppiMET_phi{unc}UpFix))") \
+    #        .Define(f"u_PUPPI{unc}_pt", f"TMath::Sqrt(u_PUPPI{unc}_x * u_PUPPI{unc}_x + u_PUPPI{unc}_y * u_PUPPI{unc}_y)")  \
 
-    # quad sum of the uncertainties
-    rdf = rdf.Define("u_PUPPIUnc_x", f"u_PUPPI_x + TMath::Sqrt({unc_string.replace('AXIS', 'x')})") \
-             .Define("u_PUPPIUnc_y", f"u_PUPPI_y + TMath::Sqrt({unc_string.replace('AXIS', 'y')})") \
-             .Define("u_PUPPIUnc_pt", "TMath::Sqrt(u_PUPPIUnc_x * u_PUPPIUnc_x + u_PUPPIUnc_y * u_PUPPIUnc_y)")
+    #    unc_string += f"+  TMath::Power(u_PUPPI_AXIS - u_PUPPI{unc}_AXIS, 2)"
+
+    ## quad sum of the uncertainties
+    #rdf = rdf.Define("u_PUPPIUnc_x", f"u_PUPPI_x + TMath::Sqrt({unc_string.replace('AXIS', 'x')})") \
+    #         .Define("u_PUPPIUnc_y", f"u_PUPPI_y + TMath::Sqrt({unc_string.replace('AXIS', 'y')})") \
+    #         .Define("u_PUPPIUnc_pt", "TMath::Sqrt(u_PUPPIUnc_x * u_PUPPIUnc_x + u_PUPPIUnc_y * u_PUPPIUnc_y)")
     return rdf
 
 
@@ -143,7 +155,7 @@ rdf_bkg_njet1 = rdf_bkg.Filter("jet_n == 1")
 rdf_bkg_njet2 = rdf_bkg.Filter("jet_n >= 2")
 
 
-# rdfs = [[rdf_data, rdf_MC, rdf_bkg]]
+rdfs = [[rdf_data, rdf_MC, rdf_bkg]]
 rdfs = [[rdf_data, rdf_MC, rdf_bkg],
         [rdf_data_qTLow, rdf_MC_qTLow, rdf_bkg_qTLow],
         [rdf_data_qTHigh, rdf_MC_qTHigh, rdf_bkg_qTHigh]]
@@ -167,7 +179,10 @@ extraHeaders = {
 
 
 # recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
-recoils = ["PF", "PUPPI", "PUPPIUnc", "DeepMET"]
+#recoils = ["PF", "PUPPI", "PUPPIUnc", "DeepMET"]
+recoils = ["PF", "PUPPI", "DeepMET"]
+
+recoils_uncs = ["PUPPI" + unc for unc in uncs]
 
 colors = {
     "PF": 1,
@@ -212,7 +227,7 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
         suffix = "_" + suffix
 
     recoilanalyzer = RecoilAnalyzer(
-        rdf_data_tmp, recoils, rdfMC=rdf_MC_tmp, rdfBkg=rdf_bkg_tmp, name="recoilanalyzer_" + suffix, useRMS=useRMS, weightname=weightname)
+        rdf_data_tmp, recoils + recoils_uncs, rdfMC=rdf_MC_tmp, rdfBkg=rdf_bkg_tmp, name="recoilanalyzer_" + suffix, useRMS=useRMS, weightname=weightname)
     recoilanalyzer.prepareVars()
     recoilanalyzer.prepareResponses('u_GEN_pt', xbins_qT)
     recoilanalyzer.prepareResolutions('u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -234,7 +249,7 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
 
     values_responses = OrderedDict()
     values_responses_MC = OrderedDict()
-    for itype in recoils:
+    for itype in recoils + recoils_uncs:
         print("hresponses_inclusive in data for ", itype, " is ",
               hresponses_inclusive[itype].GetBinContent(1))
         print("hresponses_inclusive in MC for ", itype, " is ",
@@ -294,7 +309,7 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
         hresolsSc_paral_diff_VS_nVtx = OrderedDict()
         hresolsSc_perp_VS_nVtx = OrderedDict()
 
-        for itype in recoils:
+        for itype in recoils + recoils_uncs:
             resp = values_responses[itype]
 
             hresolsSc_paral_diff[itype] = hresols_paral_diff[itype].Clone(
@@ -313,7 +328,7 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
                 itype + "Sc_perp_VS_nVtx")
             hresolsSc_perp_VS_nVtx[itype].Scale(1.0 / resp)
 
-        for itype in recoils:
+        for itype in recoils + recoils_uncs:
             resp_MC = values_responses_MC[itype]
             hresolsSc_paral_diff[itype + "_MC"] = hresols_paral_diff[itype + "_MC"].Clone(
                 itype + "Sc_paral_diff_MC")
@@ -361,8 +376,11 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
 
     hresponses_todraw = OrderedDict()
     for k, v in hresponses.items():
-        if k != "PUPPIUnc" and k != "PUPPIUnc_MC":
-            hresponses_todraw[k] = v
+        if k in recoils_uncs:
+            continue
+        if k.replace("_MC", "") in recoils_uncs:
+            continue
+        hresponses_todraw[k] = v
 
     hcolors = GetColors(hresponses_todraw)
     hmarkers = GetMarkers(hresponses_todraw)
@@ -415,7 +433,7 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
 
     if extraHeader:
         extraToDraw.AddText(extraHeader)
-
+        
     def DrawHistosWithUncband(hdict, xmin, xmax, xlabel, ymin, ymax, ylabel, name, legendPos=[0.58, 0.15, 0.88, 0.40], **kwargs):
         args_temp = args.copy()
         args_temp.update(kwargs)
@@ -423,35 +441,44 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
 
         hdict_todraw = OrderedDict()
         for k, v in hdict.items():
-            if "PUPPIUnc" in k:
+            # do not draw the uncs in the upper panel
+            if k in recoils_uncs:
+                continue
+            if k.replace("_MC", "") in recoils_uncs:
                 continue
             hdict_todraw[k] = v
 
+        hratio_center = None
         if 'showratio' in args_temp.keys() and args_temp['showratio']:
             # make unc for the ratio panel
-            hratiopanel = None
-            if "PUPPIUnc" in hdict.keys() or "PUPPIUncSc" in hdict.keys():
-                val_center = "PUPPI" if "PUPPI" in hdict.keys() else "PUPPISc"
-                val_unc = "PUPPIUnc" if "PUPPIUnc" in hdict.keys() else "PUPPIUncSc"
+            val_center = "PUPPI"
+            hnum = hdict['PUPPI'].Clone(
+                f"{hdict['PUPPI'].GetName()}_numForUnc")
+            hratio_center = hnum.Clone(f"{hnum.GetName()}_center")
+            hratio_center.Divide(hdict[f"{val_center}_MC"])
+            
+            hratio_uncs = []
+            for recoil_unc in recoils_uncs:
+                if recoil_unc in hdict.keys():
+                    # data / MC_unc
+                    # center value for data, variation for MC
+                    hratio_unc = hnum.Clone(f"{hnum.GetName()}_unc_for_{recoil_unc}")
+                    hratio_unc.Divide(hdict[f"{recoil_unc}_MC"])
+                    hratio_uncs.append(hratio_unc)
+                    
+            for ibin in range(1, hratio_center.GetNbinsX() + 1):
+                temp_center = hratio_center.GetBinContent(ibin)
+                temp = 0.
+                for hratio_unc in hratio_uncs:
+                    temp += (hratio_unc.GetBinContent(ibin) - temp_center) ** 2
+                temp = math.sqrt(temp)
+                hratio_center.SetBinError(ibin, temp)
+                hratio_center.SetBinContent(ibin, 1.0)
+                
+        hratios = GetRatios(hdict_todraw)
 
-                h_center_ratio = hdict[val_center].Clone(
-                    f"{hdict[val_center].GetName()}_ratio")
-                h_center_ratio.Divide(hdict[f"{val_center}_MC"])
-                # h_unc_ratio = hdict["PUPPIUnc"].Clone(f"{hdict['PUPPIUnc'].GetName()}_ratio")
-                h_unc_ratio = hdict[val_center].Clone(
-                    f"{hdict[val_center].GetName()}_ratio_unc")
-                h_unc_ratio.Divide(hdict[f"{val_unc}_MC"])
-                hratiopanel = h_center_ratio.Clone(
-                    f"{h_center_ratio.GetName()}_ratioForUnc")
-                for ibin in range(1, h_center_ratio.GetNbinsX() + 1):
-                    hratiopanel.SetBinError(ibin, abs(h_unc_ratio.GetBinContent(
-                        ibin) - h_center_ratio.GetBinContent(ibin)))
-                    hratiopanel.SetBinContent(ibin, 1.0)
-
-            hratios = GetRatios(hdict_todraw)
-
-            args_temp['hratiopanel'] = hratiopanel
-            args_temp['hratios'] = hratios
+        args_temp['hratiopanel'] = hratio_center
+        args_temp['hratios'] = hratios
 
         DrawHistos(hdict_todraw.values(), legends, xmin, xmax,
                    xlabel, ymin, ymax, ylabel, name, **args_temp)
