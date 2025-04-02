@@ -29,7 +29,7 @@ applySc = args.applySc
 outdir = f"plots/MC/WJets"
 
 ifiles = "/eos/cms/store/group/cmst3/group/wmass/w-mass-13TeV/NanoAOD/WplusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_TrackFitV722_NanoProdv6/240509_052242/0000/NanoV9MCPostVFP_2*.root"
-ifiles = "/home/yongbinfeng/Desktop/DeepMET/data/wjetsMC/NanoV9MCPostVFP_294.root"
+#ifiles = "/home/yongbinfeng/Desktop/DeepMET/data/wjetsMC/NanoV9MCPostVFP_294.root"
 rdf_org = ROOT.ROOT.RDataFrame("Events", ifiles)
 rdf_org1 = rdf_org.Filter("nMuon >= 1")
 rdf_org1 = rdf_org1.Define("Muon_pass0", "Muon_pt[0] > 25.0 && abs(Muon_eta[0]) < 2.4 && Muon_pfRelIso04_all[0] < 0.15 && Muon_looseId[0]")
@@ -409,6 +409,6 @@ if applySc:
     
     DrawHistos(list(hresolsSc_perp_goodpv.values()) + list(hresolsSc_perp_badpv.values()), [labels[itype] for itype in hresolsSc_perp_goodpv.keys()], 0, qtmax, qtlabel, 0, 32.0, uperplabel, "reco_recoil_resol_perp_Scaled", legendPos=[0.30, 0.69, 0.70, 0.92], **args)
     
-    DrawHistos(list(hresolsSc_paral_diff_VS_nVtx_goodpv.values()) + list(hresolsSc_paral_diff_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_paral_diff_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 79.0, uparallabel, "reco_recoil_resol_paral_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
+    DrawHistos(list(hresolsSc_paral_diff_VS_nVtx_goodpv.values()) + list(hresolsSc_paral_diff_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_paral_diff_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel, "reco_recoil_resol_paral_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
     
-    DrawHistos(list(hresolsSc_perp_VS_nVtx_goodpv.values()) + list(hresolsSc_perp_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_perp_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 79.0, uperplabel, "reco_recoil_resol_perp_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
+    DrawHistos(list(hresolsSc_perp_VS_nVtx_goodpv.values()) + list(hresolsSc_perp_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_perp_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel, "reco_recoil_resol_perp_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
