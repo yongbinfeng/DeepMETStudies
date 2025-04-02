@@ -3,7 +3,7 @@ import sys
 sys.path.append("../RecoilResol/CMSPLOTS")
 from CMSPLOTS.myFunction import DrawHistos
 from collections import OrderedDict
-from utils.utils import getpTBins, getnVtxBins, get_response_code, prepRecoilVars, getqTRange, getqTLabel, getnVtxLabel, getResponseLabel, getUparalLabel, getUperpLabel, getVtxRange
+from utils.utils import getpTBins, getnVtxBins, get_response_code, prepRecoilVars, getqTRange, getqTLabel, getnVtxLabel, getResponseLabel, getUparalLabel, getUperpLabel, getVtxRange, getpTResponseBins
 from utils.RecoilAnalyzer import RecoilAnalyzer
 import argparse
 
@@ -29,11 +29,14 @@ applySc = args.applySc
 outdir = f"plots/MC/WJets"
 
 ifiles = "/eos/cms/store/group/cmst3/group/wmass/w-mass-13TeV/NanoAOD/WplusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_TrackFitV722_NanoProdv6/240509_052242/0000/NanoV9MCPostVFP_2*.root"
+ifiles = "/home/yongbinfeng/Desktop/DeepMET/data/wjetsMC/NanoV9MCPostVFP_294.root"
 rdf_org = ROOT.ROOT.RDataFrame("Events", ifiles)
 rdf_org1 = rdf_org.Filter("nMuon >= 1")
 rdf_org1 = rdf_org1.Define("Muon_pass0", "Muon_pt[0] > 25.0 && abs(Muon_eta[0]) < 2.4 && Muon_pfRelIso04_all[0] < 0.15 && Muon_looseId[0]")
 rdf_org2 = rdf_org1.Filter("Muon_pass0")
 rdf = rdf_org2
+
+rdf = rdf.Define("weight", "Generator_weight > 0 ? 1 : -1")
 
 rdf = rdf.Define("muon_pt", "Muon_pt[0]").Define("muon_phi", "Muon_phi[0]")
 
@@ -110,12 +113,13 @@ for met in ["PF", "PUPPI", "DeepMET"]:
 # get resolutions
 xbins_qT = getpTBins()
 xbins_nVtx = getnVtxBins() 
+xbins_qT_resp = getpTResponseBins()
 
 rdf = rdf.Define("GoodPVEvent", "PVRobustIndex == 0").Define("BadPVEvent", "PVRobustIndex != 0")
 rdf_goodpv = rdf.Filter("GoodPVEvent")
 rdf_badpv = rdf.Filter("BadPVEvent")
 
-recoilanalyzer_goodpv = RecoilAnalyzer(rdf_goodpv, recoils, useRMS=useRMS)
+recoilanalyzer_goodpv = RecoilAnalyzer(rdf_goodpv, recoils, useRMS=useRMS, name="recoilanalyzer_goodpv")
 recoilanalyzer_goodpv.prepareVars()
 recoilanalyzer_goodpv.prepareResponses(   'u_GEN_pt', xbins_qT)
 recoilanalyzer_goodpv.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -127,7 +131,17 @@ hresols_paral_diff_goodpv, hresols_perp_goodpv = recoilanalyzer_goodpv.getResolu
 hresponses_nVtx_goodpv = recoilanalyzer_goodpv.getResponses('PV_npvsGood')
 hresols_paral_diff_VS_nVtx_goodpv, hresols_perp_VS_nVtx_goodpv = recoilanalyzer_goodpv.getResolutions('PV_npvsGood')
 
-recoilanalyzer_badpv = RecoilAnalyzer(rdf_badpv, recoils, useRMS=useRMS)
+# just one bin, to calculate the response correction
+recoilanalyzer_goodpv.prepareResponses('V_pt', xbins_qT_resp)
+hresponses_inclusive_goodpv = recoilanalyzer_goodpv.getResponses('V_pt')
+
+values_responses_goodpv = OrderedDict()
+for itype in recoils:
+    print("hresponses_inclusive in data GoodPV for ", itype, " is ",
+          hresponses_inclusive_goodpv[itype].GetBinContent(1))
+    values_responses_goodpv[itype] = hresponses_inclusive_goodpv[itype].GetBinContent(1)
+
+recoilanalyzer_badpv = RecoilAnalyzer(rdf_badpv, recoils, useRMS=useRMS, name="recoilanalyzer_badpv")
 recoilanalyzer_badpv.prepareVars()
 recoilanalyzer_badpv.prepareResponses(   'u_GEN_pt', xbins_qT)
 recoilanalyzer_badpv.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
@@ -139,50 +153,111 @@ hresols_paral_diff_badpv, hresols_perp_badpv = recoilanalyzer_badpv.getResolutio
 hresponses_nVtx_badpv = recoilanalyzer_badpv.getResponses('PV_npvsGood')
 hresols_paral_diff_VS_nVtx_badpv, hresols_perp_VS_nVtx_badpv = recoilanalyzer_badpv.getResolutions('PV_npvsGood')
 
+# just one bin, to calculate the response correction
+recoilanalyzer_badpv.prepareResponses('V_pt', xbins_qT_resp)
+hresponses_inclusive_badpv = recoilanalyzer_badpv.getResponses('V_pt')
+
+values_responses_badpv = OrderedDict()
+for itype in recoils:
+    print("hresponses_inclusive in data BadPV for ", itype, " is ",
+          hresponses_inclusive_badpv[itype].GetBinContent(1))
+    values_responses_badpv[itype] = hresponses_inclusive_badpv[itype].GetBinContent(1)
+
 
 if applySc:
-   ROOT.gInterpreter.Declare(get_response_code)
-   # create branch with the scale factors
+   #ROOT.gInterpreter.Declare(get_response_code)
+   ## create branch with the scale factors
+   #for itype in recoils:
+   #    #"dynamic scopes" to create a variable holding histograms
+   #    ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}_goodpv = {HNAME} ".format(RECOIL=itype, HNAME=hresponses_goodpv[itype].GetName()))
+   #    
+   #    rdf_goodpv = rdf_goodpv.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}_goodpv)'.format(RECOIL=itype)) \
+   #               .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+   #               .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
+   #               
+   #    ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}_badpv = {HNAME} ".format(RECOIL=itype, HNAME=hresponses_badpv[itype].GetName()))
+   #     
+   #    rdf_badpv = rdf_badpv.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}_badpv)'.format(RECOIL=itype)) \
+   #                .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
+   #                .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
+
+
+   #recoilsSc = [itype + "Sc" for itype in recoils]
+   
+   #recoilanalyzer_goodpv_Sc = RecoilAnalyzer(rdf_goodpv, recoilsSc, name = "recoilanalyzer_Scaled_goodpv", useRMS=useRMS)
+   #recoilanalyzer_goodpv_Sc.prepareVars()
+   #recoilanalyzer_goodpv_Sc.prepareResponses(   'u_GEN_pt', xbins_qT)
+   #recoilanalyzer_goodpv_Sc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
+   #recoilanalyzer_goodpv_Sc.prepareResponses(   'PV_npvsGood', xbins_nVtx)
+   #recoilanalyzer_goodpv_Sc.prepareResolutions( 'PV_npvsGood', xbins_nVtx, 400, -200, 200)
+
+   #hresponses_goodpv_Sc = recoilanalyzer_goodpv_Sc.getResponses('u_GEN_pt')
+   #hresols_goodpv_Sc_paral_diff, hresols_goodpv_Sc_perp = recoilanalyzer_goodpv_Sc.getResolutions('u_GEN_pt')
+   #hresponses_goodpv_Sc_nVtx = recoilanalyzer_goodpv_Sc.getResponses('PV_npvsGood')
+   #hresols_goodpv_Sc_paral_diff_VS_nVtx, hresols_goodpv_Sc_perp_VS_nVtx = recoilanalyzer_goodpv_Sc.getResolutions('PV_npvsGood')
+   
+   #recoilanalyzer_badpv_Sc = RecoilAnalyzer(rdf_badpv, recoilsSc, name = "recoilanalyzer_Scaled_badpv", useRMS=useRMS)
+   #recoilanalyzer_badpv_Sc.prepareVars()
+   #recoilanalyzer_badpv_Sc.prepareResponses(   'u_GEN_pt', xbins_qT)
+   #recoilanalyzer_badpv_Sc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
+   #recoilanalyzer_badpv_Sc.prepareResponses(   'PV_npvsGood', xbins_nVtx)
+   #recoilanalyzer_badpv_Sc.prepareResolutions( 'PV_npvsGood', xbins_nVtx, 400, -200, 200)
+
+   #hresponses_badpv_Sc = recoilanalyzer_badpv_Sc.getResponses('u_GEN_pt')
+   #hresols_badpv_Sc_paral_diff, hresols_badpv_Sc_perp = recoilanalyzer_badpv_Sc.getResolutions('u_GEN_pt')
+   #hresponses_badpv_Sc_nVtx = recoilanalyzer_badpv_Sc.getResponses('PV_npvsGood')
+   #hresols_badpv_Sc_paral_diff_VS_nVtx, hresols_badpv_Sc_perp_VS_nVtx = recoilanalyzer_badpv_Sc.getResolutions('PV_npvsGood')
+   
+   hresolsSc_paral_diff_goodpv = OrderedDict()
+   hresolsSc_perp_goodpv = OrderedDict()
+   hresolsSc_paral_diff_VS_nVtx_goodpv = OrderedDict()
+   hresolsSc_perp_VS_nVtx_goodpv = OrderedDict()
+
    for itype in recoils:
-       #"dynamic scopes" to create a variable holding histograms
-       ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}_goodpv = {HNAME} ".format(RECOIL=itype, HNAME=hresponses_goodpv[itype].GetName()))
+       resp = values_responses_goodpv[itype] + 1e-6
+
+       hresolsSc_paral_diff_goodpv[itype] = hresols_paral_diff_goodpv[itype].Clone(
+           itype + "Sc_paral_diff")
+       hresolsSc_paral_diff_goodpv[itype].Scale(1.0 / resp)
+
+       hresolsSc_perp_goodpv[itype] = hresols_perp_goodpv[itype].Clone(
+           itype + "Sc_perp")
+       hresolsSc_perp_goodpv[itype].Scale(1.0 / resp)
+
+       hresolsSc_paral_diff_VS_nVtx_goodpv[itype] = hresols_paral_diff_VS_nVtx_goodpv[itype].Clone(
+           itype + "Sc_paral_diff_VS_nVtx")
+       hresolsSc_paral_diff_VS_nVtx_goodpv[itype].Scale(1.0 / resp)
+
+       hresolsSc_perp_VS_nVtx_goodpv[itype] = hresols_perp_VS_nVtx_goodpv[itype].Clone(
+           itype + "Sc_perp_VS_nVtx")
+       hresolsSc_perp_VS_nVtx_goodpv[itype].Scale(1.0 / resp)
        
-       rdf_goodpv = rdf_goodpv.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}_goodpv)'.format(RECOIL=itype)) \
-                  .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
-                  .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
-                  
-       ROOT.gInterpreter.ProcessLine("auto hprof_{RECOIL}_badpv = {HNAME} ".format(RECOIL=itype, HNAME=hresponses_badpv[itype].GetName()))
-        
-       rdf_badpv = rdf_badpv.Define("{RECOIL}_scale".format(RECOIL=itype), '1.0/get_response(u_GEN_pt, hprof_{RECOIL}_badpv)'.format(RECOIL=itype)) \
-                   .Define("u_{RECOIL}Sc_x".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_x".format(RECOIL=itype)) \
-                   .Define("u_{RECOIL}Sc_y".format(RECOIL=itype), "{RECOIL}_scale * u_{RECOIL}_y".format(RECOIL=itype))
 
+   hresolsSc_paral_diff_badpv = OrderedDict()
+   hresolsSc_perp_badpv = OrderedDict()
+   hresolsSc_paral_diff_VS_nVtx_badpv = OrderedDict()
+   hresolsSc_perp_VS_nVtx_badpv = OrderedDict()
 
-   recoilsSc = [itype + "Sc" for itype in recoils]
-   
-   recoilanalyzer_goodpv_Sc = RecoilAnalyzer(rdf_goodpv, recoilsSc, name = "recoilanalyzer_Scaled_goodpv", useRMS=useRMS)
-   recoilanalyzer_goodpv_Sc.prepareVars()
-   recoilanalyzer_goodpv_Sc.prepareResponses(   'u_GEN_pt', xbins_qT)
-   recoilanalyzer_goodpv_Sc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
-   recoilanalyzer_goodpv_Sc.prepareResponses(   'PV_npvsGood', xbins_nVtx)
-   recoilanalyzer_goodpv_Sc.prepareResolutions( 'PV_npvsGood', xbins_nVtx, 400, -200, 200)
+   for itype in recoils:
+       resp = values_responses_badpv[itype] + 1e-6
 
-   hresponses_goodpv_Sc = recoilanalyzer_goodpv_Sc.getResponses('u_GEN_pt')
-   hresols_goodpv_Sc_paral_diff, hresols_goodpv_Sc_perp = recoilanalyzer_goodpv_Sc.getResolutions('u_GEN_pt')
-   hresponses_goodpv_Sc_nVtx = recoilanalyzer_goodpv_Sc.getResponses('PV_npvsGood')
-   hresols_goodpv_Sc_paral_diff_VS_nVtx, hresols_goodpv_Sc_perp_VS_nVtx = recoilanalyzer_goodpv_Sc.getResolutions('PV_npvsGood')
-   
-   recoilanalyzer_badpv_Sc = RecoilAnalyzer(rdf_badpv, recoilsSc, name = "recoilanalyzer_Scaled_badpv", useRMS=useRMS)
-   recoilanalyzer_badpv_Sc.prepareVars()
-   recoilanalyzer_badpv_Sc.prepareResponses(   'u_GEN_pt', xbins_qT)
-   recoilanalyzer_badpv_Sc.prepareResolutions( 'u_GEN_pt', xbins_qT, 400, -200, 200)
-   recoilanalyzer_badpv_Sc.prepareResponses(   'PV_npvsGood', xbins_nVtx)
-   recoilanalyzer_badpv_Sc.prepareResolutions( 'PV_npvsGood', xbins_nVtx, 400, -200, 200)
+       hresolsSc_paral_diff_badpv[itype] = hresols_paral_diff_badpv[itype].Clone(
+           itype + "Sc_paral_diff")
+       hresolsSc_paral_diff_badpv[itype].Scale(1.0 / resp)
 
-   hresponses_badpv_Sc = recoilanalyzer_badpv_Sc.getResponses('u_GEN_pt')
-   hresols_badpv_Sc_paral_diff, hresols_badpv_Sc_perp = recoilanalyzer_badpv_Sc.getResolutions('u_GEN_pt')
-   hresponses_badpv_Sc_nVtx = recoilanalyzer_badpv_Sc.getResponses('PV_npvsGood')
-   hresols_badpv_Sc_paral_diff_VS_nVtx, hresols_badpv_Sc_perp_VS_nVtx = recoilanalyzer_badpv_Sc.getResolutions('PV_npvsGood')
+       hresolsSc_perp_badpv[itype] = hresols_perp_badpv[itype].Clone(
+           itype + "Sc_perp")
+       hresolsSc_perp_badpv[itype].Scale(1.0 / resp)
+
+       hresolsSc_paral_diff_VS_nVtx_badpv[itype] = hresols_paral_diff_VS_nVtx_badpv[itype].Clone(
+           itype + "Sc_paral_diff_VS_nVtx")
+       hresolsSc_paral_diff_VS_nVtx_badpv[itype].Scale(1.0 / resp)
+
+       hresolsSc_perp_VS_nVtx_badpv[itype] = hresols_perp_VS_nVtx_badpv[itype].Clone(
+           itype + "Sc_perp_VS_nVtx")
+       hresolsSc_perp_VS_nVtx_badpv[itype].Scale(1.0 / resp)
+       
+       
    
    
 
@@ -330,14 +405,10 @@ if applySc:
     
     args["extraToDraw"] = [extraToDraw, extraToDraw2, extraToDraw3]
     
-    DrawHistos(list(hresponses_goodpv_Sc.values()) + list(hresponses_badpv_Sc.values()), [labels[itype] for itype in hresponses_goodpv_Sc.keys()], 0, qtmax, qtlabel, 0., 1.15, responselabel, "reco_recoil_response_Scaled", legendPos=[0.45, 0.17, 0.88, 0.41],**args)
+    DrawHistos(list(hresolsSc_paral_diff_goodpv.values()) + list(hresolsSc_paral_diff_badpv.values()), [labels[itype] for itype in hresolsSc_paral_diff_goodpv.keys()], 0, qtmax, qtlabel, 0, 39.0, uparallabel, "reco_recoil_resol_paral_Scaled", legendPos=[0.30, 0.69, 0.65, 0.92], **args)
     
-    DrawHistos(list(hresols_goodpv_Sc_paral_diff.values()) + list(hresols_badpv_Sc_paral_diff.values()), [labels[itype] for itype in hresols_goodpv_Sc_paral_diff.keys()], 0, qtmax, qtlabel, 0, 39.0, uparallabel, "reco_recoil_resol_paral_Scaled", legendPos=[0.30, 0.69, 0.65, 0.92], **args)
+    DrawHistos(list(hresolsSc_perp_goodpv.values()) + list(hresolsSc_perp_badpv.values()), [labels[itype] for itype in hresolsSc_perp_goodpv.keys()], 0, qtmax, qtlabel, 0, 32.0, uperplabel, "reco_recoil_resol_perp_Scaled", legendPos=[0.30, 0.69, 0.70, 0.92], **args)
     
-    DrawHistos(list(hresols_goodpv_Sc_perp.values()) + list(hresols_badpv_Sc_perp.values()), [labels[itype] for itype in hresols_goodpv_Sc_perp.keys()], 0, qtmax, qtlabel, 0, 32.0, uperplabel, "reco_recoil_resol_perp_Scaled", legendPos=[0.30, 0.69, 0.70, 0.92], **args)
+    DrawHistos(list(hresolsSc_paral_diff_VS_nVtx_goodpv.values()) + list(hresolsSc_paral_diff_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_paral_diff_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 79.0, uparallabel, "reco_recoil_resol_paral_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
     
-    DrawHistos(list(hresponses_goodpv_Sc_nVtx.values()) + list(hresponses_badpv_Sc_nVtx.values()), [labels[itype] for itype in hresponses_goodpv_Sc_nVtx.keys()], nvtxmin, nvtxmax, nvtxlabel, 0., 1.15, responselabel, "reco_recoil_response_Scaled_VS_nVtx", legendPos=[0.65, 0.17, 0.90, 0.41], **args)
-    
-    DrawHistos(list(hresols_goodpv_Sc_paral_diff_VS_nVtx.values()) + list(hresols_badpv_Sc_paral_diff_VS_nVtx.values()), [labels[itype] for itype in hresols_goodpv_Sc_paral_diff_VS_nVtx.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 79.0, uparallabel, "reco_recoil_resol_paral_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
-    
-    DrawHistos(list(hresols_goodpv_Sc_perp_VS_nVtx.values()) + list(hresols_badpv_Sc_perp_VS_nVtx.values()), [labels[itype] for itype in hresols_goodpv_Sc_perp_VS_nVtx.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 79.0, uperplabel, "reco_recoil_resol_perp_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
+    DrawHistos(list(hresolsSc_perp_VS_nVtx_goodpv.values()) + list(hresolsSc_perp_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_perp_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 79.0, uperplabel, "reco_recoil_resol_perp_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
