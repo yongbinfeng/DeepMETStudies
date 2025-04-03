@@ -89,7 +89,13 @@ def prepareVars(rdf):
              .Define("u_PF_pt",    "TMath::Sqrt(u_PF_x * u_PF_x + u_PF_y * u_PF_y)") \
              .Define("u_DeepMET_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETResolutionTune_pt*TMath::Cos(DeepMETResolutionTune_phi))") \
              .Define("u_DeepMET_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETResolutionTune_pt*TMath::Sin(DeepMETResolutionTune_phi))") \
-             .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)")
+             .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)") \
+             .Define("u_RawPF_x", "-(pT_muons*TMath::Cos(phi_muons) + RawMET_pt*TMath::Cos(RawMET_phi))") \
+             .Define("u_RawPF_y", "-(pT_muons*TMath::Sin(phi_muons) + RawMET_pt*TMath::Sin(RawMET_phi))") \
+             .Define("u_RawPF_pt", "TMath::Sqrt(u_RawPF_x * u_RawPF_x + u_RawPF_y * u_RawPF_y)") \
+             .Define("u_RawPUPPI_x", "-(pT_muons*TMath::Cos(phi_muons) + RawPuppiMET_pt*TMath::Cos(RawPuppiMET_phi))") \
+             .Define("u_RawPUPPI_y", "-(pT_muons*TMath::Sin(phi_muons) + RawPuppiMET_pt*TMath::Sin(RawPuppiMET_phi))") \
+             .Define("u_RawPUPPI_pt", "TMath::Sqrt(u_RawPUPPI_x * u_RawPUPPI_x + u_RawPUPPI_y * u_RawPUPPI_y)")
              
     # .Define("u_DeepMETCorr_x", "-(pT_muons*TMath::Cos(phi_muons) + deepmet_pt_corr_central*TMath::Cos(deepmet_phi_corr_central) )") \
     # .Define("u_DeepMETCorr_y", "-(pT_muons*TMath::Sin(phi_muons) + deepmet_pt_corr_central*TMath::Sin(deepmet_phi_corr_central) )") \
@@ -181,6 +187,7 @@ extraHeaders = {
 # recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
 #recoils = ["PF", "PUPPI", "PUPPIUnc", "DeepMET"]
 recoils = ["PF", "PUPPI", "DeepMET"]
+recoils = ["PF", "PUPPI", "DeepMET", "RawPF", "RawPUPPI"]
 
 recoils_uncs = ["PUPPI" + unc for unc in uncs]
 
@@ -191,6 +198,8 @@ colors = {
     "DeepMET": 4,
     "DeepMETCorr": 8,
     "PUPPIUnc": 6,
+    "RawPF": 5,
+    "RawPUPPI": 7,
 }
 
 labels = {
@@ -202,6 +211,8 @@ labels = {
     "DeepMET": "DeepMET",
     "DeepMETCorr": "DeepMET",
     "PUPPIUnc": "PUPPIUnc",
+    "RawPF": "RawPF",
+    "RawPUPPI": "RawPUPPI",
 }
 
 markers = {
@@ -211,6 +222,8 @@ markers = {
     "DeepMET": 22,
     "DeepMETCorr": 23,
     "PUPPIUnc": 24,
+    "RawPF": 25,
+    "RawPUPPI": 26,
 }
 
 xbins_qT = getpTBins()
