@@ -39,16 +39,16 @@ def getResponseLabel():
 
 def getpTBins():
     import numpy as np
-    xbins_qT = np.zeros(24)
+    xbins_qT = np.zeros(22)
     for ibin in range(0, 4):
         xbins_qT[ibin] = 5*ibin
     for ibin in range(4, 8):
         xbins_qT[ibin] = 10*ibin-20
     for ibin in range(8, 13):
         xbins_qT[ibin] = 20*ibin-100
-    for ibin in range(13, 20):
-        xbins_qT[ibin] = 25*ibin-165
-    xbins_qT[20:] = (350, 400, 450, 500)
+    for ibin in range(13, 18):
+        xbins_qT[ibin] = 30*ibin-220
+    xbins_qT[18:] = (350, 400, 450, 500)
     return xbins_qT
 
 
