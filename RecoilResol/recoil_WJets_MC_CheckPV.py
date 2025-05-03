@@ -352,7 +352,7 @@ extraToDraw.SetFillColorAlpha(0, 0)
 extraToDraw.SetBorderSize(0)
 extraToDraw.SetTextFont(42)
 extraToDraw.SetTextSize(0.04)
-extraToDraw.AddText("PV-Incorrect")
+extraToDraw.AddText("LV-Incorrect")
 
 extraToDraw2 = ROOT.TPaveText(0.33, 0.37, 0.50, 0.42, "NDC")
 extraToDraw2.SetFillColorAlpha(0, 0)
@@ -360,7 +360,7 @@ extraToDraw2.SetBorderSize(0)
 extraToDraw2.SetTextAlign(31)
 extraToDraw2.SetTextFont(42)
 extraToDraw2.SetTextSize(0.04)
-extraToDraw2.AddText("PV-Correct")
+extraToDraw2.AddText("LV-Correct")
 
 args["extraToDraw"] = [extraToDraw, extraToDraw2]
 
@@ -393,7 +393,7 @@ if applySc:
     extraToDraw2.SetBorderSize(0)
     extraToDraw2.SetTextFont(42)
     extraToDraw2.SetTextSize(0.04)
-    extraToDraw2.AddText("PV-Incorrect")
+    extraToDraw2.AddText("LV-Incorrect")
     
     extraToDraw3 = ROOT.TPaveText(0.20, 0.85, 0.37, 0.90, "NDC")
     extraToDraw3.SetFillColorAlpha(0, 0)
@@ -401,7 +401,7 @@ if applySc:
     extraToDraw3.SetBorderSize(0)
     extraToDraw3.SetTextFont(42)
     extraToDraw3.SetTextSize(0.04)
-    extraToDraw3.AddText("PV-Correct")
+    extraToDraw3.AddText("LV-Correct")
     
     args["extraToDraw"] = [extraToDraw, extraToDraw2, extraToDraw3]
     
