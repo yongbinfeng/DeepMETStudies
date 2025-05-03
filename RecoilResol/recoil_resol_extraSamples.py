@@ -28,15 +28,16 @@ def prepareVars(rdf):
    return rdf
 
 def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
-   #fdir = "/eos/cms/store/user/yofeng/DeepMETNanoAOD/2016/"
+   fdir = "/eos/cms/store/user/yofeng/DeepMETNanoAOD/2016/"
    fdir = "/home/yongbinfeng/Desktop/DeepMET/data/NanoAOD2016/"
    fpath = fdir + fname
-   if not os.path.isfile(fpath):
-      sys.exit(f"File {fpath} does not exist")
+   #if not os.path.isfile(fpath):
+   #   sys.exit(f"File {fpath} does not exist")
    
-   chainMC = ROOT.TChain("Events")
-   chainMC.Add(fpath)
-   rdf_MC = ROOT.ROOT.RDataFrame(chainMC)
+   #chainMC = ROOT.TChain("Events")
+   #chainMC.Add(fpath)
+   # rdf_MC = ROOT.ROOT.RDataFrame(chainMC)
+   rdf_MC = ROOT.ROOT.RDataFrame("Events", fpath)
    
    rdf_MC = prepareVars(rdf_MC)
 
@@ -51,6 +52,10 @@ def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
    nbins_ht = htbins.size - 1
    htmax = htbins[-1]
    htmin = htbins[0]
+   
+   print(f"htbins: {htbins}")
+   print(f"htmin: {htmin}")
+   print(f"htmax: {htmax}")
 
    histos_2d_diffs = OrderedDict()
    histos_ratios = OrderedDict()
@@ -156,31 +161,33 @@ def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
 
 
    if applySc:
+      #
+      # Scaled 
+      #
       
-      extraToDraw = ROOT.TPaveText(0.60, 0.77, 0.90, 0.82, "NDC")
+      extraToDraw = ROOT.TPaveText(0.60, 0.70, 0.90, 0.87, "NDC")
+      # extraToDraw.SetFillColor(0)
       extraToDraw.SetFillColorAlpha(0, 0)
       extraToDraw.SetBorderSize(0)
       extraToDraw.SetTextFont(42)
       extraToDraw.SetTextSize(0.04)
       extraToDraw.AddText("Response corrected")
-      #
-      # Scaled 
-      #
+      
       DrawHistos(hresponses_sc.values(), GetLegends(hresponses), htmin, htmax, "Gen H_{T} [GeV]", 0., 1.20, "Scaled Response -<p^{miss}_{T}>/<Gen p^{miss}_{T}>", "met_response_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresponses), MCOnly=MCOnly, lheader=lheader)
 
       DrawHistos(hresols_sc.values(), GetLegends(hresols), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols), MCOnly=MCOnly, lheader=lheader, extraToDraw=extraToDraw)
       
       DrawHistos(hresolsRMS_sc.values(), GetLegends(hresolsRMS), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_RMS_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresolsRMS.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresolsRMS), MCOnly=MCOnly, lheader=lheader, extraToDraw=extraToDraw)
       
-      DrawHistos([hresols_sc["DeepMET"], hresolsRMS_sc["DeepMET"]], ["DeepMET", "DeepMET RMS"], htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled_RMSVsQuantitle_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, lheader=lheader, showratio=True, yrlabel="RMS/Quantile", yrmin=0.91, yrmax=1.09)
+      #DrawHistos([hresols_sc["DeepMET"], hresolsRMS_sc["DeepMET"]], ["DeepMET", "DeepMET RMS"], htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled_RMSVsQuantitle_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, lheader=lheader, showratio=True, yrlabel="RMS/Quantile", yrmin=0.91, yrmax=1.09)
 
-      DrawHistos(hresols_ratio_sc.values(), GetLegends(hresols_ratio), htmin, htmax, "Gen H_{T} [GeV]", 0, 0.5, "Response-corrected #sigma (p^{miss}_{T}) / <p^{miss}_{T}>", "met_resol_ratio_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_ratio.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_ratio), MCOnly=MCOnly, lheader=lheader)
+      #DrawHistos(hresols_ratio_sc.values(), GetLegends(hresols_ratio), htmin, htmax, "Gen H_{T} [GeV]", 0, 0.5, "Response-corrected #sigma (p^{miss}_{T}) / <p^{miss}_{T}>", "met_resol_ratio_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_ratio.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols_ratio), MCOnly=MCOnly, lheader=lheader)
 
-      DrawHistos([hresponses["DeepMET"], hresponses_sc["DeepMET"]], ["DeepMET", "DeepMET Scaled"], htmin, htmax, "Gen H_{T} [GeV]", 0., 1.20, "Response -<p^{miss}_{T}>/<Gen p^{miss}_{T}>", "met_response_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.50, 0.20, 0.80, 0.40], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, showratio=True, yrlabel="Scaled/Unscaled", yrmin=0.91, yrmax=1.09, lheader=lheader)
+      #DrawHistos([hresponses["DeepMET"], hresponses_sc["DeepMET"]], ["DeepMET", "DeepMET Scaled"], htmin, htmax, "Gen H_{T} [GeV]", 0., 1.20, "Response -<p^{miss}_{T}>/<Gen p^{miss}_{T}>", "met_response_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.50, 0.20, 0.80, 0.40], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, showratio=True, yrlabel="Scaled/Unscaled", yrmin=0.91, yrmax=1.09, lheader=lheader)
 
-      DrawHistos([hresols["DeepMET"], hresols_sc["DeepMET"]], ["DeepMET", "DeepMET Scaled"], htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, showratio=True, yrlabel="Scaled/Unscaled", yrmin=0.91, yrmax=1.09, lheader=lheader)
+      #DrawHistos([hresols["DeepMET"], hresols_sc["DeepMET"]], ["DeepMET", "DeepMET Scaled"], htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, showratio=True, yrlabel="Scaled/Unscaled", yrmin=0.91, yrmax=1.09, lheader=lheader)
 
-      DrawHistos([hresols_ratio["DeepMET"], hresols_ratio_sc["DeepMET"]], ["DeepMET", "DeepMET Scaled"], htmin, htmax, "Gen H_{T} [GeV]", 0, 0.5, "#sigma (p^{miss}_{T}) / <p^{miss}_{T}>", "met_resol_ratio_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, showratio=True, yrlabel="Scaled/Unscaled", yrmin=0.91, yrmax=1.09, lheader=lheader)
+      #DrawHistos([hresols_ratio["DeepMET"], hresols_ratio_sc["DeepMET"]], ["DeepMET", "DeepMET Scaled"], htmin, htmax, "Gen H_{T} [GeV]", 0, 0.5, "#sigma (p^{miss}_{T}) / <p^{miss}_{T}>", "met_resol_ratio_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, showratio=True, yrlabel="Scaled/Unscaled", yrmin=0.91, yrmax=1.09, lheader=lheader)
    
 if __name__ == "__main__":
    
@@ -197,6 +204,19 @@ if __name__ == "__main__":
       ("ttHToMuMu_M125_TuneCP5_13TeV-powheg-pythia8.root", "ttHToMuMu", "ttH(H#rightarrow#mu^{+}#mu^{-})", np.array([200.0, 250, 300, 350, 400, 450, 500, 600, 700, 800, 1000]), 10.0, 45.0),
       ("VBF_HToInvisible_M125_TuneCP5_withDipoleRecoil_13TeV_powheg_pythia8.root", "VBF_HToInvisible", "VBF H#rightarrow invisible", np.array([0.0, 100.0, 240, 280, 320, 360, 400, 450, 500, 600]), 10.0, 50.0),
    ]
+   
+   
+   fnames = [
+      ("GluGluToHHTo2B2Tau_TuneCP5_PSWeights_node_SM_13TeV-madgraph-pythia8.root", "GGToHHTo2B2Tau", "HH#rightarrowb#bar{b}#tau^{+}#tau^{-}", np.array([200.0, 250, 300, 350, 400, 450, 500, 600, 700, 800, 1000]), 10, 45.0),
+      ("SMS-T2tt-4bd_genMET-100_genHT200_mStop-350_mLSP-335_TuneCP5_LLStop_13TeV-madgraphMLM-pythia8.root", "T2tt_4bd", "SMS T2tt 4bd", np.array([200.0, 250, 300, 350.0, 400., 450., 500, 600, 700, 800, 1000]), 15.0, 50.0),
+      ("SMS-TChiZZ-mNLSP400_mLSP1_TuneCP5_13TeV-madgraphMLM-pythia8.root", "TChiZZ", "SMS TChiZZ", np.array([200.0, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 800, 1000]), 5.0, 45.0),
+      ("ttHTobb_ttTo2L2Nu_M125_TuneCP5_13TeV-powheg-pythia8.root", "ttHTobb", "ttH(H#rightarrowb#bar{b}) dilepton", np.array([200.0, 250, 300, 350, 400, 450, 500, 600, 700, 800, 1000]), 10.0, 45.0),
+      ("ttHToMuMu_M125_TuneCP5_13TeV-powheg-pythia8.root", "ttHToMuMu", "ttH(H#rightarrow#mu^{+}#mu^{-})", np.array([200.0, 250, 300, 350, 400, 450, 500, 600, 700, 800, 1000]), 10.0, 45.0),
+      ("VBF_HToInvisible_M125_TuneCP5_withDipoleRecoil_13TeV_powheg_pythia8*.root", "VBF_HToInvisible", "VBF H#rightarrow invisible", np.array([200.0, 240, 280, 320, 360, 400, 450, 500, 600,  800, 1000]), 10.0, 50.0),
+   ]
    for fname, suffix, lheader, htbins, ymin, ymax in fnames:
+      htbins = np.array([200.0, 250.0, 300.0, 350.0, 400.0, 450.0, 500.0, 600.0, 700.0, 800.0, 1000.0])
+      ymin = 11.0
+      ymax = 50.0
       makePlots(fname, "_" + suffix, lheader, htbins, ymin, ymax, args.applySc)
    
