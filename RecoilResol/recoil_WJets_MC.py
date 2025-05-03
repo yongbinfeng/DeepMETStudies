@@ -81,9 +81,9 @@ labels = {
             "DeepMETPVRobustNoPUPPI": "DeepMET PVRobust NoPUPPI"
          }
 
-DrawHistos([h_pvIndex, h_pvIndex_Z], ["W", "Z"], -1.5, 10.5, "Robust PV Index", 1e-5, 10.0, "A.U.", "W_pv_Index", donormalize=True, outdir=outdir, noLumi=True, mycolors=[1, 2])
+DrawHistos([h_pvIndex, h_pvIndex_Z], ["W", "Z"], -1.5, 10.5, "Robust PV Index", 1e-5, 10.0, "a.u.", "W_pv_Index", donormalize=True, outdir=outdir, noLumi=True, mycolors=[1, 2])
 
-DrawHistos(h_MTs.values(), [labels[itype] for itype in h_MTs.keys()], 0, 120, "m_{T} [GeV]", 0., 0.1, "A.U.", "MT_comp", drawashist=True, dology=False, legendPos=[0.20, 0.67, 0.38, 0.86], mycolors=[colors[itype] for itype in h_MTs.keys()], outdir=outdir, donormalize=True, MCOnly=True)
+DrawHistos(h_MTs.values(), [labels[itype] for itype in h_MTs.keys()], 0, 120, "m_{T} [GeV]", 0., 0.1, "a.u.", "MT_comp", drawashist=True, dology=False, legendPos=[0.20, 0.67, 0.38, 0.86], mycolors=[colors[itype] for itype in h_MTs.keys()], outdir=outdir, donormalize=True, MCOnly=True)
 
-DrawHistos(h_METs.values(), [labels[itype] for itype in h_METs.keys()], 0, 100, "p^{miss}_{T} [GeV]", 0., 0.13, "A.U.", "MET_comp", drawashist=True, dology=False, legendPos=[0.62, 0.67, 0.80, 0.86], mycolors=[colors[itype] for itype in h_METs.keys()], outdir=outdir, donormalize=True, MCOnly=True)
+DrawHistos(h_METs.values(), [labels[itype] for itype in h_METs.keys()], 0, 100, "p^{miss}_{T} [GeV]", 0., 0.13, "a.u.", "MET_comp", drawashist=True, dology=False, legendPos=[0.62, 0.67, 0.80, 0.86], mycolors=[colors[itype] for itype in h_METs.keys()], outdir=outdir, donormalize=True, MCOnly=True)
 

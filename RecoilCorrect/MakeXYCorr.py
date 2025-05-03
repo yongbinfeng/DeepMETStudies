@@ -18,19 +18,22 @@ ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT(10)
 ROOT.gSystem.Load("Functions_cc.so")
 
+fdata = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/Data.root"
+fMC = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/DY.root"
+
 outdir = f"plots/MET_xy"
 if not os.path.exists(outdir):
    print(f"Creating {outdir}")
    os.makedirs(outdir)
 
 chain = ROOT.TChain("Events")
-chain.Add("/afs/cern.ch/work/y/yofeng/public/outputroot/Data.root")
+chain.Add(fdata)
 rdf_data = ROOT.ROOT.RDataFrame(chain)
 
 branches_data = list(rdf_data.GetColumnNames())
 
 chainMC = ROOT.TChain("Events")
-chainMC.Add("/afs/cern.ch/work/y/yofeng/public/outputroot/DY.root")
+chainMC.Add(fMC)
 rdf_MC = ROOT.ROOT.RDataFrame(chainMC)
 
 branches_MC = list(rdf_MC.GetColumnNames())
@@ -304,7 +307,12 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
       "legendoptions": ["EP"] * len(recoils) + ["L"] * len(recoils),
    }
    
-   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -pi, pi, "#phi", 0.0151, 0.0279, "a.u.", f"hphi_{suffix}", **args, lheader = "MC", extralheader = "Data", extralabels = [""] * len(recoils))
+   ymax = 0.0279
+   ymin = 0.0151
+   ymax = 0.0599
+   ymin = 0.0
+   
+   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -pi, pi, "#phi", ymin, ymax, "a.u.", f"hphi_{suffix}", **args, lheader = "MC", extralheader = "Data", extralabels = [""] * len(recoils))
    
    #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -pi, pi, "#phi", 0, 0.019, "a.u.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
       
@@ -342,7 +350,7 @@ if __name__ == "__main__":
    print("Running the XY corrections")
    corrname = "results/MET_xy_dataMC.root"
    
-   if 0:
+   if 1:
       print(f"Deriving XY corrections for MET and saving them in {corrname}")
       deriveXYCorr(corrname, writeOutput=writeOutput)
       print("\n\n\n")

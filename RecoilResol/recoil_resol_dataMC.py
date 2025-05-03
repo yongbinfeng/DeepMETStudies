@@ -13,7 +13,7 @@ nPV = getNPVString()
 useRMS = True
 
 # whether to plot data and MC in the same plot
-combineDataMC = False
+combineDataMC = True
 
 ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT()
@@ -560,14 +560,15 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
                                   "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
         else:
             args['showratio'] = False
+            suffix_data = suffix + "_Data"
             DrawHistosDataMC(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 50.0, uparallabel,
-                                  "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.70, 0.58, 0.87], DataOnly=True)
+                                  "reco_recoil_resol_paral_Scaled" + suffix_data, legendPos=[0.33, 0.70, 0.58, 0.87], DataOnly=True)
             DrawHistosDataMC(hresolsSc_perp, qtmin, qtmax, qtlabel, 0, 50.0, uperplabel,
-                                  "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.70, 0.58, 0.87], DataOnly=True)
+                                  "reco_recoil_resol_perp_Scaled" + suffix_data, legendPos=[0.33, 0.70, 0.58, 0.87], DataOnly=True)
             DrawHistosDataMC(hresolsSc_paral_diff_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel,
-                                  "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.70, 0.58, 0.87], DataOnly=True)
+                                  "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix_data, legendPos=[0.33, 0.70, 0.58, 0.87], DataOnly=True)
             DrawHistosDataMC(hresolsSc_perp_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel,
-                                  "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.70, 0.58, 0.87], DataOnly=True)
+                                  "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix_data, legendPos=[0.33, 0.70, 0.58, 0.87], DataOnly=True)
             
             suffix_MC = suffix + "_MC"
             DrawHistosDataMC(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 50.0, uparallabel,

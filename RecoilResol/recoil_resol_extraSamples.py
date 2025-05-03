@@ -28,7 +28,8 @@ def prepareVars(rdf):
    return rdf
 
 def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
-   fdir = "/eos/cms/store/user/yofeng/DeepMETNanoAOD/2016/"
+   #fdir = "/eos/cms/store/user/yofeng/DeepMETNanoAOD/2016/"
+   fdir = "/home/yongbinfeng/Desktop/DeepMET/data/NanoAOD2016/"
    fpath = fdir + fname
    if not os.path.isfile(fpath):
       sys.exit(f"File {fpath} does not exist")
@@ -155,14 +156,21 @@ def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
 
 
    if applySc:
+      
+      extraToDraw = ROOT.TPaveText(0.60, 0.77, 0.90, 0.82, "NDC")
+      extraToDraw.SetFillColorAlpha(0, 0)
+      extraToDraw.SetBorderSize(0)
+      extraToDraw.SetTextFont(42)
+      extraToDraw.SetTextSize(0.04)
+      extraToDraw.AddText("Response corrected")
       #
       # Scaled 
       #
       DrawHistos(hresponses_sc.values(), GetLegends(hresponses), htmin, htmax, "Gen H_{T} [GeV]", 0., 1.20, "Scaled Response -<p^{miss}_{T}>/<Gen p^{miss}_{T}>", "met_response_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.70, 0.17, 0.88, 0.36], mycolors=[colors[itype] for itype in hresponses.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresponses), MCOnly=MCOnly, lheader=lheader)
 
-      DrawHistos(hresols_sc.values(), GetLegends(hresols), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "Response-corrected #sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols), MCOnly=MCOnly, lheader=lheader)
+      DrawHistos(hresols_sc.values(), GetLegends(hresols), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols), MCOnly=MCOnly, lheader=lheader, extraToDraw=extraToDraw)
       
-      DrawHistos(hresolsRMS_sc.values(), GetLegends(hresolsRMS), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "Response-corrected #sigma (p^{miss}_{T}) [GeV]", "met_resol_RMS_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresolsRMS.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresolsRMS), MCOnly=MCOnly, lheader=lheader)
+      DrawHistos(hresolsRMS_sc.values(), GetLegends(hresolsRMS), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_RMS_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresolsRMS.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresolsRMS), MCOnly=MCOnly, lheader=lheader, extraToDraw=extraToDraw)
       
       DrawHistos([hresols_sc["DeepMET"], hresolsRMS_sc["DeepMET"]], ["DeepMET", "DeepMET RMS"], htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled_RMSVsQuantitle_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, lheader=lheader, showratio=True, yrlabel="RMS/Quantile", yrmin=0.91, yrmax=1.09)
 
