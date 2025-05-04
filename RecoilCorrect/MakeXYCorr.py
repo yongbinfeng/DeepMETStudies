@@ -4,11 +4,12 @@ sys.path.append("../RecoilResol/CMSPLOTS")
 sys.path.append("../RecoilResol/")
 from CMSPLOTS.myFunction import DrawHistos
 from collections import OrderedDict
-from utils.utils import getnVtxBins
+from utils.utils import getnVtxBins, doPAS
 import argparse
 
 noLumi = False
 writeOutput = False
+doPAS = doPAS()
 #nPV = "PV_npvsGood"
 nPV = "PV_npvs"
 
@@ -93,7 +94,20 @@ for itype in recoils:
    
 
 def GetLineStyles(hdict):
-    return [1 if "_MC" not in itype else 2 for itype in hdict.keys()]
+    linestyles = []
+    for itype in hdict.keys():
+        if "_MC" not in itype:
+            linestyles.append(1)
+        else:
+            if "PUPPI" in itype:
+                linestyles.append(2)
+            elif "PF" in itype:
+                linestyles.append(5)
+            elif "DeepMET" in itype:
+                linestyles.append(8) 
+            else:
+                linestyles.append(3)
+    return linestyles
 
 def GetMarkers(hdict):
    return [markers[itype] if "_MC" not in itype else 1 for itype in hdict.keys()]
@@ -175,7 +189,7 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
    hdrawoptions = GetDrawOptions(h_toDraws)
    
    
-   extraToDraw = ROOT.TPaveText(0.60, 0.82, 0.90, 0.87, "NDC")
+   extraToDraw = ROOT.TPaveText(0.60, 0.20, 0.90, 0.27, "NDC")
    extraToDraw.SetFillColor(0)
    extraToDraw.SetBorderSize(0)
    extraToDraw.SetTextFont(42)
@@ -192,7 +206,7 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
       "dology": False,
       "drawashist": False,
       "donormalize": True,
-      "legendPos": [0.28, 0.62, 0.55, 0.87],
+      "legendPos": [0.63, 0.57, 0.90, 0.82],
       "extraToDraw": extraToDraw,
       "legendoptions": ["EP"] * len(recoils) + ["L"] * len(recoils),
    }
@@ -200,7 +214,7 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
    print("legend options", args["legendoptions"], len(args["legendoptions"]))
    print("hists to draw, ", len(h_toDraws.values()))
    
-   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -pi, pi, "#phi", 0, 0.0599, "a.u.", f"hphi_{suffix}", **args, lheader = "MC", extralheader = "Data", extralabels = [""] * len(recoils))
+   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -pi, pi, "#phi", 0, 0.0599, "a.u.", f"hphi_{suffix}", **args, lheader = "MC", extralheader = "Data", extralabels = [""] * len(recoils), inPaper=True, doPAS=doPAS)
             
    #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -pi, pi, "#phi", 0, 0.027, "a.u.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
 
@@ -285,7 +299,7 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
    hdrawoptions = GetDrawOptions(h_toDraws)
    
    
-   extraToDraw = ROOT.TPaveText(0.60, 0.82, 0.90, 0.87, "NDC")
+   extraToDraw = ROOT.TPaveText(0.60, 0.20, 0.90, 0.27, "NDC")
    extraToDraw.SetFillColor(0)
    extraToDraw.SetBorderSize(0)
    extraToDraw.SetTextFont(42)
@@ -302,7 +316,7 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
       "dology": False,
       "drawashist": False,
       "donormalize": True,
-      "legendPos": [0.28, 0.62, 0.55, 0.87],
+      "legendPos": [0.63, 0.57, 0.90, 0.82],
       "extraToDraw": extraToDraw,
       "legendoptions": ["EP"] * len(recoils) + ["L"] * len(recoils),
    }
@@ -312,7 +326,7 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
    ymax = 0.0599
    ymin = 0.0
    
-   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -pi, pi, "#phi", ymin, ymax, "a.u.", f"hphi_{suffix}", **args, lheader = "MC", extralheader = "Data", extralabels = [""] * len(recoils))
+   DrawHistos(h_toDraws.values(), [labels[itype] for itype in recoils], -pi, pi, "#phi", ymin, ymax, "a.u.", f"hphi_{suffix}", **args, lheader = "MC", extralheader = "Data", extralabels = [""] * len(recoils), inPaper=True, doPAS=doPAS)
    
    #DrawHistos([hphis_data[itype] for itype in recoils] + [hphis_MC[itype] for itype in recoils], [labels[itype] for itype in recoils], -pi, pi, "#phi", 0, 0.019, "a.u.", f"hphi_{suffix}", drawashist=True, dology=False, legendPos=[0.20, 0.70, 0.50, 0.90], mycolors=[colors[itype] for itype in recoils]*2, linestyles = [linestyles[itype] for itype in recoils] + [linestyles[itype + "_MC"] for itpe in recoils], noLumi=noLumi, outdir=outdir, donormalize=True)
       

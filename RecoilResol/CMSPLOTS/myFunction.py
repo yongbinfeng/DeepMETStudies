@@ -510,7 +510,10 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     if isinstance(extraText, str):
         CMS_lumi.extraText = extraText
     if doPAS:
-        CMS_lumi.extraText += "Preliminary"
+        if CMS_lumi.extraText == "":
+            CMS_lumi.extraText += "Preliminary"
+        else:
+            CMS_lumi.extraText += " Preliminary"
 
     if nMaxDigits:
         # print(f"set the maximum number of digits {nMaxDigits}")

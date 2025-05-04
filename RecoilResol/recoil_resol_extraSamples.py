@@ -4,11 +4,13 @@ import numpy as np
 sys.path.append("../RecoilResol/CMSPLOTS")
 from CMSPLOTS.myFunction import DrawHistos, getMedian, getResolution, getQuantileResolution
 from collections import OrderedDict
-from utils.utils import getpTBins, getnVtxBins, get_response_code
+from utils.utils import getpTBins, getnVtxBins, get_response_code, doPAS
 import argparse
 
 noLumi = False
 MCOnly = True
+
+doPAS = doPAS()
 
 ROOT.gROOT.SetBatch(True)
 ROOT.ROOT.EnableImplicitMT(10)
@@ -165,7 +167,7 @@ def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
       # Scaled 
       #
       
-      extraToDraw = ROOT.TPaveText(0.60, 0.70, 0.90, 0.87, "NDC")
+      extraToDraw = ROOT.TPaveText(0.60, 0.20, 0.90, 0.27, "NDC")
       # extraToDraw.SetFillColor(0)
       extraToDraw.SetFillColorAlpha(0, 0)
       extraToDraw.SetBorderSize(0)
@@ -177,7 +179,7 @@ def makePlots(fname, suffix, lheader, htbins, ymin, ymax, applySc = True):
 
       DrawHistos(hresols_sc.values(), GetLegends(hresols), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresols), MCOnly=MCOnly, lheader=lheader, extraToDraw=extraToDraw)
       
-      DrawHistos(hresolsRMS_sc.values(), GetLegends(hresolsRMS), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_RMS_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresolsRMS.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresolsRMS), MCOnly=MCOnly, lheader=lheader, extraToDraw=extraToDraw)
+      DrawHistos(hresolsRMS_sc.values(), GetLegends(hresolsRMS), htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_RMS_Scaled" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.60, 0.38, 0.79], mycolors=[colors[itype] for itype in hresolsRMS.keys()], noLumi=noLumi, outdir=outdir, linestyles = GetLineStyles(hresolsRMS), MCOnly=MCOnly, lheader=lheader, extraToDraw=extraToDraw, doPAS=doPAS, inPaper=True)
       
       #DrawHistos([hresols_sc["DeepMET"], hresolsRMS_sc["DeepMET"]], ["DeepMET", "DeepMET RMS"], htmin, htmax, "Gen H_{T} [GeV]", ymin, ymax, "#sigma (p^{miss}_{T}) [GeV]", "met_resol_Scaled_RMSVsQuantitle_DeepMET" + suffix, drawashist=True, dology=False, legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors["DeepMET"], colors["DeepMET"]], noLumi=noLumi, outdir=outdir, linestyles = [1, 2], MCOnly=MCOnly, lheader=lheader, showratio=True, yrlabel="RMS/Quantile", yrmin=0.91, yrmax=1.09)
 
