@@ -173,11 +173,14 @@ def getRMSResolution(th2d):
     hprof = th2d.ProfileX(th2d.GetName()+"_profX", 1, -1, "s")
     hresol = th2d.ProjectionX(th2d.GetName()+"_resolRMS", 0, -1, "e")
     for ibin in range(1, hresol.GetNbinsX()+1):
-        count = hresol.GetBinContent(ibin)
-        rms = hprof.GetBinError(ibin)
-        rms_err = 0
-        if count > 0:
-            rms_err = rms / ROOT.TMath.Sqrt(2*count)
+        #count = hresol.GetBinContent(ibin)
+        #rms = hprof.GetBinError(ibin)
+        #rms_err = 0
+        #if count > 0:
+        #    rms_err = rms / ROOT.TMath.Sqrt(2*count)
+        htemp = th2d.ProjectionY(th2d.GetName() + f"_resolRMS_{ibin}", ibin, ibin)
+        rms = htemp.GetRMS()
+        rms_err = htemp.GetRMSError()
         # print("counts, ", hresol.GetBinContent(ibin), hprof.GetBinContent(ibin))
         # print("ibin ", ibin, hresol.GetBinContent(ibin), hprof.GetBinContent(ibin), hprof.GetBinError(ibin))
         hresol.SetBinContent(ibin, rms)
