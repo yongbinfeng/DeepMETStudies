@@ -59,6 +59,9 @@ class DrawConfig(object):
         self.addUnderflow = kwargs.get('addUnderflow', False)
 
         self.outputname = kwargs.get('outputname', 'test')
+        
+        self.doPAS = kwargs.get('doPAS', False)
+        self.inPaper = kwargs.get('inPaper', False)
 
 
 class Sample(object):
@@ -459,7 +462,7 @@ class SampleManager(object):
         self.hdatas[drawconfigs.outputname] = h_data
         self.hsmcs[drawconfigs.outputname] = hs_gmc
         self.hratios[drawconfigs.outputname] = DrawHistos([h_data, hs_gmc], drawconfigs.legends, drawconfigs.xmin, drawconfigs.xmax, drawconfigs.xlabel, drawconfigs.ymin, drawconfigs.ymax, drawconfigs.ylabel, drawconfigs.outputname, dology=drawconfigs.dology, dologx=drawconfigs.dologx, showratio=drawconfigs.showratio, yrmax=drawconfigs.yrmax,
-                                                          yrmin=drawconfigs.yrmin, yrlabel=drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos=drawconfigs.legendPos, redrawihist=drawconfigs.redrawihist, outdir=self.outdir, addOverflow=drawconfigs.addOverflow, addUnderflow=drawconfigs.addUnderflow, hratiopanel=drawconfigs.hratiopanel)
+                                                          yrmin=drawconfigs.yrmin, yrlabel=drawconfigs.yrlabel, donormalize=drawconfigs.donormalize, ratiobase=drawconfigs.ratiobase, legendPos=drawconfigs.legendPos, redrawihist=drawconfigs.redrawihist, outdir=self.outdir, addOverflow=drawconfigs.addOverflow, addUnderflow=drawconfigs.addUnderflow, hratiopanel=drawconfigs.hratiopanel, doPAS=drawconfigs.doPAS, inPaper=drawconfigs.inPaper)
 
     def launchDraw(self):
         """

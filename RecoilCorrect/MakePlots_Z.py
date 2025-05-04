@@ -22,7 +22,7 @@ doJetsInclusive = True
 
 reweightZpt = True
 
-doSnapshot = True
+doSnapshot = False
 if not reweightZpt:
     doSnapshot = False
 
@@ -43,6 +43,15 @@ def main():
     input_ZZ2L = "inputs/inputs_Z_UL_Post/input_ZZTo2L2Nu.txt"
     input_ZZ2L2Q = "inputs/inputs_Z_UL_Post/input_ZZTo2Q2L.txt"
     input_dytau = "inputs/inputs_Z_UL_Post/input_zjets_tautau.txt"
+    
+    input_data   = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/Data.root"
+    input_dy     = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/DY.root"
+    input_ttbar  = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ttbar.root"
+    input_WW2L   = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/WW2L.root"
+    input_WZ2L   = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/WZ2L.root"
+    input_ZZ2L   = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ZZ2L.root"
+    input_ZZ2L2Q = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ZZ2L2Q.root"
+    input_dytau  = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/DYTauTau.root"
 
     DataSamp = Sample(input_data, isMC=False, legend="Data",
                       name="Data", prepareVars=False, select=False)
@@ -289,17 +298,17 @@ def main():
         xmin=0, xmax=utmax, xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True))
 
     # corrected deepmet
-    def DrawCorrection(postfix, h_met_unc=None, h_u1_unc=None, h_u2_unc=None, h_u_unc=None):
+    def DrawCorrection(postfix, h_met_unc=None, h_u1_unc=None, h_u2_unc=None, h_u_unc=None, doPAS=False, inPaper=False):
         sampMan.cacheDraw("deepmet_pt_corr_"+postfix, "histo_zjets_deepmet_pt_corr_"+postfix, met_pt_bins, DrawConfig(xmin=0, xmax=ptmissmax,
-                          xlabel='p^{miss}_{T} [GeV]', yrmin=0.79, yrmax=1.21, addOverflow=True, addUnderflow=True, hratiopanel=h_met_unc))
+                          xlabel='p^{miss}_{T} [GeV]', yrmin=0.79, yrmax=1.21, addOverflow=True, addUnderflow=True, hratiopanel=h_met_unc, doPAS=doPAS, inPaper=inPaper))
         sampMan.cacheDraw("deepmet_phi_corr_"+postfix, "histo_zjets_deepmet_phi_corr_"+postfix,
-                          30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='p^{miss}_{T} #phi'))
+                          30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='p^{miss}_{T} #phi', doPAS=doPAS, inPaper=inPaper))
         sampMan.cacheDraw("u1_corr_"+postfix, "histo_zjets_u1_corr_"+postfix, u1_bins, DrawConfig(xmin=-40.0,
-                          xmax=u1max, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u1_unc))
+                          xmax=u1max, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u1_unc, doPAS=doPAS, inPaper=inPaper))
         sampMan.cacheDraw("u2_corr_"+postfix, "histo_zjets_u2_corr_"+postfix, u2_bins, DrawConfig(xmin=-u2max,
-                          xmax=u2max, xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u2_unc))
+                          xmax=u2max, xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u2_unc, doPAS=doPAS, inPaper=inPaper))
         sampMan.cacheDraw("u_pt_corr_"+postfix,    "histo_zjets_u_pt_corr_"+postfix, u_bins,  DrawConfig(xmin=0, xmax=utmax,
-                          xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u_unc, yrmin=0.79, yrmax=1.21))
+                          xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u_unc, yrmin=0.79, yrmax=1.21, doPAS=doPAS, inPaper=inPaper))
 
     if doDefaultCorrection:
         DrawCorrection("central")
@@ -431,7 +440,7 @@ def main():
 
     # DrawCorrection("central", histos_met_uncs, histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs)
     DrawCorrection("central_jetsInclusive", histos_met_uncs,
-                   histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs)
+                   histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs, doPAS=True, inPaper=True)
     sampMan.launchDraw()
 
     if not reweightZpt:
