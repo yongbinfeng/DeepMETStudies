@@ -4,6 +4,9 @@ and prepare some variables (uparal, uperp, responses, and paral_diff)
 for the RDataFrame
 '''
 
+def doPAS():
+    return True
+
 
 def getqTRange():
     return (0, 350.0)

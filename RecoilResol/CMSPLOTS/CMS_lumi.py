@@ -17,17 +17,19 @@ extraTextFont = 52
 lumiTextSize     = 0.72
 lumiTextOffset   = 0.2
 
-cmsTextSize      = 0.75
+cmsTextSize      = 1.0
 cmsTextOffset    = 0.1
 
 relPosX    = 0.045
 relPosY    = 0.035
 relExtraDY = 1.2
 
-extraOverCmsTextSize  = 0.72/0.75
+#extraOverCmsTextSize  = 0.72/0.75
+extraOverCmsTextSize = 0.78
 
+#lumi_13TeV = "20.1 fb^{-1}"
 lumi_13TeV = "16.8 fb^{-1}"
-#lumi_13TeV = "200 pb^{-1}"
+lumi_5TeV = "298.0 pb^{-1}"
 lumi_5TeV = "298 pb^{-1}"
 lumi_8TeV  = "19.7 fb^{-1}" 
 lumi_7TeV  = "5.1 fb^{-1}"
@@ -52,7 +54,6 @@ def CMS_lumi(pad,  iPeriod,  iPosX, plotCMS = True):
     W = pad.GetWw()
     l = pad.GetLeftMargin()
     t = pad.GetTopMargin()
-    #print "top margin %f"%t
     r = pad.GetRightMargin()
     b = pad.GetBottomMargin()
     e = 0.025
@@ -78,7 +79,15 @@ def CMS_lumi(pad,  iPeriod,  iPosX, plotCMS = True):
         lumiText += " (13 TeV)"
     elif ( iPeriod==5 ):
         lumiText += lumi_5TeV
-        lumiText += " (5 TeV)"
+        lumiText += " (5.02 TeV)"
+    elif ( iPeriod==6) :
+        lumiText += "#scale[0.85]{"
+        lumiText += lumi_13TeV
+        lumiText += " (13 TeV)"
+        lumiText += ", "
+        lumiText += lumi_5TeV
+        lumiText += " (5.02 TeV)"
+        lumiText += "}"
     elif ( iPeriod==7 ):
         if( outOfFrame ):lumiText += "#scale[0.85]{"
         lumiText += lumi_13TeV 
@@ -95,8 +104,6 @@ def CMS_lumi(pad,  iPeriod,  iPosX, plotCMS = True):
     elif ( iPeriod==0 ):
         lumiText += lumi_sqrtS
             
-    #print lumiText
-
     latex = rt.TLatex()
     latex.SetNDC()
     latex.SetTextAngle(0)
@@ -107,20 +114,20 @@ def CMS_lumi(pad,  iPeriod,  iPosX, plotCMS = True):
     latex.SetTextFont(42)
     latex.SetTextAlign(31) 
     latex.SetTextSize(lumiTextSize*t)    
-
+    
     latex.DrawLatex(1-r,1-t+lumiTextOffset*t,lumiText)
 
     if( outOfFrame and plotCMS ):
         latex.SetTextFont(cmsTextFont)
         latex.SetTextAlign(11) 
-        latex.SetTextSize(cmsTextSize*t)    
+        latex.SetTextSize(cmsTextSize*t*0.8)    
         latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText)
   
     pad.cd()
 
     posX_ = 0
     if( iPosX%10<=1 ):
-        posX_ =   l + relPosX*(1-l-r)
+        posX_ =   l + relPosX*(1+l+r) + 0.01
     elif( iPosX%10==2 ):
         posX_ =  l + 0.5*(1-l-r)
     elif( iPosX%10==3 ):
@@ -132,9 +139,9 @@ def CMS_lumi(pad,  iPeriod,  iPosX, plotCMS = True):
         if( drawLogo ):
             posX_ =   l + 0.045*(1-l-r)*W/H
             posY_ = 1-t - 0.045*(1-t-b)
-            xl_0 = posX_
+            xl_0 = posX_ + 0.02
             yl_0 = posY_ - 0.15
-            xl_1 = posX_ + 0.15*H/W
+            xl_1 = posX_ + 0.15*H/W + 0.02
             yl_1 = posY_
             CMS_logo = rt.TASImage("CMS-BW-label.png")
             pad_logo =  rt.TPad("logo","logo", xl_0, yl_0, xl_1, yl_1 )
@@ -147,21 +154,23 @@ def CMS_lumi(pad,  iPeriod,  iPosX, plotCMS = True):
             latex.SetTextFont(cmsTextFont)
             latex.SetTextSize(cmsTextSize*t)
             latex.SetTextAlign(align_)
-            latex.DrawLatex(posX_, posY_, cmsText)
+            latex.DrawLatex(posX_ + 0.05, posY_, cmsText)
         if( writeExtraText ) :
             latex.SetTextFont(extraTextFont)
             latex.SetTextAlign(align_)
             latex.SetTextSize(extraTextSize*t)
-            latex.DrawLatex(posX_, posY_- relExtraDY*cmsTextSize*t, extraText)
+            #latex.DrawLatex(posX_, posY_- relExtraDY*cmsTextSize*t, extraText)
+            latex.DrawLatex(posX_ + relPosX*(1+l+r) * 2 + 0.12, posY_-0.013, extraText)            
     elif( writeExtraText ):
         if( iPosX==0):
             #posX_ =   l +  relPosX*(1-l-r)
-            posX_ = l 
+            posX_ =  l +  relPosX*(1+l + r) + 0.02
+            #posX_ = l 
             posY_ =   1-t+lumiTextOffset*t
 
         latex.SetTextFont(extraTextFont)
         latex.SetTextSize(extraTextSize*t)
         latex.SetTextAlign(align_)
-        latex.DrawLatex(posX_ + 0.10, posY_, extraText)      
+        latex.DrawLatex(posX_, posY_, extraText)      
 
     pad.Update()

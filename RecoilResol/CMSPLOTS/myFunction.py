@@ -469,7 +469,7 @@ def TH2ToTH1s(h2, projY=False, label="X"):
     return hs, labels
 
 
-def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outputname, dology=True, showratio=False, dologx=False, lheader=None, donormalize=False, binomialratio=False, yrmax=2.0, yrmin=0.0, yrlabel=None, MCOnly=False, leftlegend=False, mycolors=None, legendPos=None, legendNCols=1, linestyles=None, markerstyles=None, showpull=False, doNewman=False, doPearson=False, ignoreHistError=False, ypullmin=-3.99, ypullmax=3.99, drawashist=False, padsize=(2, 0.9, 1.1), setGridx=False, setGridy=False, drawoptions=None, legendoptions=None, ratiooptions=None, dologz=False, doth2=False, ratiobase=0, redrawihist=-1, extraText=None, noCMS=False, noLumi=False, nMaxDigits=None, addOverflow=False, addUnderflow=False, plotdiff=False, hratiopanel=None, doratios=None, hpulls=None, W_ref=600, is5TeV=False, outdir="plots", savepdf=True, zmin=0, zmax=2, extralabels=None, extralheader=None, extraToDraw=None, exlegoffset=0.11, hratios=None):
+def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outputname, dology=True, showratio=False, dologx=False, lheader=None, donormalize=False, binomialratio=False, yrmax=2.0, yrmin=0.0, yrlabel=None, MCOnly=False, leftlegend=False, mycolors=None, legendPos=None, legendNCols=1, linestyles=None, markerstyles=None, showpull=False, doNewman=False, doPearson=False, ignoreHistError=False, ypullmin=-3.99, ypullmax=3.99, drawashist=False, padsize=(2, 0.9, 1.1), setGridx=False, setGridy=False, drawoptions=None, legendoptions=None, ratiooptions=None, dologz=False, doth2=False, ratiobase=0, redrawihist=-1, extraText=None, noCMS=False, noLumi=False, nMaxDigits=None, addOverflow=False, addUnderflow=False, plotdiff=False, hratiopanel=None, doratios=None, hpulls=None, W_ref=600, is5TeV=False, outdir="plots", savepdf=True, zmin=0, zmax=2, extralabels=None, extralheader=None, extraToDraw=None, exlegoffset=0.11, hratios=None, doPAS=False, inPaper=False):
     """
     draw histograms with the CMS tdr style
     """
@@ -502,13 +502,15 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     # change the CMS_lumi variables (see CMS_lumi.py)
     # used with iPeriod = 0, e.g. for simulation-only plots (default is an empty string)
     CMS_lumi.lumi_sqrtS = "(13 TeV)"
-    CMS_lumi.relPosX = 0.12
+    #CMS_lumi.relPosX = 0.12
     # CMS_lumi.extraText = "Internal"
     CMS_lumi.extraText = ""
     if MCOnly:
-        CMS_lumi.extraText = "Simulation"
+        CMS_lumi.extraText += "Simulation"
     if isinstance(extraText, str):
         CMS_lumi.extraText = extraText
+    if doPAS:
+        CMS_lumi.extraText += "Preliminary"
 
     if nMaxDigits:
         # print(f"set the maximum number of digits {nMaxDigits}")
@@ -770,7 +772,7 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         myhistos_clone[redrawihist].Draw(
             " ".join(filter(None, [drawoptions[redrawihist], "same"])))
 
-    iPosX = 0
+    iPosX = 1
     plotCMS = True
     if noCMS:
         # do not draw CMS, only lumi info and extraText
@@ -974,4 +976,11 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         canvas.Print("%s.pdf" % outputname)
         canvas.Print("%s.png" % outputname)
         # canvas.Print("%s.root" % outputname)
+        
+        if inPaper:
+            dirpath = "plots/paper"
+            if not os.path.exists(dirpath):
+                print(f"Make the directory {dirpath}")
+                os.makedirs(dirpath)
+            canvas.Print(f"{dirpath}/{outputname.rpartition('/')[-1]}.pdf")
     return hratios if showratio else None
