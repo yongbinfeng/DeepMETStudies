@@ -3,7 +3,7 @@ import sys
 sys.path.append("../RecoilResol/CMSPLOTS")
 from CMSPLOTS.myFunction import DrawHistos
 from collections import OrderedDict
-from utils.utils import getpTBins, getnVtxBins, get_response_code, prepRecoilVars, getqTRange, getqTLabel, getnVtxLabel, getResponseLabel, getUparalLabel, getUperpLabel, getVtxRange, getpTResponseBins
+from utils.utils import getpTBins, getnVtxBins, get_response_code, prepRecoilVars, getqTRange, getqTLabel, getnVtxLabel, getResponseLabel, getUparalLabel, getUperpLabel, getVtxRange, getpTResponseBins, doPAS
 from utils.RecoilAnalyzer import RecoilAnalyzer
 import argparse
 
@@ -11,6 +11,7 @@ noLumi = False
 MCOnly = True
 
 useRMS=False
+doPAS = doPAS()
 
 ROOT.gROOT.SetBatch(True)
 
@@ -28,8 +29,8 @@ includeZ = args.includeZ
 applySc = args.applySc
 outdir = f"plots/MC/WJets"
 
-ifiles = "/eos/cms/store/group/cmst3/group/wmass/w-mass-13TeV/NanoAOD/WplusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_TrackFitV722_NanoProdv6/240509_052242/0000/NanoV9MCPostVFP_2*.root"
-#ifiles = "/home/yongbinfeng/Desktop/DeepMET/data/wjetsMC/NanoV9MCPostVFP_294.root"
+#ifiles = "/eos/cms/store/group/cmst3/group/wmass/w-mass-13TeV/NanoAOD/WplusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_TrackFitV722_NanoProdv6/240509_052242/0000/NanoV9MCPostVFP_2*.root"
+ifiles = "/home/yongbinfeng/Desktop/DeepMET/data/wjetsMC/NanoV9MCPostVFP_294.root"
 rdf_org = ROOT.ROOT.RDataFrame("Events", ifiles)
 rdf_org1 = rdf_org.Filter("nMuon >= 1")
 rdf_org1 = rdf_org1.Define("Muon_pass0", "Muon_pt[0] > 25.0 && abs(Muon_eta[0]) < 2.4 && Muon_pfRelIso04_all[0] < 0.15 && Muon_looseId[0]")
@@ -330,9 +331,26 @@ responselabel = getResponseLabel()
 
 nvtxmin, nvtxmax = getVtxRange()
 
+
+def GetLineStyles(hdict):
+    linestyles = []
+    for itype in hdict.keys():
+        if "PUPPI" in itype:
+            linestyles.append(2)
+        elif "PF" in itype:
+            linestyles.append(5)
+        elif "DeepMETPVRobust" in itype:
+            linestyles.append(7)
+        elif "DeepMET" in itype:
+            linestyles.append(8) 
+        else:
+            linestyles.append(3)
+    return linestyles
+
+
 args = {
       "mycolors": [colors[itype] for itype in hresponses_goodpv.keys()]*2,
-      "linestyles": [1] * len(hresponses_goodpv) + [2] * len(hresponses_badpv),
+      "linestyles": [1] * len(hresponses_goodpv) + GetLineStyles(hresponses_badpv),
       "outdir": outdir,
       "noLumi": noLumi,
       "dology": False,
@@ -342,7 +360,8 @@ args = {
       #"extralheader": "PVCorrect",
       "extralabels": [""]*len(hresponses_badpv),
       "MCOnly": MCOnly,
-      "exlegoffset": 0.06
+      "exlegoffset": 0.06,
+      "doPAS": doPAS,
 }
 
 
@@ -364,9 +383,11 @@ extraToDraw2.AddText("LV-Correct")
 
 args["extraToDraw"] = [extraToDraw, extraToDraw2]
 
+suffix = "CheckPV"
+
 linestyles = [1] * len(hresponses_goodpv) + [2] * len(hresponses_badpv)
 
-DrawHistos(list(hresponses_goodpv.values()) + list(hresponses_badpv.values()), [labels[itype] for itype in hresponses_goodpv.keys()], 0, qtmax, qtlabel, 0., 1.15, responselabel, "reco_recoil_response", legendPos=[0.50, 0.17, 0.80, 0.37], **args)
+DrawHistos(list(hresponses_goodpv.values()) + list(hresponses_badpv.values()), [labels[itype] for itype in hresponses_goodpv.keys()], 0, qtmax, qtlabel, 0., 1.29, responselabel, "reco_recoil_response_" + suffix, legendPos=[0.50, 0.17, 0.80, 0.37], inPaper = True, **args)
 
 DrawHistos(list(hresols_paral_diff_goodpv.values()) + list(hresols_paral_diff_badpv.values()), [labels[itype] for itype in hresols_paral_diff_goodpv.keys()], 0, qtmax, qtlabel, 0, 39.0, uparallabel, "reco_recoil_resol_paral", drawashist=True, dology=False, legendPos=[0.20, 0.73, 0.38, 0.92], mycolors=[colors[itype] for itype in hresols_paral_diff_goodpv.keys()]*2, noLumi=noLumi, outdir=outdir, linestyles=linestyles, MCOnly=MCOnly)
 
@@ -380,14 +401,14 @@ DrawHistos(list(hresols_perp_VS_nVtx_goodpv.values()) + list(hresols_perp_VS_nVt
 
 
 if applySc:
-    extraToDraw = ROOT.TPaveText(0.60, 0.77, 0.90, 0.82, "NDC")
+    extraToDraw = ROOT.TPaveText(0.60, 0.15, 0.90, 0.22, "NDC")
     extraToDraw.SetFillColorAlpha(0, 0)
     extraToDraw.SetBorderSize(0)
     extraToDraw.SetTextFont(42)
     extraToDraw.SetTextSize(0.04)
     extraToDraw.AddText("Response corrected")
     
-    extraToDraw2 = ROOT.TPaveText(0.37, 0.85, 0.67, 0.90, "NDC")
+    extraToDraw2 = ROOT.TPaveText(0.37, 0.78, 0.67, 0.83, "NDC")
     extraToDraw2.SetFillColorAlpha(0, 0)
     extraToDraw2.SetTextAlign(11)
     extraToDraw2.SetBorderSize(0)
@@ -395,7 +416,7 @@ if applySc:
     extraToDraw2.SetTextSize(0.04)
     extraToDraw2.AddText("LV-Incorrect")
     
-    extraToDraw3 = ROOT.TPaveText(0.20, 0.85, 0.37, 0.90, "NDC")
+    extraToDraw3 = ROOT.TPaveText(0.20, 0.78, 0.37, 0.83, "NDC")
     extraToDraw3.SetFillColorAlpha(0, 0)
     extraToDraw3.SetTextAlign(31)
     extraToDraw3.SetBorderSize(0)
@@ -409,6 +430,6 @@ if applySc:
     
     DrawHistos(list(hresolsSc_perp_goodpv.values()) + list(hresolsSc_perp_badpv.values()), [labels[itype] for itype in hresolsSc_perp_goodpv.keys()], 0, qtmax, qtlabel, 0, 32.0, uperplabel, "reco_recoil_resol_perp_Scaled", legendPos=[0.30, 0.69, 0.70, 0.92], **args)
     
-    DrawHistos(list(hresolsSc_paral_diff_VS_nVtx_goodpv.values()) + list(hresolsSc_paral_diff_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_paral_diff_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel, "reco_recoil_resol_paral_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
+    DrawHistos(list(hresolsSc_paral_diff_VS_nVtx_goodpv.values()) + list(hresolsSc_paral_diff_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_paral_diff_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 59.0, uparallabel, "reco_recoil_resol_paral_Scaled_VS_nVtx_" + suffix, legendPos=[0.37, 0.58, 0.67, 0.78], inPaper=True, **args)
     
-    DrawHistos(list(hresolsSc_perp_VS_nVtx_goodpv.values()) + list(hresolsSc_perp_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_perp_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel, "reco_recoil_resol_perp_Scaled_VS_nVtx", legendPos=[0.37, 0.65, 0.67, 0.85], **args)
+    DrawHistos(list(hresolsSc_perp_VS_nVtx_goodpv.values()) + list(hresolsSc_perp_VS_nVtx_badpv.values()), [labels[itype] for itype in hresolsSc_perp_VS_nVtx_goodpv.keys()], nvtxmin, nvtxmax, nvtxlabel, 0, 59.0, uperplabel, "reco_recoil_resol_perp_Scaled_VS_nVtx_" + suffix, legendPos=[0.37, 0.58, 0.67, 0.78], inPaper=True, **args)
