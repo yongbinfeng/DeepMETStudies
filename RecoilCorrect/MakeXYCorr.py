@@ -194,7 +194,7 @@ def deriveXYCorr(oname = "MET_xy_dataMC.root", suffix = "PreXYCorr", writeOutput
    extraToDraw.SetBorderSize(0)
    extraToDraw.SetTextFont(42)
    extraToDraw.SetTextSize(0.04)
-   extraToDraw.AddText("Before XY correction")
+   extraToDraw.AddText("Before #it{xy} correction")
    
    args = {
       "mycolors": hcolors,
@@ -304,7 +304,7 @@ def applyXYCorr(corrname, suffix = "PostXYCorr", writeOutput = False):
    extraToDraw.SetBorderSize(0)
    extraToDraw.SetTextFont(42)
    extraToDraw.SetTextSize(0.04)
-   extraToDraw.AddText("After XY correction")
+   extraToDraw.AddText("After #it{xy} correction")
    
    args = {
       "mycolors": hcolors,
