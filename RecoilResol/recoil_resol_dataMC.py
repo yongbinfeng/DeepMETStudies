@@ -13,7 +13,7 @@ nPV = getNPVString()
 useRMS = True
 
 # whether to plot data and MC in the same plot
-combineDataMC = False
+combineDataMC = True
 
 doPAS = doPAS()
 

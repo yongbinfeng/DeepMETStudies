@@ -6,10 +6,10 @@ from SampleManager import DrawConfig, Sample, SampleManager
 import ROOT
 import math
 import numpy as np
-from collections import OrderedDict
 import sys
-sys.path.append("../RecoilResol/CMSPLOTS")
-from myFunction import DrawHistos, THStack2TH1  # noqa
+sys.path.append("../RecoilResol/")
+from CMSPLOTS.myFunction import DrawHistos, THStack2TH1  # noqa
+from utils.utils import getnVtxBins, doPAS
 
 
 ROOT.gROOT.SetBatch(True)
@@ -21,6 +21,8 @@ doBkgScaled = True
 doJetsInclusive = True
 
 reweightZpt = True
+
+doPAS = doPAS()
 
 doSnapshot = False
 if not reweightZpt:
@@ -56,7 +58,7 @@ def main():
     DataSamp = Sample(input_data, isMC=False, legend="Data",
                       name="Data", prepareVars=False, select=False)
     DYSamp = Sample(input_dy,    xsec=0,  color=5,  reweightzpt=False,
-                    legend="DY", name="DY", prepareVars=False, select=False)
+                    legend="Z#rightarrow#mu#mu", name="DY", prepareVars=False, select=False)
     TTbarSamp = Sample(input_ttbar, xsec=0,  color=46, reweightzpt=False,
                        legend="t#bar{t}", name="ttbar", prepareVars=False, select=False)
     WW2LSamp = Sample(input_WW2L,  xsec=0,  color=38, reweightzpt=False,
@@ -68,7 +70,7 @@ def main():
     ZZ2L2QSamp = Sample(input_ZZ2L2Q,  xsec=0, color=36, reweightzpt=False,
                         legend="ZZ2L2Q", name="ZZ2L2Q",  prepareVars=False, select=False)
     DYTauSamp = Sample(input_dytau, xsec=0, color=8,  reweightzpt=False,
-                       legend="DY#rightarrow#tau#tau", name="DYTauTau", prepareVars=False, select=False)
+                       legend="Z#rightarrow#tau#tau", name="DYTauTau", prepareVars=False, select=False)
 
     sampMan = SampleManager(
         DataSamp, [DYSamp, DYTauSamp, WW2LSamp, WZ2LSamp, TTbarSamp, ZZ2LSamp, ZZ2L2QSamp])
@@ -440,7 +442,7 @@ def main():
 
     # DrawCorrection("central", histos_met_uncs, histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs)
     DrawCorrection("central_jetsInclusive", histos_met_uncs,
-                   histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs, doPAS=True, inPaper=True)
+                   histo_u1_uncs, histo_u2_uncs, histos_u_pt_uncs, doPAS=doPAS, inPaper=True)
     sampMan.launchDraw()
 
     if not reweightZpt:

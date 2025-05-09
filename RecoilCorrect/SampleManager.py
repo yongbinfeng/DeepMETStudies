@@ -50,7 +50,7 @@ class DrawConfig(object):
         self.yrlabel = kwargs.get('yrlabel', 'Data / MC ')
 
         self.legends = kwargs.get('legends', [])
-        self.legendPos = kwargs.get('legendPos', [0.92, 0.85, 0.70, 0.58])
+        self.legendPos = kwargs.get('legendPos', [0.92, 0.85, 0.70, 0.55])
         self.colors = kwargs.get('colors', [])
 
         self.redrawihist = kwargs.get('redrawihist', 0)

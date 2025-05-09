@@ -163,7 +163,7 @@ def CMS_lumi(pad,  iPeriod,  iPosX, plotCMS = True):
             if len(extraText) > 20:
                 latex.DrawLatex(posX_ + relPosX*(1+l+r) * 2 + 0.22, posY_-0.013, extraText)
             else:
-                latex.DrawLatex(posX_ + relPosX*(1+l+r) * 2 + 0.12, posY_-0.013, extraText)            
+                latex.DrawLatex(posX_ + relPosX*(1+l+r) * 2 + 0.11, posY_-0.013, extraText)            
     elif( writeExtraText ):
         if( iPosX==0):
             #posX_ =   l +  relPosX*(1-l-r)

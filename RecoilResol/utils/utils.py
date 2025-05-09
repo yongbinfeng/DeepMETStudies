@@ -5,7 +5,7 @@ for the RDataFrame
 '''
 
 def doPAS():
-    return True
+    return False
 
 
 def getqTRange():
