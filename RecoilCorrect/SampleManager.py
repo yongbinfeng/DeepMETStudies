@@ -554,7 +554,7 @@ class SampleManager(object):
             "Jet_truthflavor_tight",
             "Jet_truthpt_tight",
             "Jet_trutheta_tight",
-            "Jet_truthphi_tight"
+            "Jet_truthphi_tight",
             "Jet_pt_tight",
             "Jet_eta_tight",
             "Jet_phi_tight",
