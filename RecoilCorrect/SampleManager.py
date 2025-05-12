@@ -474,7 +474,7 @@ class SampleManager(object):
         # clear the to_draw list
         self.to_draw = OrderedDict()
 
-    def snapShot(self, outdir, branches, addNorm=True):
+    def snapShot(self, outdir, branches, addNorm=True, jets_variables=None):
         """
         write the ntuples to a root file
         """
@@ -486,6 +486,10 @@ class SampleManager(object):
                         "Pileup_pudensity", "Pileup_gpudensity", "Pileup_nPU", "Pileup_sumEOOT", "Pileup_sumLOOT"]
         if addNorm:
             branches_mc += ["norm"]
+            
+        if jets_variables is not None:
+            # slim jets
+            branches_mc += jets_variables
 
         for mc in self.mcs:
             if addNorm:
@@ -501,3 +505,60 @@ class SampleManager(object):
             outdir, self.data.name+".root"), branches)
 
         print("finished snapshot..")
+        
+    def slimJets(self):
+        
+        ROOT.gInterpreter.Declare(
+        """
+        #include <vector>
+        #include "ROOT/RVec.hxx"
+        using namespace ROOT::VecOps;
+
+        template <typename T>
+        RVec<T> getJetTruthVariables(const RVec<int>& Jet_genJetIdx, const RVec<T>& genJet_Variable, T default_value) {
+            RVec<T> out;
+            for (size_t i = 0; i < Jet_genJetIdx.size(); ++i) {
+                int idx = Jet_genJetIdx[i];
+                if (idx >= 0) {
+                    out.push_back(genJet_Variable[idx]);
+                } else {
+                    out.push_back(default_value);
+                }
+            }
+            return out;
+        }
+        """
+        )
+        jet_variables = [
+            "Jet_pt",
+            "Jet_eta",
+            "Jet_phi",
+        ]
+        for mc in self.mcs:
+            mc.rdf = mc.rdf.Define("Jet_mask_tight", "Jet_jetId == 6")
+            
+            for var in jet_variables:
+                mc.rdf = mc.rdf.Define(f"{var}_tight", f"{var}[Jet_mask_tight]")
+
+            mc.rdf = mc.rdf.Define("Jet_truthflavor", "getJetTruthVariables<int>(Jet_genJetIdx, GenJet_partonFlavour, -999)")
+            mc.rdf = mc.rdf.Define("Jet_truthpt", "getJetTruthVariables<float>(Jet_genJetIdx, GenJet_pt, -999)")
+            mc.rdf = mc.rdf.Define("Jet_trutheta", "getJetTruthVariables<float>(Jet_genJetIdx, GenJet_eta, -999)")
+            mc.rdf = mc.rdf.Define("Jet_truthphi", "getJetTruthVariables<float>(Jet_genJetIdx, GenJet_phi, -999)")
+
+            mc.rdf = mc.rdf.Define("Jet_truthflavor_tight", "Jet_truthflavor[Jet_mask_tight]")
+            mc.rdf = mc.rdf.Define("Jet_truthpt_tight", "Jet_truthpt[Jet_mask_tight]")
+            mc.rdf = mc.rdf.Define("Jet_trutheta_tight", "Jet_trutheta[Jet_mask_tight]")
+            mc.rdf = mc.rdf.Define("Jet_truthphi_tight", "Jet_truthphi[Jet_mask_tight]")
+            
+        jet_variables_to_keep = [
+            "Jet_truthflavor_tight",
+            "Jet_truthpt_tight",
+            "Jet_trutheta_tight",
+            "Jet_truthphi_tight"
+            "Jet_pt_tight",
+            "Jet_eta_tight",
+            "Jet_phi_tight",
+        ]
+        
+        return jet_variables_to_keep
+            

@@ -161,6 +161,9 @@ def main():
 
     if doDefaultCorrection:
         DrawCorrection("central")
+        
+    jets_variables_to_keep = None
+    jets_variables_to_keep = sampMan.slimJets()
 
     sampMan.launchDraw()
 
@@ -188,7 +191,7 @@ def main():
     if doDefaultCorrection:
         branches += ["u1_corr_central", "u2_corr_central", "u_pt_corr_central",
                      "deepmet_pt_corr_central", "deepmet_phi_corr_central"]
-    sampMan.snapShot("/afs/cern.ch/work/y/yofeng/public/outputroot", branches)
+    sampMan.snapShot("/afs/cern.ch/work/y/yofeng/public/outputroot", branches, jets_variables=jets_variables_to_keep)
 
     print("Program end...")
 
