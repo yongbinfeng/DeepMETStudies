@@ -21,6 +21,8 @@ derivePileupCorr = False
 applyZptCorr = not deriveZptCorr
 applyPileupCorr = not derivePileupCorr
 
+applyJER = True
+
 doSnapshot = True
 
 
@@ -37,13 +39,13 @@ def main():
     suffix = suffix_zpt + suffix_pileup
 
     input_data = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/Data.root"
-    input_dy = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/DY.root"
-    input_ttbar = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ttbar.root"
-    input_WW2L = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/WW2L.root"
-    input_WZ2L = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/WZ2L.root"
-    input_ZZ2L = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ZZ2L.root"
-    input_ZZ2L2Q = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ZZ2L2Q.root"
-    input_dytau = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/DYTauTau.root"
+    input_dy = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/DY.root"
+    input_ttbar = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/ttbar.root"
+    input_WW2L = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/WW2L.root"
+    input_WZ2L = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/WZ2L.root"
+    input_ZZ2L = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/ZZ2L.root"
+    input_ZZ2L2Q = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/ZZ2L2Q.root"
+    input_dytau = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/DYTauTau.root"
 
     DataSamp = Sample(input_data, isMC=False, legend="Data",
                       name="Data", prepareVars=False, select=False)
@@ -132,6 +134,14 @@ def main():
             mc.Define("pileupweight", f"pileupweight_bare * {pileupnorm}")
     else:
         sampMan.DefineMC("pileupweight", "1")
+        
+        
+    branches_added = []
+    if applyJER:
+        # apply JER to all MCs
+        # propagate the changes of jet pts to the MET
+        branches_added = sampMan.ApplyJER()
+        
 
     DataSamp.Define("pileupweight", "1")
     sampMan.DefineAll("weight_corr",
@@ -226,9 +236,8 @@ def main():
         branches += [
             "weight_corr", "pileupweight", "weight_corr_zpt",
         ]
-
         sampMan.snapShot(
-            "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs", branches, addNorm=False)
+            "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withZptPileupCorrs", branches, addNorm=False, jer_variables=branches_added)
 
     print("Program end...")
 

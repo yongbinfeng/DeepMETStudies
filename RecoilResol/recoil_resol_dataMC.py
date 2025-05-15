@@ -53,6 +53,7 @@ print("apply Response corrections: ", applySc)
 chain = ROOT.TChain("Events")
 chain.Add(datafile)
 rdf_data = ROOT.ROOT.RDataFrame(chain)
+rdf_data = rdf_data.Define("MET_pt_smeared", "MET_pt").Define("MET_phi_smeared", "MET_phi")
 
 chainMC = ROOT.TChain("Events")
 chainMC.Add(mcfile)
@@ -62,6 +63,10 @@ chainBkg = ROOT.TChain("Events")
 for bkgfile in bkgfiles:
     chainBkg.Add(bkgfile)
 rdf_bkg = ROOT.ROOT.RDataFrame(chainBkg)
+
+rdf_data = rdf_data.Define("MET_pt_fixed", "MET_pt_smeared > 500 ? 500 : MET_pt_smeared")
+rdf_MC = rdf_MC.Define("MET_pt_fixed", "MET_pt_smeared > 500 ? 500 : MET_pt_smeared")
+rdf_bkg = rdf_bkg.Define("MET_pt_fixed", "MET_pt_smeared > 500 ? 500 : MET_pt_smeared")
 
 
 # weight_corr includes both the pileup and Zpt corrections
@@ -89,8 +94,8 @@ def prepareVars(rdf):
              .Define("u_PUPPI_x",  "-(pT_muons*TMath::Cos(phi_muons) + PuppiMET_pt*TMath::Cos(PuppiMET_phi))") \
              .Define("u_PUPPI_y",  "-(pT_muons*TMath::Sin(phi_muons) + PuppiMET_pt*TMath::Sin(PuppiMET_phi))") \
              .Define("u_PUPPI_pt", "TMath::Sqrt(u_PUPPI_x * u_PUPPI_x + u_PUPPI_y * u_PUPPI_y)") \
-             .Define("u_PF_x",     "-(pT_muons*TMath::Cos(phi_muons) + MET_pt*TMath::Cos(MET_phi))") \
-             .Define("u_PF_y",     "-(pT_muons*TMath::Sin(phi_muons) + MET_pt*TMath::Sin(MET_phi))") \
+             .Define("u_PF_x",     "-(pT_muons*TMath::Cos(phi_muons) + MET_pt_fixed*TMath::Cos(MET_phi_smeared))") \
+             .Define("u_PF_y",     "-(pT_muons*TMath::Sin(phi_muons) + MET_pt_fixed*TMath::Sin(MET_phi_smeared))") \
              .Define("u_PF_pt",    "TMath::Sqrt(u_PF_x * u_PF_x + u_PF_y * u_PF_y)") \
              .Define("u_DeepMET_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETResolutionTune_pt*TMath::Cos(DeepMETResolutionTune_phi))") \
              .Define("u_DeepMET_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETResolutionTune_pt*TMath::Sin(DeepMETResolutionTune_phi))") \
