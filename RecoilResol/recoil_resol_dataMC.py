@@ -53,7 +53,9 @@ print("apply Response corrections: ", applySc)
 chain = ROOT.TChain("Events")
 chain.Add(datafile)
 rdf_data = ROOT.ROOT.RDataFrame(chain)
-rdf_data = rdf_data.Define("MET_pt_smeared", "MET_pt").Define("MET_phi_smeared", "MET_phi")
+rdf_data = rdf_data.Define("MET_pt_smeared", "MET_pt").Define("MET_phi_smeared", "MET_phi") \
+    .Define("MET_pt_smeared_Up", "MET_pt_smeared").Define("MET_phi_smeared_Up", "MET_phi_smeared") \
+    .Define("MET_pt_smeared_Down", "MET_pt_smeared").Define("MET_phi_smeared_Down", "MET_phi_smeared") \
 
 chainMC = ROOT.TChain("Events")
 chainMC.Add(mcfile)
@@ -64,9 +66,15 @@ for bkgfile in bkgfiles:
     chainBkg.Add(bkgfile)
 rdf_bkg = ROOT.ROOT.RDataFrame(chainBkg)
 
-rdf_data = rdf_data.Define("MET_pt_fixed", "MET_pt_smeared > 500 ? 500 : MET_pt_smeared")
-rdf_MC = rdf_MC.Define("MET_pt_fixed", "MET_pt_smeared > 500 ? 500 : MET_pt_smeared")
-rdf_bkg = rdf_bkg.Define("MET_pt_fixed", "MET_pt_smeared > 500 ? 500 : MET_pt_smeared")
+rdf_data = rdf_data.Define("MET_pt_fixed", "MET_pt_smeared > 500 ? 500 : MET_pt_smeared") \
+    .Define("MET_pt_fixed_Up", "MET_pt_smeared_Up > 500 ? 500 : MET_pt_smeared_Up") \
+    .Define("MET_pt_fixed_Down", "MET_pt_smeared_Down > 500 ? 500 : MET_pt_smeared_Down")
+rdf_MC = rdf_MC.Define("MET_pt_fixed", "MET_pt_smeared > 500 ? 500 : MET_pt_smeared") \
+    .Define("MET_pt_fixed_Up", "MET_pt_smeared_Up > 500 ? 500 : MET_pt_smeared_Up") \
+    .Define("MET_pt_fixed_Down", "MET_pt_smeared_Down > 500 ? 500 : MET_pt_smeared_Down")
+rdf_bkg = rdf_bkg.Define("MET_pt_fixed", "MET_pt_smeared > 500 ? 500 : MET_pt_smeared") \
+    .Define("MET_pt_fixed_Up", "MET_pt_smeared_Up > 500 ? 500 : MET_pt_smeared_Up") \
+    .Define("MET_pt_fixed_Down", "MET_pt_smeared_Down > 500 ? 500 : MET_pt_smeared_Down")
 
 
 # weight_corr includes both the pileup and Zpt corrections
@@ -97,6 +105,12 @@ def prepareVars(rdf):
              .Define("u_PF_x",     "-(pT_muons*TMath::Cos(phi_muons) + MET_pt_fixed*TMath::Cos(MET_phi_smeared))") \
              .Define("u_PF_y",     "-(pT_muons*TMath::Sin(phi_muons) + MET_pt_fixed*TMath::Sin(MET_phi_smeared))") \
              .Define("u_PF_pt",    "TMath::Sqrt(u_PF_x * u_PF_x + u_PF_y * u_PF_y)") \
+             .Define("u_PFUp_x",  "-(pT_muons*TMath::Cos(phi_muons) + MET_pt_fixed_Up*TMath::Cos(MET_phi_smeared_Up))") \
+             .Define("u_PFUp_y",  "-(pT_muons*TMath::Sin(phi_muons) + MET_pt_fixed_Up*TMath::Sin(MET_phi_smeared_Up))") \
+             .Define("u_PFUp_pt", "TMath::Sqrt(u_PFUp_x * u_PFUp_x + u_PFUp_y * u_PFUp_y)") \
+             .Define("u_PFDown_x",  "-(pT_muons*TMath::Cos(phi_muons) + MET_pt_fixed_Down*TMath::Cos(MET_phi_smeared_Down))") \
+             .Define("u_PFDown_y",  "-(pT_muons*TMath::Sin(phi_muons) + MET_pt_fixed_Down*TMath::Sin(MET_phi_smeared_Down))") \
+             .Define("u_PFDown_pt", "TMath::Sqrt(u_PFDown_x * u_PFDown_x + u_PFDown_y * u_PFDown_y)") \
              .Define("u_DeepMET_x",  "-(pT_muons*TMath::Cos(phi_muons) + DeepMETResolutionTune_pt*TMath::Cos(DeepMETResolutionTune_phi))") \
              .Define("u_DeepMET_y",  "-(pT_muons*TMath::Sin(phi_muons) + DeepMETResolutionTune_pt*TMath::Sin(DeepMETResolutionTune_phi))") \
              .Define("u_DeepMET_pt", "TMath::Sqrt(u_DeepMET_x * u_DeepMET_x + u_DeepMET_y * u_DeepMET_y)") \
@@ -210,6 +224,8 @@ colors = {
     "PUPPIUnc": 6,
     "RawPF": 5,
     "RawPUPPI": 7,
+    "PFUp": 5,
+    "PFDown": 7
 }
 
 labels = {
@@ -223,6 +239,8 @@ labels = {
     "PUPPIUnc": "PUPPIUnc",
     "RawPF": "RawPF",
     "RawPUPPI": "RawPUPPI",
+    "PFUp": "PFUp",
+    "PFDown": "PFDown",
 }
 
 markers = {
@@ -234,6 +252,8 @@ markers = {
     "PUPPIUnc": 24,
     "RawPF": 25,
     "RawPUPPI": 26,
+    "PFUp": 25,
+    "PFDown": 26,
 }
 
 xbins_qT = getpTBins()

@@ -629,24 +629,45 @@ class SampleManager(object):
             }}
             return out;
         }}
+        
+        RVec<float> getJERResolution(RVec<float> pt, RVec<float> eta, float rho) {{
+            RVec<float> out;
+            for (size_t i = 0; i < pt.size(); ++i) {{
+                float res = getJERResolution(pt[i], eta[i], rho);
+                res = std::min(res, 0.5f);
+                res = std::max(res, 0.0f);
+                out.push_back(res);
+            }}
+            return out;
+        }}
+        RVec<float> getJERSF(RVec<float> eta, int variation=1) {{
+            RVec<float> out;
+            for (size_t i = 0; i < eta.size(); ++i) {{
+                float sf = getJERSF(eta[i], variation);
+                sf = std::min(sf, 1.5f);
+                sf = std::max(sf, 1.0f);
+                out.push_back(sf);
+            }}
+            return out; 
+        }}
 
         RVec<float> smearJER(RVec<float> pt, RVec<float> eta, RVec<float> genpt, float rho, RVec<float> randvalue, int variation=1) {{
             RVec<float> out;
             for (size_t i = 0; i < pt.size(); ++i) {{
                 float sf = getJERSF(eta[i], variation);
                 sf = std::min(sf, 1.5f);
-                sf = std::max(sf, 0.5f);
+                sf = std::max(sf, 1.0f);
                 float res = getJERResolution(pt[i], eta[i], rho);
                 res = std::min(res, 0.5f);
                 res = std::max(res, 0.0f);
                 float gpt = genpt[i];
                 float smeared = pt[i];
-                if (gpt > 0) {{
-                    smeared = gpt + sf * (pt[i] - gpt);
-                }} else {{
+                //if (gpt > 0 && gpt < 500.0) {{
+                //    smeared = pt[i] + (sf - 1.0) * (pt[i] - gpt);
+                //}} else {{
                     float sigma = res * sqrt(std::max(sf*sf - 1.f, 0.f));
                     smeared = pt[i] * (1.0 + sigma * randvalue[i]);
-                }}
+                //}}
                 out.push_back(smeared);
             }}
             return out;
@@ -668,6 +689,8 @@ class SampleManager(object):
         
         for mc in self.mcs:
             mc.rdf = mc.rdf.Define("Jet_randvalue", "randGaus(Jet_pt_tight)") \
+                           .Define("Jet_RES", "getJERResolution(Jet_pt_tight, Jet_eta_tight, fixedGridRhoFastjetAll)") \
+                           .Define("Jet_SF", "getJERSF(Jet_eta_tight)") \
                            .Define("Jet_pt_smeared", "smearJER(Jet_pt_tight, Jet_eta_tight, Jet_truthpt_tight,fixedGridRhoFastjetAll, Jet_randvalue, 1)") \
                            .Define("Jet_pt_smeared_Up", "smearJER(Jet_pt_tight, Jet_eta_tight, Jet_truthpt_tight,fixedGridRhoFastjetAll, Jet_randvalue, 2)") \
                            .Define("Jet_pt_smeared_Down", "smearJER(Jet_pt_tight, Jet_eta_tight, Jet_truthpt_tight,fixedGridRhoFastjetAll, Jet_randvalue, 0)")
@@ -681,7 +704,7 @@ class SampleManager(object):
                 .Define("MET_pt_smeared_Down", "vMET_smeared_Down.Mod()") \
                 .Define("MET_phi_smeared_Down", "vMET_smeared_Down.Phi()")
                 
-        branches_added =  [ "Jet_randvalue",
+        branches_added =  [ "Jet_randvalue", "Jet_RES", "Jet_SF",
                             "Jet_pt_smeared", "MET_pt_smeared", "MET_phi_smeared",
                             "Jet_pt_smeared_Up", "MET_pt_smeared_Up", "MET_phi_smeared_Up",
                             "Jet_pt_smeared_Down", "MET_pt_smeared_Down", "MET_phi_smeared_Down",
