@@ -592,21 +592,23 @@ class SampleManager(object):
         #include <tuple>
         #include "TVector2.h"
         using namespace ROOT::VecOps;
+        
+        TRandom3* R3 = new TRandom3(0);
 
 
-        float getJERSF(float eta, int norm=1) {{
+        float getJERSF(float eta, int variation=1) {{
             int ibin = h_sfs_norm->FindBin(eta);
             if (ibin < 1 || ibin > h_sfs_norm->GetNbinsX()) {{
                 return 1.0;
             }} 
-            if (norm == 1) {{
+            if (variation == 1) {{
                 return h_sfs_norm->GetBinContent(ibin);
-            }} else if (norm == 0) {{
+            }} else if (variation == 0) {{
                 return h_sfs_down->GetBinContent(ibin);
-            }} else if (norm == 2) {{
+            }} else if (variation == 2) {{
                 return h_sfs_up->GetBinContent(ibin);
             }} else {{
-                std::cerr << "Invalid norm value: " << norm << std::endl;
+                std::cerr << "Invalid variation value: " << variation << std::endl;
                 return 1.0;
             }}
         }}
@@ -619,19 +621,31 @@ class SampleManager(object):
             }}
             return h_resols[ibin_eta-1][ibin_rho-1]->Eval(pt);
         }}
-
-        RVec<float> smearJER(RVec<float> pt, RVec<float> eta, RVec<float> genpt, float rho) {{
+        
+        RVec<float> randGaus(RVec<float> pt) {{
             RVec<float> out;
             for (size_t i = 0; i < pt.size(); ++i) {{
-                float sf = getJERSF(eta[i]);
+                out.push_back(R3->Gaus(0,1));
+            }}
+            return out;
+        }}
+
+        RVec<float> smearJER(RVec<float> pt, RVec<float> eta, RVec<float> genpt, float rho, RVec<float> randvalue, int variation=1) {{
+            RVec<float> out;
+            for (size_t i = 0; i < pt.size(); ++i) {{
+                float sf = getJERSF(eta[i], variation);
+                sf = std::min(sf, 1.5f);
+                sf = std::max(sf, 0.5f);
                 float res = getJERResolution(pt[i], eta[i], rho);
+                res = std::min(res, 0.5f);
+                res = std::max(res, 0.0f);
                 float gpt = genpt[i];
                 float smeared = pt[i];
                 if (gpt > 0) {{
                     smeared = gpt + sf * (pt[i] - gpt);
                 }} else {{
                     float sigma = res * sqrt(std::max(sf*sf - 1.f, 0.f));
-                    smeared = pt[i] * (1.0 + sigma * gRandom->Gaus(0, 1));
+                    smeared = pt[i] * (1.0 + sigma * randvalue[i]);
                 }}
                 out.push_back(smeared);
             }}
@@ -653,11 +667,24 @@ class SampleManager(object):
         """)
         
         for mc in self.mcs:
-            mc.rdf = mc.rdf.Define("Jet_pt_smeared", "smearJER(Jet_pt_tight, Jet_eta_tight, Jet_truthpt_tight,fixedGridRhoFastjetAll)")
+            mc.rdf = mc.rdf.Define("Jet_randvalue", "randGaus(Jet_pt_tight)") \
+                           .Define("Jet_pt_smeared", "smearJER(Jet_pt_tight, Jet_eta_tight, Jet_truthpt_tight,fixedGridRhoFastjetAll, Jet_randvalue, 1)") \
+                           .Define("Jet_pt_smeared_Up", "smearJER(Jet_pt_tight, Jet_eta_tight, Jet_truthpt_tight,fixedGridRhoFastjetAll, Jet_randvalue, 2)") \
+                           .Define("Jet_pt_smeared_Down", "smearJER(Jet_pt_tight, Jet_eta_tight, Jet_truthpt_tight,fixedGridRhoFastjetAll, Jet_randvalue, 0)")
             mc.rdf = mc.rdf.Define("vMET_smeared", "recomputeMET(MET_pt, MET_phi, Jet_pt_tight, Jet_pt_smeared, Jet_phi_tight)") \
                 .Define("MET_pt_smeared", "vMET_smeared.Mod()") \
-                .Define("MET_phi_smeared", "vMET_smeared.Phi()")
+                .Define("MET_phi_smeared", "vMET_smeared.Phi()") \
+                .Define("vMET_smeared_Up", "recomputeMET(MET_pt, MET_phi, Jet_pt_tight, Jet_pt_smeared_Up, Jet_phi_tight)") \
+                .Define("MET_pt_smeared_Up", "vMET_smeared_Up.Mod()") \
+                .Define("MET_phi_smeared_Up", "vMET_smeared_Up.Phi()") \
+                .Define("vMET_smeared_Down", "recomputeMET(MET_pt, MET_phi, Jet_pt_tight, Jet_pt_smeared_Down, Jet_phi_tight)") \
+                .Define("MET_pt_smeared_Down", "vMET_smeared_Down.Mod()") \
+                .Define("MET_phi_smeared_Down", "vMET_smeared_Down.Phi()")
                 
-        branches_added =  ["Jet_pt_smeared", "MET_pt_smeared", "MET_phi_smeared"]
+        branches_added =  [ "Jet_randvalue",
+                            "Jet_pt_smeared", "MET_pt_smeared", "MET_phi_smeared",
+                            "Jet_pt_smeared_Up", "MET_pt_smeared_Up", "MET_phi_smeared_Up",
+                            "Jet_pt_smeared_Down", "MET_pt_smeared_Down", "MET_phi_smeared_Down",
+                            "Jet_pt_tight", "Jet_eta_tight", "Jet_phi_tight", "Jet_truthpt_tight",] 
         return branches_added
             

@@ -104,104 +104,111 @@ def saveJERInfo_to_ROOT():
         tf1.Write()
     output_file.Close()
     
-saveJERInfo_to_ROOT()
-
-load_code = """
-// Load JER SF and resolution information from ROOT files
-TFile* f = TFile::Open("corrections/jer.root");
-TH1D* h_sfs_norm = (TH1D*)f->Get("h_sfs_norm");
-TH1D* h_sfs_down = (TH1D*)f->Get("h_sfs_down");
-TH1D* h_sfs_up = (TH1D*)f->Get("h_sfs_up");
-TH2D* h_resol_par0 = (TH2D*)f->Get("h_resol_par0");
-
-TF1* h_resols[26][7];
-for (int i = 0; i < 26; ++i) {{
-    for (int j = 0; j < 7; ++j) {{
-        h_resols[i][j] = (TF1*)f->Get(Form("h_resol_pol3_%d_%d", i, j));
-    }}
-}}
-"""
-ROOT.gInterpreter.ProcessLine(load_code)
     
-# Inject tables as C++ constants
-ROOT.gInterpreter.Declare(f"""
-#include <cmath>
-#include <vector>
-#include <tuple>
-#include "TVector2.h"
-using namespace ROOT::VecOps;
+def ApplyJER():
+    load_code = """
+    // Load JER SF and resolution information from ROOT files
+    TFile* f = TFile::Open("corrections/jer.root");
+    TH1D* h_sfs_norm = (TH1D*)f->Get("h_sfs_norm");
+    TH1D* h_sfs_down = (TH1D*)f->Get("h_sfs_down");
+    TH1D* h_sfs_up = (TH1D*)f->Get("h_sfs_up");
+    TH2D* h_resol_par0 = (TH2D*)f->Get("h_resol_par0");
 
-    
-float getJERSF(float eta, int norm=1) {{
-    int ibin = h_sfs_norm->FindBin(eta);
-    if (ibin < 1 || ibin > h_sfs_norm->GetNbinsX()) {{
-        return 1.0;
-    }} 
-    if (norm == 1) {{
-        return h_sfs_norm->GetBinContent(ibin);
-    }} else if (norm == 0) {{
-        return h_sfs_down->GetBinContent(ibin);
-    }} else if (norm == 2) {{
-        return h_sfs_up->GetBinContent(ibin);
-    }} else {{
-        std::cerr << "Invalid norm value: " << norm << std::endl;
-        return 1.0;
-    }}
-}}
-
-float getJERResolution(float pt, float eta, float rho) {{
-    int ibin_eta = h_resol_par0->GetXaxis()->FindBin(eta);
-    int ibin_rho = h_resol_par0->GetYaxis()->FindBin(rho);
-    if (ibin_eta < 1 || ibin_eta > h_resol_par0->GetNbinsX() || ibin_rho < 1 || ibin_rho > h_resol_par0->GetNbinsY()) {{
-        return 0.0;
-    }}
-    return h_resols[ibin_eta-1][ibin_rho-1]->Eval(pt);
-}}
-
-RVec<float> smearJER(RVec<float> pt, RVec<float> eta, RVec<float> genpt, float rho) {{
-    RVec<float> out;
-    for (size_t i = 0; i < pt.size(); ++i) {{
-        float sf = getJERSF(eta[i]);
-        float res = getJERResolution(pt[i], eta[i], rho);
-        float gpt = genpt[i];
-        float smeared = pt[i];
-        if (gpt > 0) {{
-            smeared = gpt + sf * (pt[i] - gpt);
-        }} else {{
-            float sigma = res * sqrt(std::max(sf*sf - 1.f, 0.f));
-            smeared = pt[i] * (1.0 + sigma * gRandom->Gaus(0, 1));
+    TF1* h_resols[26][7];
+    for (int i = 0; i < 26; ++i) {{
+        for (int j = 0; j < 7; ++j) {{
+            h_resols[i][j] = (TF1*)f->Get(Form("h_resol_pol3_%d_%d", i, j));
         }}
-        out.push_back(smeared);
     }}
-    return out;
-}}
+    """
+    ROOT.gInterpreter.ProcessLine(load_code)
 
-TVector2 recomputeMET(float met_pt, float met_phi, RVec<float> pt_old, RVec<float> pt_new, RVec<float> phi) {{
-    float met_px = met_pt * cos(met_phi);
-    float met_py = met_pt * sin(met_phi);
-    for (size_t i = 0; i < pt_old.size(); ++i) {{
-        float dpx = (pt_old[i] - pt_new[i]) * cos(phi[i]);
-        float dpy = (pt_old[i] - pt_new[i]) * sin(phi[i]);
-        met_px += dpx;
-        met_py += dpy;
+    # Inject tables as C++ constants
+    ROOT.gInterpreter.Declare(f"""
+    #include <cmath>
+    #include <vector>
+    #include <tuple>
+    #include "TVector2.h"
+    using namespace ROOT::VecOps;
+
+
+    float getJERSF(float eta, int norm=1) {{
+        int ibin = h_sfs_norm->FindBin(eta);
+        if (ibin < 1 || ibin > h_sfs_norm->GetNbinsX()) {{
+            return 1.0;
+        }} 
+        if (norm == 1) {{
+            return h_sfs_norm->GetBinContent(ibin);
+        }} else if (norm == 0) {{
+            return h_sfs_down->GetBinContent(ibin);
+        }} else if (norm == 2) {{
+            return h_sfs_up->GetBinContent(ibin);
+        }} else {{
+            std::cerr << "Invalid norm value: " << norm << std::endl;
+            return 1.0;
+        }}
     }}
-    TVector2 met_vec(met_px, met_py);
-    return met_vec;
-}}
-""")
 
-# --- Load your NanoAOD file with RDataFrame ---
-fname = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/DY.root"
-rdf = ROOT.RDataFrame("Events", fname)
-branches = rdf.GetColumnNames()
-# look at the first 10 events
-#rdf = rdf.Filter("rdfentry_ < 1000")
-rdf = rdf.Define("Jet_pt_smeared", "smearJER(Jet_pt_tight, Jet_eta_tight, Jet_truthpt_tight,fixedGridRhoFastjetAll)")
+    float getJERResolution(float pt, float eta, float rho) {{
+        int ibin_eta = h_resol_par0->GetXaxis()->FindBin(eta);
+        int ibin_rho = h_resol_par0->GetYaxis()->FindBin(rho);
+        if (ibin_eta < 1 || ibin_eta > h_resol_par0->GetNbinsX() || ibin_rho < 1 || ibin_rho > h_resol_par0->GetNbinsY()) {{
+            return 0.0;
+        }}
+        return h_resols[ibin_eta-1][ibin_rho-1]->Eval(pt);
+    }}
 
-rdf = rdf.Define("vMET_smeared", "recomputeMET(MET_pt, MET_phi, Jet_pt_tight, Jet_pt_smeared, Jet_phi_tight)") \
-    .Define("MET_pt_smeared", "vMET_smeared.Mod()") \
-    .Define("MET_phi_smeared", "vMET_smeared.Phi()")
+    RVec<float> smearJER(RVec<float> pt, RVec<float> eta, RVec<float> genpt, float rho) {{
+        RVec<float> out;
+        for (size_t i = 0; i < pt.size(); ++i) {{
+            float sf = getJERSF(eta[i]);
+            float res = getJERResolution(pt[i], eta[i], rho);
+            float gpt = genpt[i];
+            float smeared = pt[i];
+            if (gpt > 0) {{
+                smeared = gpt + sf * (pt[i] - gpt);
+            }} else {{
+                float sigma = res * sqrt(std::max(sf*sf - 1.f, 0.f));
+                smeared = pt[i] * (1.0 + sigma * gRandom->Gaus(0, 1));
+            }}
+            out.push_back(smeared);
+        }}
+        return out;
+    }}
 
-# save all the branches
-branches += ["Jet_pt_smeared", "MET_pt_smeared", "MET_phi_smeared"]
-rdf.Snapshot("Events", "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/DY_smeared.root", branches)
+    TVector2 recomputeMET(float met_pt, float met_phi, RVec<float> pt_old, RVec<float> pt_new, RVec<float> phi) {{
+        float met_px = met_pt * cos(met_phi);
+        float met_py = met_pt * sin(met_phi);
+        for (size_t i = 0; i < pt_old.size(); ++i) {{
+            float dpx = (pt_old[i] - pt_new[i]) * cos(phi[i]);
+            float dpy = (pt_old[i] - pt_new[i]) * sin(phi[i]);
+            met_px += dpx;
+            met_py += dpy;
+        }}
+        TVector2 met_vec(met_px, met_py);
+        return met_vec;
+    }}
+    """)
+
+    # --- Load your NanoAOD file with RDataFrame ---
+    fname = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/DY.root"
+    rdf = ROOT.RDataFrame("Events", fname)
+    branches = rdf.GetColumnNames()
+    # look at the first 10 events
+    #rdf = rdf.Filter("rdfentry_ < 1000")
+    rdf = rdf.Define("Jet_pt_smeared", "smearJER(Jet_pt_tight, Jet_eta_tight, Jet_truthpt_tight,fixedGridRhoFastjetAll)")
+
+    rdf = rdf.Define("vMET_smeared", "recomputeMET(MET_pt, MET_phi, Jet_pt_tight, Jet_pt_smeared, Jet_phi_tight)") \
+        .Define("MET_pt_smeared", "vMET_smeared.Mod()") \
+        .Define("MET_phi_smeared", "vMET_smeared.Phi()")
+
+    # save all the branches
+    branches += ["Jet_pt_smeared", "MET_pt_smeared", "MET_phi_smeared"]
+    rdf.Snapshot("Events", "/home/yongbinfeng/Desktop/DeepMET/data/outputroot_withjets/DY_smeared.root", branches)
+    
+if __name__ == "__main__":
+    # Convert JER SF and resolution information to ROOT format
+    saveJERInfo_to_ROOT()
+    
+    # Apply JER to the NanoAOD file
+    ApplyJER()

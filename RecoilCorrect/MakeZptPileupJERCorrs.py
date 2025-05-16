@@ -4,12 +4,9 @@ and the systematic uncs.
 '''
 from SampleManager import DrawConfig, Sample, SampleManager
 import ROOT
-import math
 import numpy as np
-from collections import OrderedDict
 import sys
 sys.path.append("../RecoilResol/CMSPLOTS")
-from myFunction import DrawHistos, THStack2TH1  # noqa
 
 
 ROOT.gROOT.SetBatch(True)
