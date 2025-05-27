@@ -180,8 +180,15 @@ class Sample(object):
             else:
                 self.rdf = self.rdf_temp
         elif self.isWSR:
-            self.rdf = self.rdf_org.Define(
-                "lep_n", "mu_n+el_n").Filter("lep_n==1")
+            #self.rdf = self.rdf_org.Define(
+            #    "lep_n", "mu_n+el_n").Filter("lep_n==1")
+            self.rdf_temp = self.rdf_org.Filter("HLT_IsoMu24 || HLT_IsoTkMu24") \
+                                .Filter('nMuon > 0') \
+                                .Filter("Muon_pt[0] > {}".format(LEPPTMIN))  \
+                                .Filter("abs(Muon_eta[0]) < {}".format(LEPETA))  \
+                                .Filter("Muon_pfRelIso04_all[0] < 0.15")
+            self.rdf = self.rdf_temp
+                                    
         else:
             self.rdf = self.rdf_org
         # print self.rdf.Count().GetValue()
