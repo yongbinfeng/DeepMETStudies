@@ -73,14 +73,22 @@ rdf = rdf.Define("mT_DeepMETPVRobustNoPUPPI",
 # h_pvIndex_Z = rdf_Z.Histo1D(("pv_Index", "pv_Index", 11, -1.5, 10.5), "PVRobustIndex")
 
 h_MTs = OrderedDict()
+h_MTs_FineBins = OrderedDict()
 h_METs = OrderedDict()
+h_METs_FineBins = OrderedDict()
 # for met in ["PF", "DeepMET", "DeepMETPVRobust", "DeepMETPVRobustNoPUPPI"]:
 for met in ["PF", "PUPPI", "DeepMET"]:
     hname = "h_mT_{}".format(met)
     h_MTs[met] = rdf.Histo1D((hname, hname, 60, 0, 120), "mT_{}".format(met))
+    hname_fine = "h_mT_{}_fine".format(met)
+    h_MTs_FineBins[met] = rdf.Histo1D(
+        (hname_fine, hname_fine, 600, 0, 120), "mT_{}".format(met))
     hname = "h_MET_{}".format(met)
     h_METs[met] = rdf.Histo1D(
         (hname, hname, 50, 0, 100), "{}MET_pt".format(met))
+    hname_fine = "h_MET_{}_fine".format(met)
+    h_METs_FineBins[met] = rdf.Histo1D(
+        (hname_fine, hname_fine, 500, 0, 100), "{}MET_pt".format(met))
 
 colors = {
     "PF": 1,
@@ -102,11 +110,58 @@ labels = {
     "DeepMETPVRobustNoPUPPI": "DeepMET PVRobust NoPUPPI"
 }
 
+
+markers = {
+    "PF": 20,
+    "PUPPI": 21,
+    "GEN": 22,
+    "DeepMET": 22,
+    "DeepMETCorr": 23,
+    "PUPPIUnc": 24,
+    "RawPF": 25,
+    "RawPUPPI": 26,
+    "PFUp": 25,
+    "PFDown": 26,
+}
+
 # DrawHistos([h_pvIndex], ["W", "Z"], -1.5, 10.5, "Robust PV Index", 1e-5, 10.0, "a.u.",
 #           "W_pv_Index", donormalize=True, outdir=outdir, noLumi=True, mycolors=[1, 2])
 
-DrawHistos(h_MTs.values(), [labels[itype] for itype in h_MTs.keys()], 0, 120, "m_{T} [GeV]", 0., 9.9e6, "Events / 2 Gev", "MT_comp", drawashist=True, dology=False, legendPos=[
-           0.20, 0.63, 0.38, 0.82], mycolors=[colors[itype] for itype in h_MTs.keys()], outdir=outdir, donormalize=False, MCOnly=not doData, doPAS=doPAS, inPaper=True, nMaxDigits=3)
 
-DrawHistos(h_METs.values(), [labels[itype] for itype in h_METs.keys()], 0, 100, "p^{miss}_{T} [GeV]", 0., 1.5e7, "Events / 2 GeV", "MET_comp", drawashist=True, dology=False, legendPos=[
-           0.62, 0.63, 0.80, 0.82], mycolors=[colors[itype] for itype in h_METs.keys()], outdir=outdir, donormalize=False, MCOnly=not doData, doPAS=doPAS, inPaper=True)
+def FindFWHM(histo):
+    max_bin = histo.GetMaximumBin()
+    max_value = histo.GetBinContent(max_bin)
+    half_max = max_value / 2.0
+    left_bin = max_bin
+    right_bin = max_bin
+
+    while left_bin > 1 and histo.GetBinContent(left_bin) > half_max:
+        left_bin -= 1
+    while right_bin < histo.GetNbinsX() and histo.GetBinContent(right_bin) > half_max:
+        right_bin += 1
+
+    # fwhm = histo.GetBinLowEdge(right_bin) - histo.GetBinLowEdge(left_bin)
+    fwhmRight = histo.GetBinLowEdge(right_bin) - histo.GetBinLowEdge(max_bin)
+    return fwhmRight
+
+
+DrawHistos(h_MTs.values(), [labels[itype] for itype in h_MTs.keys()], 0, 120, "m_{T} [GeV]", 0., 9.9e6, "Events / 2 Gev", "MT_comp", drawashist=False, dology=False, legendPos=[
+           0.20, 0.63, 0.48, 0.82], mycolors=[colors[itype] for itype in h_MTs.keys()], outdir=outdir, donormalize=False, MCOnly=not doData, doPAS=doPAS, inPaper=True, nMaxDigits=3, markerstyles=[markers[itype] for itype in h_MTs.keys()], legendoptions=['LEP'] * len(h_MTs.keys()))
+
+DrawHistos(h_METs.values(), [labels[itype] for itype in h_METs.keys()], 0, 100, "p^{miss}_{T} [GeV]", 0., 1.5e7, "Events / 2 GeV", "MET_comp", drawashist=False, dology=False, legendPos=[
+           0.62, 0.63, 0.90, 0.82], mycolors=[colors[itype] for itype in h_METs.keys()], outdir=outdir, donormalize=False, MCOnly=not doData, doPAS=doPAS, inPaper=True, markerstyles=[markers[itype] for itype in h_METs.keys()], legendoptions=['LEP'] * len(h_METs.keys()))
+
+for met in h_MTs_FineBins.keys():
+    fwhm = FindFWHM(h_MTs_FineBins[met])
+    print(f"FWHM for {met}: {fwhm:.2f} GeV")
+
+for met in h_METs_FineBins.keys():
+    fwhm = FindFWHM(h_METs_FineBins[met])
+    print(f"FWHM for {met}: {fwhm:.2f} GeV")
+
+ofile = ROOT.TFile(f"{outdir}/recoil_WJets_{era}.root", "RECREATE")
+for h in h_MTs_FineBins.values():
+    h.Write()
+for h in h_METs_FineBins.values():
+    h.Write()
+ofile.Close()
