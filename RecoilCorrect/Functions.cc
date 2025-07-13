@@ -107,14 +107,17 @@ Float_t UCorrection_Quant(float u, float zpt, TH1F *hptbins, TList *tfs_Data, TL
     TF1 *tf1_MC = (TF1 *)tfs_MC->At(index);
     TF1 *tf1_Data = (TF1 *)tfs_Data->At(index);
 
-    if (u > tf1_MC->GetXmax() || u < tf1_MC->GetXmin())
-        return u;
-
     float u_temp = u;
+    if (u > tf1_MC->GetXmax())
+        u_temp = tf1_MC->GetXmax();
+    else if (u < tf1_MC->GetXmin())
+        u_temp = tf1_MC->GetXmin();
+
     if (isU1Diff)
     {
         u_temp -= zpt;
     }
+
     float qt = tf1_MC->Eval(u_temp); // quantile, cdf
     // no correction on outliers
     if (qcut > 0)
@@ -122,12 +125,13 @@ Float_t UCorrection_Quant(float u, float zpt, TH1F *hptbins, TList *tfs_Data, TL
         if (qt < qcut || qt > 1 - qcut)
             return u;
     }
-    float u_corr = tf1_Data->GetX(qt);
-    if (isU1Diff)
-    {
-        u_corr += zpt;
-    }
-    return u_corr;
+    float u_temp_corr = tf1_Data->GetX(qt);
+    return u_temp_corr - u_temp + u;
+    // if (isU1Diff)
+    //{
+    //     u_corr += zpt;
+    // }
+    // return u_corr;
 }
 
 Float_t UCorrection_Quant(float u, int njet, float zpt, TH1F *hjetbins, TH1F *hptbins, TList *tfs_Data, TList *tfs_MC, float qcut = 0.005, bool isU1Diff = false)
@@ -144,10 +148,15 @@ Float_t UCorrection_Quant(float u, int njet, float zpt, TH1F *hjetbins, TH1F *hp
     TF1 *tf1_MC = (TF1 *)((TList *)tfs_MC->At(njetbin))->At(index);
     TF1 *tf1_Data = (TF1 *)((TList *)tfs_Data->At(njetbin))->At(index);
 
-    if (u > tf1_MC->GetXmax() || u < tf1_MC->GetXmin())
-        return u;
+    // if (u > tf1_MC->GetXmax() || u < tf1_MC->GetXmin())
+    //     return u;
 
     float u_temp = u;
+    if (u > tf1_MC->GetXmax())
+        u_temp = tf1_MC->GetXmax();
+    else if (u < tf1_MC->GetXmin())
+        u_temp = tf1_MC->GetXmin();
+
     if (isU1Diff)
     {
         u_temp -= zpt;
@@ -159,11 +168,9 @@ Float_t UCorrection_Quant(float u, int njet, float zpt, TH1F *hjetbins, TH1F *hp
         if (qt < qcut || qt > 1 - qcut)
             return u;
     }
-    float u_corr = tf1_Data->GetX(qt);
-    if (isU1Diff)
-    {
-        u_corr += zpt;
-    }
+    float u_temp_corr = tf1_Data->GetX(qt);
+    float u_corr = u_temp_corr - u_temp + u;
+
     if (isnan(u_corr))
     {
         std::cout << "u_corr is nan" << std::endl;

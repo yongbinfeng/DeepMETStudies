@@ -2,14 +2,14 @@
 plot the data-MC comparisons pre/post DeepMET corrections.
 and the systematic uncs.
 '''
+import sys
+sys.path.append("../RecoilResol/")  # noqa
+from utils.utils import getnVtxBins, doPAS
 from SampleManager import DrawConfig, Sample, SampleManager
 import ROOT
 import math
 import numpy as np
-import sys
-sys.path.append("../RecoilResol/")
 from CMSPLOTS.myFunction import DrawHistos, THStack2TH1  # noqa
-from utils.utils import getnVtxBins, doPAS
 
 
 ROOT.gROOT.SetBatch(True)
@@ -45,15 +45,15 @@ def main():
     input_ZZ2L = "inputs/inputs_Z_UL_Post/input_ZZTo2L2Nu.txt"
     input_ZZ2L2Q = "inputs/inputs_Z_UL_Post/input_ZZTo2Q2L.txt"
     input_dytau = "inputs/inputs_Z_UL_Post/input_zjets_tautau.txt"
-    
-    input_data   = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/Data.root"
-    input_dy     = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/DY.root"
-    input_ttbar  = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ttbar.root"
-    input_WW2L   = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/WW2L.root"
-    input_WZ2L   = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/WZ2L.root"
-    input_ZZ2L   = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ZZ2L.root"
+
+    input_data = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/Data.root"
+    input_dy = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/DY.root"
+    input_ttbar = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ttbar.root"
+    input_WW2L = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/WW2L.root"
+    input_WZ2L = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/WZ2L.root"
+    input_ZZ2L = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ZZ2L.root"
     input_ZZ2L2Q = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/ZZ2L2Q.root"
-    input_dytau  = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/DYTauTau.root"
+    input_dytau = "/home/yongbinfeng/Desktop/DeepMET/data/outputroot/DYTauTau.root"
 
     DataSamp = Sample(input_data, isMC=False, legend="Data",
                       name="Data", prepareVars=False, select=False)
@@ -413,6 +413,20 @@ def main():
                 for hmet in hmets:
                     unc2 += math.pow(hmet.GetBinContent(ibin) - 1.0, 2.0)
                 hmet_unc.SetBinError(ibin, math.sqrt(unc2))
+
+            makeSmooth = True
+            if makeSmooth:
+                hmet_unc_smoothed = hmet_unc.Clone(
+                    hmet_unc.GetName()+"_smoothed")
+                for ibin in range(2, hmet_unc.GetNbinsX()):
+                    unc2 = hmet_unc.GetBinError(ibin)**2
+                    unc2 = hmet_unc.GetBinError(
+                        ibin-1)**2 + hmet_unc.GetBinError(ibin+1)**2
+                    hmet_unc_smoothed.SetBinError(
+                        ibin, math.sqrt(unc2 / 3.0))
+
+            if makeSmooth:
+                hmet_unc = hmet_unc_smoothed
             return hmet_unc
 
         histo_met_uncs = AddUnc(histo_met_uncs, histos_met)
