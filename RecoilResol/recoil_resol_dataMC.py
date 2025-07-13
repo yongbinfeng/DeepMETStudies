@@ -13,7 +13,7 @@ nPV = getNPVString()
 useRMS = True
 
 # whether to plot data and MC in the same plot
-combineDataMC = True
+combineDataMC = False
 
 doPAS = doPAS()
 
@@ -211,7 +211,7 @@ extraHeaders = {
 # recoils = ["PF", "PUPPI", "DeepMET", "DeepMETCorr"]
 # recoils = ["PF", "PUPPI", "PUPPIUnc", "DeepMET"]
 recoils = ["PF", "PUPPI", "DeepMET"]
-recoils = ["PF", "PFUp", "PFDown"]
+# recoils = ["PF", "PFUp", "PFDown"]
 # recoils = ["PF", "PUPPI", "DeepMET", "RawPF", "RawPUPPI"]
 
 recoils_uncs = ["PUPPI" + unc for unc in uncs]
