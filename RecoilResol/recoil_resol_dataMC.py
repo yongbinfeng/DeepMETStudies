@@ -13,7 +13,7 @@ nPV = getNPVString()
 useRMS = True
 
 # whether to plot data and MC in the same plot
-combineDataMC = False
+combineDataMC = True
 
 doPAS = doPAS()
 
@@ -607,6 +607,8 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
             extraToDraw.SetTextSize(0.055)
             extraToDraw.AddText(todraw_string)
             args['extraToDraw'] = extraToDraw
+            DrawHistosDataMC(hresponses, qtmin, qtmax, qtlabel, 0., 1.29, responselabel,
+                             "reco_recoil_response_withratio" + suffix, legendPos=[0.58, 0.20, 0.88, 0.40], inPaper=True)
             DrawHistosDataMC(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 50.0, uparallabel,
                              "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
             DrawHistosDataMC(hresolsSc_perp, qtmin, qtmax, qtlabel, 0, 50.0, uperplabel,

@@ -173,12 +173,13 @@ def getRMSResolution(th2d):
     hprof = th2d.ProfileX(th2d.GetName()+"_profX", 1, -1, "s")
     hresol = th2d.ProjectionX(th2d.GetName()+"_resolRMS", 0, -1, "e")
     for ibin in range(1, hresol.GetNbinsX()+1):
-        #count = hresol.GetBinContent(ibin)
-        #rms = hprof.GetBinError(ibin)
-        #rms_err = 0
-        #if count > 0:
+        # count = hresol.GetBinContent(ibin)
+        # rms = hprof.GetBinError(ibin)
+        # rms_err = 0
+        # if count > 0:
         #    rms_err = rms / ROOT.TMath.Sqrt(2*count)
-        htemp = th2d.ProjectionY(th2d.GetName() + f"_resolRMS_{ibin}", ibin, ibin)
+        htemp = th2d.ProjectionY(
+            th2d.GetName() + f"_resolRMS_{ibin}", ibin, ibin)
         rms = htemp.GetRMS()
         rms_err = htemp.GetRMSError()
         # print("counts, ", hresol.GetBinContent(ibin), hprof.GetBinContent(ibin))
@@ -472,7 +473,7 @@ def TH2ToTH1s(h2, projY=False, label="X"):
     return hs, labels
 
 
-def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outputname, dology=True, showratio=False, dologx=False, lheader=None, donormalize=False, binomialratio=False, yrmax=2.0, yrmin=0.0, yrlabel=None, MCOnly=False, leftlegend=False, mycolors=None, legendPos=None, legendNCols=1, linestyles=None, markerstyles=None, showpull=False, doNewman=False, doPearson=False, ignoreHistError=False, ypullmin=-3.99, ypullmax=3.99, drawashist=False, padsize=(2, 0.9, 1.1), setGridx=False, setGridy=False, drawoptions=None, legendoptions=None, ratiooptions=None, dologz=False, doth2=False, ratiobase=0, redrawihist=-1, extraText=None, noCMS=False, noLumi=False, nMaxDigits=None, addOverflow=False, addUnderflow=False, plotdiff=False, hratiopanel=None, doratios=None, hpulls=None, W_ref=600, is5TeV=False, outdir="plots", savepdf=True, zmin=0, zmax=2, extralabels=None, extralheader=None, extraToDraw=None, exlegoffset=0.11, hratios=None, doPAS=False, inPaper=False):
+def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outputname, dology=True, showratio=False, dologx=False, lheader=None, donormalize=False, binomialratio=False, yrmax=2.0, yrmin=0.0, yrlabel=None, MCOnly=False, leftlegend=False, mycolors=None, legendPos=None, legendNCols=1, linestyles=None, markerstyles=None, showpull=False, doNewman=False, doPearson=False, ignoreHistError=False, ypullmin=-3.99, ypullmax=3.99, drawashist=False, padsize=(2, 0.9, 1.1), setGridx=False, setGridy=False, drawoptions=None, legendoptions=None, ratiooptions=None, dologz=False, doth2=False, ratiobase=0, redrawihist=-1, extraText=None, noCMS=False, noLumi=False, nMaxDigits=None, addOverflow=False, addUnderflow=False, plotdiff=False, hratiopanel=None, doratios=None, hpulls=None, W_ref=600, is5TeV=False, outdir="plots", savepdf=True, zmin=0, zmax=2, extralabels=None, extralheader=None, extraToDraw=None, exlegoffset=0.11, hratios=None, doPAS=False, inPaper=False, linewidths=None):
     """
     draw histograms with the CMS tdr style
     """
@@ -505,7 +506,7 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
     # change the CMS_lumi variables (see CMS_lumi.py)
     # used with iPeriod = 0, e.g. for simulation-only plots (default is an empty string)
     CMS_lumi.lumi_sqrtS = "(13 TeV)"
-    #CMS_lumi.relPosX = 0.12
+    # CMS_lumi.relPosX = 0.12
     # CMS_lumi.extraText = "Internal"
     CMS_lumi.extraText = ""
     if MCOnly:
@@ -729,7 +730,10 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         if idx < len(markerstyles):
             myhistos_clone[idx].SetMarkerStyle(markerstyles[idx])
         if isinstance(myhistos_clone[idx], ROOT.TH1):
-            myhistos_clone[idx].SetLineWidth(3)
+            if linewidths and idx < len(linewidths):
+                myhistos_clone[idx].SetLineWidth(linewidths[idx])
+            else:
+                myhistos_clone[idx].SetLineWidth(3)
         # myhistos_clone[idx].GetXaxis().SetRangeUser(xmin, xmax)
         if donormalize:
             Normalize(myhistos_clone[idx])
@@ -982,7 +986,7 @@ def DrawHistos(myhistos, mylabels, xmin, xmax, xlabel, ymin, ymax, ylabel, outpu
         canvas.Print("%s.pdf" % outputname)
         canvas.Print("%s.png" % outputname)
         # canvas.Print("%s.root" % outputname)
-        
+
         if inPaper:
             dirpath = "plots/paper"
             if not os.path.exists(dirpath):
