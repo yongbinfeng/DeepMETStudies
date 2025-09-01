@@ -306,9 +306,9 @@ def main():
         sampMan.cacheDraw("deepmet_phi_corr_"+postfix, "histo_zjets_deepmet_phi_corr_"+postfix,
                           30, phimin, phimax, DrawConfig(xmin=phimin, xmax=phimax, xlabel='p^{miss}_{T} #phi', doPAS=doPAS, inPaper=inPaper))
         sampMan.cacheDraw("u1_corr_"+postfix, "histo_zjets_u1_corr_"+postfix, u1_bins, DrawConfig(xmin=-40.0,
-                          xmax=u1max, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u1_unc, doPAS=doPAS, inPaper=inPaper))
+                          xmax=u1max, xlabel='u_{#parallel} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u1_unc, doPAS=doPAS, inPaper=inPaper, yrmin=0.79, yrmax=1.21))
         sampMan.cacheDraw("u2_corr_"+postfix, "histo_zjets_u2_corr_"+postfix, u2_bins, DrawConfig(xmin=-u2max,
-                          xmax=u2max, xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u2_unc, doPAS=doPAS, inPaper=inPaper))
+                          xmax=u2max, xlabel='u_{#perp } [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u2_unc, doPAS=doPAS, inPaper=inPaper, yrmin=0.79, yrmax=1.21))
         sampMan.cacheDraw("u_pt_corr_"+postfix,    "histo_zjets_u_pt_corr_"+postfix, u_bins,  DrawConfig(xmin=0, xmax=utmax,
                           xlabel='u_{T} [GeV]', addOverflow=True, addUnderflow=True, hratiopanel=h_u_unc, yrmin=0.79, yrmax=1.21, doPAS=doPAS, inPaper=inPaper))
 
@@ -398,13 +398,13 @@ def main():
             legendPos = [0.20, 0.88, 0.35, 0.74]
 
         DrawHistos(histos_met, legends, 0., ptmissmax, "p^{miss}_{T} [GeV]", rmin, rmax, "Variation / Nominal", "histo_zjets_MCratio_deepmet_pt_{}".format(
-            outputtag), dology=False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly=True)
+            outputtag), dology=False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly=True, addOverflow=True)
         DrawHistos(histos_u_pt, legends, 0., utmax, "u_{T} [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u_pt_{}".format(
-            outputtag), dology=False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly=True)
+            outputtag), dology=False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly=True, addOverflow=True)
         DrawHistos(histos_u1, legends, -40.0, u1max, "u_{#parallel} [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u1_{}".format(
-            outputtag), dology=False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly=True)
+            outputtag), dology=False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly=True, addOverflow=True)
         DrawHistos(histos_u2, legends, -u2max, u2max, "u_{#perp } [GeV]", 0.7, 1.3, "Variation / Nominal", "histo_zjets_MCratio_u2_{}".format(
-            outputtag), dology=False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly=True)
+            outputtag), dology=False, drawashist=True, mycolors=colors, linestyles=linestyles, legendPos=legendPos, legendNCols=legendNCols, MCOnly=True, addOverflow=True)
 
         def AddUnc(hmet_unc, hmets):
             for ibin in range(1, hmet_unc.GetNbinsX()+1):
