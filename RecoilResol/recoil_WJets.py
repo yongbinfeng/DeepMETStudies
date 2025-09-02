@@ -159,9 +159,9 @@ for met in h_METs_FineBins.keys():
     fwhm = FindFWHM(h_METs_FineBins[met])
     print(f"FWHM for {met}: {fwhm:.2f} GeV")
 
-ofile = ROOT.TFile(f"{outdir}/recoil_WJets_{era}.root", "RECREATE")
-for h in h_MTs_FineBins.values():
+ofile = ROOT.TFile(f"root/recoil_WJets_{era}.root", "RECREATE")
+for h in h_MTs.values():
     h.Write()
-for h in h_METs_FineBins.values():
+for h in h_METs.values():
     h.Write()
 ofile.Close()
