@@ -263,6 +263,8 @@ xbins_nVtx = getnVtxBins()
 
 hresponses_inclusive = None
 
+hists_to_dump = []
+
 # loop over the different qT bins
 for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
     suffix = suffixes[idx]
@@ -357,37 +359,37 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
             resp = values_responses[itype]
 
             hresolsSc_paral_diff[itype] = hresols_paral_diff[itype].Clone(
-                itype + "Sc_paral_diff")
+                hresols_paral_diff[itype].GetName() + "Sc_paral_diff")
             hresolsSc_paral_diff[itype].Scale(1.0 / resp)
 
             hresolsSc_perp[itype] = hresols_perp[itype].Clone(
-                itype + "Sc_perp")
+                hresols_perp[itype].GetName() + "Sc_perp")
             hresolsSc_perp[itype].Scale(1.0 / resp)
 
             hresolsSc_paral_diff_VS_nVtx[itype] = hresols_paral_diff_VS_nVtx[itype].Clone(
-                itype + "Sc_paral_diff_VS_nVtx")
+                hresols_paral_diff_VS_nVtx[itype].GetName() + "Sc_paral_diff_VS_nVtx")
             hresolsSc_paral_diff_VS_nVtx[itype].Scale(1.0 / resp)
 
             hresolsSc_perp_VS_nVtx[itype] = hresols_perp_VS_nVtx[itype].Clone(
-                itype + "Sc_perp_VS_nVtx")
+                hresols_perp_VS_nVtx[itype].GetName() + "Sc_perp_VS_nVtx")
             hresolsSc_perp_VS_nVtx[itype].Scale(1.0 / resp)
 
         for itype in recoils + recoils_uncs:
             resp_MC = values_responses_MC[itype]
             hresolsSc_paral_diff[itype + "_MC"] = hresols_paral_diff[itype + "_MC"].Clone(
-                itype + "Sc_paral_diff_MC")
+                hresols_paral_diff[itype + "_MC"].GetName() + "Sc_paral_diff_MC")
             hresolsSc_paral_diff[itype + "_MC"].Scale(1.0 / resp_MC)
 
             hresolsSc_perp[itype + "_MC"] = hresols_perp[itype + "_MC"].Clone(
-                itype + "Sc_perp_MC")
+                hresols_perp[itype + "_MC"].GetName() + "Sc_perp_MC")
             hresolsSc_perp[itype + "_MC"].Scale(1.0 / resp_MC)
 
             hresolsSc_paral_diff_VS_nVtx[itype + "_MC"] = hresols_paral_diff_VS_nVtx[itype + "_MC"].Clone(
-                itype + "Sc_paral_diff_VS_nVtx_MC")
+                hresols_paral_diff_VS_nVtx[itype + "_MC"].GetName() + "Sc_paral_diff_VS_nVtx_MC")
             hresolsSc_paral_diff_VS_nVtx[itype + "_MC"].Scale(1.0 / resp_MC)
 
             hresolsSc_perp_VS_nVtx[itype + "_MC"] = hresols_perp_VS_nVtx[itype + "_MC"].Clone(
-                itype + "Sc_perp_VS_nVtx_MC")
+                hresols_perp_VS_nVtx[itype + "_MC"].GetName() + "Sc_perp_VS_nVtx_MC")
             hresolsSc_perp_VS_nVtx[itype + "_MC"].Scale(1.0 / resp_MC)
 
     qtmin, qtmax = getqTRange()
@@ -571,6 +573,9 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
 
         DrawHistos(hdict_todraw.values(), legends, xmin, xmax,
                    xlabel, ymin, ymax, ylabel, name, inPaper=inPaper, **args_temp)
+        if inPaper:
+            global hists_to_dump
+            hists_to_dump += hdict_todraw.values()
 
     DrawHistosDataMC(hresponses, qtmin, qtmax, qtlabel, 0., 1.29, responselabel,
                      "reco_recoil_response" + suffix, legendPos=[0.58, 0.20, 0.88, 0.40], inPaper=True)
@@ -609,10 +614,14 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
             args['extraToDraw'] = extraToDraw
             DrawHistosDataMC(hresponses, qtmin, qtmax, qtlabel, 0., 1.29, responselabel,
                              "reco_recoil_response_withratio" + suffix, legendPos=[0.58, 0.20, 0.88, 0.40], inPaper=True)
+            # DrawHistosDataMC(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 50.0, uparallabel,
+            #                 "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
+            # DrawHistosDataMC(hresolsSc_perp, qtmin, qtmax, qtlabel, 0, 50.0, uperplabel,
+            #                 "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.45, 0.58, 0.73])
             DrawHistosDataMC(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 50.0, uparallabel,
-                             "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87])
+                             "reco_recoil_resol_paral_Scaled" + suffix, legendPos=[0.33, 0.60, 0.58, 0.87], inPaper=True)
             DrawHistosDataMC(hresolsSc_perp, qtmin, qtmax, qtlabel, 0, 50.0, uperplabel,
-                             "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.45, 0.58, 0.73])
+                             "reco_recoil_resol_perp_Scaled" + suffix, legendPos=[0.33, 0.45, 0.58, 0.73], inPaper=True)
             DrawHistosDataMC(hresolsSc_paral_diff_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uparallabel,
                              "reco_recoil_resol_paral_VS_nVtx_Scaled" + suffix, legendPos=[0.33, 0.48, 0.58, 0.75], inPaper=True)
             DrawHistosDataMC(hresolsSc_perp_VS_nVtx, nvtxmin, nvtxmax, nvtxlabel, 0, 50.0, uperplabel,
@@ -640,3 +649,12 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
             #                      "reco_recoil_resol_perp_VS_nVtx_Scaled" + suffix_MC, legendPos=[0.33, 0.70, 0.58, 0.87], MCOnly=True)
 
     recoilanalyzer.saveHistos(f"root/output_{suffix}.root")
+
+# dump hists
+ofile = ROOT.TFile(f"root/recoil_resol_dataMC.root", "RECREATE")
+ofile.cd()
+for hist in hists_to_dump:
+    hist.SetDirectory(ofile)
+    hist.Write()
+ofile.Close()
+print("Histograms dumped to root/recoil_resol_dataMC.root")

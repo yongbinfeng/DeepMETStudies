@@ -4,6 +4,7 @@ and prepare some variables (uparal, uperp, responses, and paral_diff)
 for the RDataFrame
 '''
 
+
 def doPAS():
     return False
 
@@ -42,7 +43,7 @@ def getResponseLabel():
 
 def getpTBins():
     import numpy as np
-    xbins_qT = np.zeros(22)
+    xbins_qT = np.zeros(19)
     for ibin in range(0, 4):
         xbins_qT[ibin] = 5*ibin
     for ibin in range(4, 8):
@@ -51,7 +52,8 @@ def getpTBins():
         xbins_qT[ibin] = 20*ibin-100
     for ibin in range(13, 18):
         xbins_qT[ibin] = 30*ibin-220
-    xbins_qT[18:] = (350, 400, 450, 500)
+    xbins_qT[18] = 350.0
+    # xbins_qT[18:] = (350, 400, 450, 500)
     return xbins_qT
 
 
@@ -66,8 +68,10 @@ def getpTResponseBins():
 def getnVtxBins():
     import numpy as np
     # xbins_nVtx = np.array([0.,5.5, 7.5, 9.5, 11.5, 13.5, 15.5, 17.5, 19.5, 21.5, 23.5, 25.5, 27.5, 29.5, 31.5, 33.5, 38.5, 43.5, 50.5])
-    xbins_nVtx = np.array([0., 4.5, 7.5, 9.5, 11.5, 13.5, 15.5,
-                          17.5, 19.5, 21.5, 23.5, 27.5, 31.5, 35.5, 40.5, 50.5, 60.5])
+    # xbins_nVtx = np.array([0., 4.5, 7.5, 9.5, 11.5, 13.5, 15.5,
+    #                      17.5, 19.5, 21.5, 23.5, 27.5, 31.5, 35.5, 40.5, 50.5, 60.5])
+    xbins_nVtx = np.array([4.5, 7.5, 9.5, 11.5, 13.5,
+                          15.5, 17.5, 19.5, 21.5, 23.5, 27.5, 31.5, 35.5, 40.5])
     return xbins_nVtx
 
 
