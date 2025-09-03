@@ -412,21 +412,21 @@ args = {
 }
 
 
-extraToDraw = ROOT.TPaveText(0.50, 0.37, 0.90, 0.42, "NDC")
+extraToDraw = ROOT.TPaveText(0.505, 0.37, 0.90, 0.42, "NDC")
 extraToDraw.SetTextAlign(11)
 extraToDraw.SetFillColorAlpha(0, 0)
 extraToDraw.SetBorderSize(0)
 extraToDraw.SetTextFont(42)
 extraToDraw.SetTextSize(0.04)
-extraToDraw.AddText("LV-Incorrect")
+extraToDraw.AddText("LPV-Incorrect")
 
-extraToDraw2 = ROOT.TPaveText(0.33, 0.37, 0.50, 0.42, "NDC")
+extraToDraw2 = ROOT.TPaveText(0.34, 0.37, 0.505, 0.42, "NDC")
 extraToDraw2.SetFillColorAlpha(0, 0)
 extraToDraw2.SetBorderSize(0)
 extraToDraw2.SetTextAlign(31)
 extraToDraw2.SetTextFont(42)
 extraToDraw2.SetTextSize(0.04)
-extraToDraw2.AddText("LV-Correct")
+extraToDraw2.AddText("LPV-Correct")
 
 args["extraToDraw"] = [extraToDraw, extraToDraw2]
 
@@ -461,21 +461,21 @@ if applySc:
     extraToDraw.SetTextSize(0.04)
     extraToDraw.AddText("Response corrected")
 
-    extraToDraw2 = ROOT.TPaveText(0.37, 0.78, 0.67, 0.83, "NDC")
+    extraToDraw2 = ROOT.TPaveText(0.375, 0.78, 0.70, 0.83, "NDC")
     extraToDraw2.SetFillColorAlpha(0, 0)
     extraToDraw2.SetTextAlign(11)
     extraToDraw2.SetBorderSize(0)
     extraToDraw2.SetTextFont(42)
     extraToDraw2.SetTextSize(0.04)
-    extraToDraw2.AddText("LV-Incorrect")
+    extraToDraw2.AddText("LPV-Incorrect")
 
-    extraToDraw3 = ROOT.TPaveText(0.20, 0.78, 0.37, 0.83, "NDC")
+    extraToDraw3 = ROOT.TPaveText(0.21, 0.78, 0.375, 0.83, "NDC")
     extraToDraw3.SetFillColorAlpha(0, 0)
     extraToDraw3.SetTextAlign(31)
     extraToDraw3.SetBorderSize(0)
     extraToDraw3.SetTextFont(42)
     extraToDraw3.SetTextSize(0.04)
-    extraToDraw3.AddText("LV-Correct")
+    extraToDraw3.AddText("LPV-Correct")
 
     args["extraToDraw"] = [extraToDraw, extraToDraw2, extraToDraw3]
 
