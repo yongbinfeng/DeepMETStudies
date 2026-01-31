@@ -462,15 +462,27 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
 
         return hratios
 
-    extraToDraw = ROOT.TPaveText(0.30, 0.15, 0.90, 0.25, "NDC")
+    extraToDraw = ROOT.TPaveText(0.30, 0.16, 0.50, 0.22, "NDC")
     # extraToDraw.SetFillColor(0)
     extraToDraw.SetFillColorAlpha(0, 0)
     extraToDraw.SetBorderSize(0)
     extraToDraw.SetTextFont(42)
+    extraToDraw.SetTextAlign(12)
     if combineDataMC:
         extraToDraw.SetTextSize(0.055)
     else:
         extraToDraw.SetTextSize(0.04)
+
+    extraToDraw_muon = ROOT.TPaveText(0.30, 0.22, 0.50, 0.27, "NDC")
+    extraToDraw_muon.SetFillColorAlpha(0, 0)
+    extraToDraw_muon.SetBorderSize(0)
+    extraToDraw_muon.SetTextFont(42)
+    extraToDraw_muon.SetTextAlign(12)
+    if combineDataMC:
+        extraToDraw_muon.SetTextSize(0.055)
+    else:
+        extraToDraw_muon.SetTextSize(0.04)
+    extraToDraw_muon.AddText("Z #rightarrow #mu#mu")
 
     n_todraw = int(len(hresponses_todraw) / 2)
 
@@ -483,7 +495,7 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
         "noLumi": noLumi,
         "dology": False,
         "drawashist": False,
-        "extraToDraw": extraToDraw,
+        "extraToDraw": [extraToDraw, extraToDraw_muon],
         "legendoptions": ["LEP"] * n_todraw + ["L"] * n_todraw,
         "lheader": "MC",
         "extralheader": "Data",
@@ -502,7 +514,7 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
         "noLumi": noLumi,
         "dology": False,
         "drawashist": False,
-        "extraToDraw": extraToDraw,
+        "extraToDraw": [extraToDraw, extraToDraw_muon],
         "legendoptions": ["LEP"] * n_todraw + ["L"] * n_todraw,
         "doPAS": doPAS,
     }
@@ -577,8 +589,15 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
             global hists_to_dump
             hists_to_dump += hdict_todraw.values()
 
+    # customize "Z->mumu" position for response
+    extraToDraw_muon_resp = extraToDraw_muon.Clone()
+    extraToDraw_muon_resp.SetX1(0.20)
+    extraToDraw_muon_resp.SetX2(0.50)
+    extraToDraw_muon_resp.SetY1(0.30)
+    extraToDraw_muon_resp.SetY2(0.35)
+
     DrawHistosDataMC(hresponses, qtmin, qtmax, qtlabel, 0., 1.29, responselabel,
-                     "reco_recoil_response" + suffix, legendPos=[0.58, 0.20, 0.88, 0.40], inPaper=True)
+                     "reco_recoil_response" + suffix, legendPos=[0.58, 0.20, 0.88, 0.40], inPaper=True, extraToDraw=extraToDraw_muon_resp)
 
     args['showratio'] = True
     DrawHistosDataMC(hresols_paral_diff, qtmin, qtmax, qtlabel, 0, 50.0, uparallabel,
@@ -604,14 +623,22 @@ for idx, [rdf_data_tmp, rdf_MC_tmp, rdf_bkg_tmp] in enumerate(rdfs):
         if combineDataMC:
             # did not find a way to update the extraToDraw position...
             # reset the variable here
-            extraToDraw = ROOT.TPaveText(0.30, 0.10, 0.90, 0.15, "NDC")
+            extraToDraw = ROOT.TPaveText(0.30, 0.05, 0.90, 0.105, "NDC")
             # extraToDraw.SetFillColor(0)
             extraToDraw.SetFillColorAlpha(0, 0)
             extraToDraw.SetBorderSize(0)
             extraToDraw.SetTextFont(42)
             extraToDraw.SetTextSize(0.055)
+            extraToDraw.SetTextAlign(12)
             extraToDraw.AddText(todraw_string)
-            args['extraToDraw'] = extraToDraw
+            extraToDraw_mu = ROOT.TPaveText(0.30, 0.105, 0.90, 0.160, "NDC")
+            extraToDraw_mu.SetFillColorAlpha(0, 0)
+            extraToDraw_mu.SetBorderSize(0)
+            extraToDraw_mu.SetTextFont(42)
+            extraToDraw_mu.SetTextSize(0.055)
+            extraToDraw_mu.SetTextAlign(12)
+            extraToDraw_mu.AddText("Z #rightarrow #mu#mu")
+            args['extraToDraw'] = [extraToDraw, extraToDraw_mu]
             DrawHistosDataMC(hresponses, qtmin, qtmax, qtlabel, 0., 1.29, responselabel,
                              "reco_recoil_response_withratio" + suffix, legendPos=[0.58, 0.20, 0.88, 0.40], inPaper=True)
             # DrawHistosDataMC(hresolsSc_paral_diff, qtmin, qtmax, qtlabel, 0, 50.0, uparallabel,

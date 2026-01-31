@@ -243,8 +243,18 @@ args = {
     "doPAS": doPAS,
 }
 
+
+extraToDraw_muon = ROOT.TPaveText(0.20, 0.27, 0.50, 0.32, "NDC")
+extraToDraw_muon.SetFillColorAlpha(0, 0)
+extraToDraw_muon.SetBorderSize(0)
+extraToDraw_muon.SetTextFont(42)
+extraToDraw_muon.SetTextAlign(12)
+extraToDraw_muon.SetTextSize(0.04)
+extraToDraw_muon.AddText("Z #rightarrow #mu#mu")
+
+
 DrawHistos(hresponses.values(), legends, 0, qtmax, qtlabel, 0., 1.29, responselabel,
-           "reco_recoil_response" + suffix, legendPos=[0.50, 0.20, 0.80, 0.40], inPaper=True, **args)
+           "reco_recoil_response" + suffix, legendPos=[0.50, 0.20, 0.80, 0.40], inPaper=True, extraToDraw=extraToDraw_muon, **args)
 
 DrawHistos(hresols_paral_diff.values(), GetLegends(hresols_paral_diff), 0, qtmax, qtlabel, 0, 39.0, uparallabel, "reco_recoil_resol_paral" + suffix, drawashist=drawashist, dology=False,
            legendPos=[0.20, 0.69, 0.38, 0.88], mycolors=[colors[itype] for itype in hresols_paral_diff.keys()], noLumi=noLumi, outdir=outdir, linestyles=GetLineStyles(hresols_paral_diff), MCOnly=MCOnly)
@@ -262,14 +272,23 @@ DrawHistos(hresols_perp_VS_nVtx.values(), GetLegends(hresols_perp_VS_nVtx), nvtx
            legendPos=[0.20, 0.69, 0.40, 0.88], mycolors=[colors[itype] for itype in hresols_perp_VS_nVtx.keys()], noLumi=noLumi, outdir=outdir, linestyles=GetLineStyles(hresols_perp_VS_nVtx), MCOnly=MCOnly)
 
 if applySc:
-    extraToDraw = ROOT.TPaveText(0.60, 0.20, 0.90, 0.27, "NDC")
+    extraToDraw = ROOT.TPaveText(0.60, 0.18, 0.90, 0.23, "NDC")
     extraToDraw.SetFillColorAlpha(0, 0)
     extraToDraw.SetBorderSize(0)
+    extraToDraw.SetTextAlign(12)
     extraToDraw.SetTextFont(42)
     extraToDraw.SetTextSize(0.04)
     extraToDraw.AddText("Response corrected")
 
-    args["extraToDraw"] = extraToDraw
+    extraToDraw_muon = ROOT.TPaveText(0.60, 0.23, 0.90, 0.28, "NDC")
+    extraToDraw_muon.SetFillColorAlpha(0, 0)
+    extraToDraw_muon.SetBorderSize(0)
+    extraToDraw_muon.SetTextFont(42)
+    extraToDraw_muon.SetTextAlign(12)
+    extraToDraw_muon.SetTextSize(0.04)
+    extraToDraw_muon.AddText("Z #rightarrow #mu#mu")
+
+    args["extraToDraw"] = [extraToDraw, extraToDraw_muon]
 
     #
     # Scaled
